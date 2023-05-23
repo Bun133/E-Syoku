@@ -6,12 +6,12 @@ interface Option<T> {
     value: T
 }
 
-export function ListSelectionString(params: {
-    values: string[],
-    selected: (t: string | undefined) => void
+export function ListSelectionPrimitive<T extends string | number>(params: {
+    values: T[],
+    selected: (t: T | undefined) => void
 }) {
     return ListSelection({
-        values: params.values.map((it) => ({name: it, value: it})),
+        values: params.values.map((it) => ({name: it.toString(), value: it})),
         selected: (t) => params.selected(t?.value)
     })
 }
@@ -26,7 +26,7 @@ export default function ListSelection<T>(params: {
 
     const onChange = (e: ChangeEvent<HTMLSelectElement>) => {
         // find matching value in values
-        setSelected(params.values.find((it) => it.value === e.target.value))
+        setSelected(params.values.find((it) => it.name === e.target.value))
         console.log("selected", selected)
         params.selected(selected)
     }
