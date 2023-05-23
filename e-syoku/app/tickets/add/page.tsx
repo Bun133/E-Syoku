@@ -3,6 +3,7 @@
 import PageTitle from "@/components/pageTitle";
 import {ListSelectionPrimitive} from "@/components/select/ListSelection";
 import {useState} from "react";
+import Button from "@/components/button";
 
 export default function Page() {
     let [firstLetter, setFirstLetter] = useState<string>()
@@ -28,6 +29,10 @@ export default function Page() {
                 <div className="font-bold">
                     {firstLetter} - {num}
                 </div>
+
+                <Button href={"/tickets/add/" + firstLetter + "-" + num}>
+                    登録
+                </Button>
             </div>
         </div>
     );
