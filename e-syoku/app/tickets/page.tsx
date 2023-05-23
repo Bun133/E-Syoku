@@ -1,5 +1,5 @@
-import PageTitle from "@/app/pageTitle";
-import Ticket from "@/app/tickets/Ticket";
+import PageTitle from "@/components/elements/pageTitle";
+import Ticket from "@/components/elements/Ticket";
 
 export default function Home() {
     return (
