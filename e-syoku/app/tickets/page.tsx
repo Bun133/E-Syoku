@@ -1,5 +1,5 @@
-import PageTitle from "@/components/elements/pageTitle";
-import Ticket from "@/components/elements/Ticket";
+import PageTitle from "@/components/pageTitle";
+import Ticket from "@/components/Ticket";
 
 export default function Page() {
     return (

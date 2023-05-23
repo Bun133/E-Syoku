@@ -1,4 +1,4 @@
-import Button from "@/components/elements/button";
+import Button from "@/components/button";
 
 export default function Ticket(param: {
     ticketUniqueId: string,

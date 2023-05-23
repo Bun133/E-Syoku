@@ -1,6 +1,6 @@
-import '../../app/globals.css'
+import './globals.css'
 import {Inter} from 'next/font/google'
-import {HangBar} from "@/components/elements/hangBar";
+import {HangBar} from "@/components/hangBar";
 
 const inter = Inter({subsets: ['latin']})
 
