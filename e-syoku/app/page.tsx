@@ -1,6 +1,6 @@
 import Button from "@/components/elements/button";
 
-export default function Home() {
+export default function Page() {
     return (
         <div className="flex flex-col justify-start items-center space-y-1 w-full">
             <Button href="/tickets">

@@ -1,7 +1,7 @@
 import PageTitle from "@/components/elements/pageTitle";
 import Ticket from "@/components/elements/Ticket";
 
-export default function Home() {
+export default function Page() {
     return (
         <div>
             <PageTitle title="食券一覧"></PageTitle>
