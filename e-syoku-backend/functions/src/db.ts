@@ -1,12 +1,13 @@
 import {firestore} from "firebase-admin";
-import {Ticket, ticketSchema} from "./types";
+import {Shop, shopSchema, Ticket, ticketSchema} from "./types";
 import {ZodType} from "zod";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
 
 export type DBRefs = {
-    tickets: firestore.CollectionReference<firestore.DocumentData>
+    tickets: firestore.CollectionReference<firestore.DocumentData>,
+    shops: firestore.CollectionReference<firestore.DocumentData>,
 }
 
 /**
@@ -16,6 +17,7 @@ export type DBRefs = {
 export function dbrefs(db: Firestore): DBRefs {
     return {
         tickets: db.collection("tickets"),
+        shops: db.collection("shops"),
     };
 }
 
@@ -56,4 +58,17 @@ export async function ticketByRef(ref: DBRefs, ticketRef: DocumentReference<fire
             ...data
         }
     });
+}
+
+export async function shopById(ref: DBRefs, id: string): Promise<Shop | undefined> {
+    return shopByRef(ref, ref.shops.doc(id));
+}
+
+export async function shopByRef(ref: DBRefs, shopRef: DocumentReference<firestore.DocumentData>): Promise<Shop | undefined> {
+    return await parseData(shopSchema, shopRef, (data) => {
+        return {
+            shopId: shopRef.id,
+            ...data
+        }
+    })
 }
