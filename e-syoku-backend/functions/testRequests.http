@@ -26,3 +26,13 @@ Content-Type: application/json
 {
   "ticketId": "JAQze9bOcHT3FsO9djf2"
 }
+
+###
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/registerTicket
+Content-Type: application/json
+
+{
+  "shopId": "7d5B2oeIrxfBEz57lSdH",
+  "ticketNum": "A-1",
+  "description": "テスト追加"
+}

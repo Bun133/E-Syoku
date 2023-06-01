@@ -4,7 +4,8 @@ export function safeAs<T>(type: ZodType<T>, value: any): T | undefined {
     try {
         return type.parse(value);
     } catch (e) {
-        return undefined;
+        console.log("ERROR", e)
+        return undefined
     }
 }
 

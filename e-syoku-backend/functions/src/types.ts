@@ -5,6 +5,8 @@ import {z} from "zod";
  */
 export const uniqueId = z.string();
 
+export type UniqueId = z.infer<typeof uniqueId>
+
 /**
  * Shop schema, expressing shop entry.
  */

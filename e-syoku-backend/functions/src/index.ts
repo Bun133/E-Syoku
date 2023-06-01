@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import {dbrefs, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
+import {dbrefs, registerNewTicket, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
 import {Ticket, TicketStatus} from "./types";
 import {endOfEndPoint, onPost, requireParameter} from "./endpointUtil";
 import {z} from "zod";
@@ -91,3 +91,23 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
         endOfEndPoint(request, response)
     })
 }
+
+/**
+ * Randomly generate Ticket Data and register it to the database
+ */
+export const registerTicket = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    await onPost(request, response, async () => {
+        let shopId = requireParameter("shopId", z.string(), request, response)
+        let ticketNum = requireParameter("ticketNum", z.string(), request, response)
+        let description = requireParameter("description", z.string().optional(), request, response)
+
+        if (!shopId || !ticketNum) return;
+
+        let ticket = await registerNewTicket(refs, shopId, ticketNum, description)
+        response.status(200).send(ticket).end()
+
+        return
+    })
+
+    endOfEndPoint(request, response)
+})

@@ -1,9 +1,11 @@
 import {firestore} from "firebase-admin";
-import {Shop, shopSchema, Ticket, ticketSchema} from "./types";
+import {Shop, shopSchema, Ticket, ticketSchema, TicketStatus, UniqueId} from "./types";
 import {ZodType} from "zod";
+import {v4 as uuidv4} from 'uuid';
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
+import CollectionReference = firestore.CollectionReference;
 
 export type DBRefs = {
     tickets: firestore.CollectionReference<firestore.DocumentData>,
@@ -54,6 +56,22 @@ async function updateData(ref: DocumentReference<firestore.DocumentData>, toUpda
     return true;
 }
 
+/**
+ * return random ref in [parent] collection. With checking if the ref is not taken.
+ * @param parent
+ */
+async function newRandomRef(parent: CollectionReference): Promise<DocumentReference> {
+    let uuid = uuidv4();
+    let ref = parent.doc(uuid);
+    let data = await ref.get();
+    if (data.exists) {
+        console.log("UUID Collided!")
+        return newRandomRef(parent);
+    }
+
+    return ref;
+}
+
 export async function ticketById(ref: DBRefs, id: string): Promise<Ticket | undefined> {
     return ticketByRef(ref, ref.tickets.doc(id));
 }
@@ -86,4 +104,22 @@ export async function shopByRef(ref: DBRefs, shopRef: DocumentReference<firestor
             ...data
         }
     })
+}
+
+export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum: UniqueId, description: string | undefined): Promise<Ticket> {
+    let ticketRef = await newRandomRef(ref.tickets);
+    // TODO Check if shop exists with Authentication
+    let data = {
+        shopId: shopId,
+        ticketNum: ticketNum,
+        description: description,
+        status: "PROCESSING" as TicketStatus
+    }
+
+    await ticketRef.set(data);
+
+    return {
+        ...data,
+        uniqueId: ticketRef.id
+    }
 }
