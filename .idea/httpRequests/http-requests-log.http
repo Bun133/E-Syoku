@@ -1,0 +1,264 @@
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/resolveTicket
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195934.400.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195931.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/cancelCalling
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195926.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/cancelCalling
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195916.400.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/callTicket
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195904.400.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/callTicket
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195842.400.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/cancelCalling
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195839.400.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195829.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195414.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/resolveTicket
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195412.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195401.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/cancelCalling
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195400.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195358.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/callTicket
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T195357.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195353.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T195001.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/cancelCalling
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T194956.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T194953.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T194335.200.json
+
+###
+
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/callTicket
+Content-Type: application/json
+Content-Length: 40
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+<> 2023-06-01T194332.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listShops
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T194326.200.json
+
+###
+
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.6)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2023-06-01T194317.200.json
+
+###
+

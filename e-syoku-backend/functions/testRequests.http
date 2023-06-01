@@ -1,0 +1,28 @@
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listTickets
+
+###
+GET http://127.0.0.1:5001/e-syoku/asia-northeast1/listShops
+
+###
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/callTicket
+Content-Type: application/json
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+###
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/cancelCalling
+Content-Type: application/json
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}
+
+###
+POST http://127.0.0.1:5001/e-syoku/asia-northeast1/resolveTicket
+Content-Type: application/json
+
+{
+  "ticketId": "JAQze9bOcHT3FsO9djf2"
+}

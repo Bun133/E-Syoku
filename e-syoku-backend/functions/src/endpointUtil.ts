@@ -12,7 +12,6 @@ import {safeAs} from "./safeAs";
  * @param response
  */
 export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request: Request, response: Response): Z | undefined {
-    console.log("body", request.body)
     const parsed = safeAs(type, request.body[paramName]);
     if (parsed === undefined) {
         response.status(400).send({
