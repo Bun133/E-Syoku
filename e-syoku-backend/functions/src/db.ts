@@ -47,6 +47,13 @@ function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<firestore.Docu
     });
 }
 
+async function updateData(ref: DocumentReference<firestore.DocumentData>, toUpdate: Partial<DocumentData>): Promise<boolean> {
+    const data = await ref.get();
+    if (!data.exists) return false;
+    await ref.update(toUpdate);
+    return true;
+}
+
 export async function ticketById(ref: DBRefs, id: string): Promise<Ticket | undefined> {
     return ticketByRef(ref, ref.tickets.doc(id));
 }
@@ -58,6 +65,14 @@ export async function ticketByRef(ref: DBRefs, ticketRef: DocumentReference<fire
             ...data
         }
     });
+}
+
+export async function updateTicketById(ref: DBRefs, id: string, data: Partial<Ticket>): Promise<boolean> {
+    return updateTicketByRef(ref, ref.tickets.doc(id), data);
+}
+
+export async function updateTicketByRef(ref: DBRefs, ticketRef: DocumentReference<firestore.DocumentData>, data: Partial<Ticket>): Promise<boolean> {
+    return await updateData(ticketRef, data)
 }
 
 export async function shopById(ref: DBRefs, id: string): Promise<Shop | undefined> {
