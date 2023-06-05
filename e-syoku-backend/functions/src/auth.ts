@@ -1,11 +1,14 @@
 import {auth} from "firebase-admin";
 import {HttpsFunction, onRequest, Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
+import {DBRefs, getAuthData} from "./db";
+import {AuthInstance, AuthType} from "./types";
 import Auth = auth.Auth;
 
 /**
  * Using [authed] function, authenticate the request by checking request headers and firebase authentication.
  * @param auth
+ * @param refs
  * @param req
  * @param res
  * @param success
@@ -13,15 +16,16 @@ import Auth = auth.Auth;
  *
  * @return HttpsFunction
  */
-export function onAuthedRequest(auth: Auth, req: Request, res: Response, success: () => void, failure?: () => void): HttpsFunction {
+export function onAuthedRequest(auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void, failure?: () => void): HttpsFunction {
     return onRequest(async (req: Request, res: Response) => {
-        await authed(auth, req, res, success, failure);
+        await authed(auth, refs, req, res, success, failure);
     });
 }
 
 /**
  * Authenticate the request by checking request headers and firebase authentication.
  * @param auth
+ * @param refs
  * @param req
  * @param res
  * @param success
@@ -29,7 +33,7 @@ export function onAuthedRequest(auth: Auth, req: Request, res: Response, success
  *
  * @return Promise<void>
  */
-export async function authed(auth: Auth, req: Request, res: Response, success: () => void, failure ?: () => void): Promise<void> {
+export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure ?: () => void): Promise<void> {
     function failed() {
         if (failure) {
             failure();
@@ -48,8 +52,32 @@ export async function authed(auth: Auth, req: Request, res: Response, success: (
     const user = await auth.getUser(uid);
 
     if (user) {
-        success();
+        let authData = await getAuthData(refs, uid)
+        if (authData) {
+            let authInstance: AuthInstance = {
+                ...authData,
+                auth: user
+            }
+
+            await success(authInstance);
+        } else {
+            failed();
+            return;
+        }
     } else {
         failed();
     }
+}
+
+
+export async function authedWithType(authType: AuthType, auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure?: () => void) {
+    await authed(auth, refs, req, res, async (user: AuthInstance) => {
+        if (user.authType === authType) {
+            await success(user);
+        } else {
+            if (failure) {
+                failure();
+            }
+        }
+    }, failure);
 }

@@ -1,14 +1,16 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import {dbrefs, registerNewTicket, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
-import {Ticket, TicketStatus} from "./types";
+import {AuthInstance, ShopAuthEntry, Ticket, TicketStatus} from "./types";
 import {endOfEndPoint, onPost, requireParameter} from "./endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
+import {authedWithType} from "./auth";
 
 admin.initializeApp()
 const db = admin.firestore();
 const refs = dbrefs(db);
+const auth = admin.auth();
 
 /**
  * List all tickets existing in the database
@@ -97,16 +99,21 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
  */
 export const registerTicket = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     await onPost(request, response, async () => {
-        let shopId = requireParameter("shopId", z.string(), request, response)
-        let ticketNum = requireParameter("ticketNum", z.string(), request, response)
-        let description = requireParameter("description", z.string().optional(), request, response)
+        await authedWithType("SHOP", auth, refs, request, response, async (user: AuthInstance) => {
+            let shopId = (user as ShopAuthEntry).shopId
+            let ticketNum = requireParameter("ticketNum", z.string(), request, response)
+            let description = requireParameter("description", z.string().optional(), request, response)
 
-        if (!shopId || !ticketNum) return;
+            if (!shopId || !ticketNum) return;
 
-        let ticket = await registerNewTicket(refs, shopId, ticketNum, description)
-        response.status(200).send(ticket).end()
+            let ticket = await registerNewTicket(refs, shopId, ticketNum, description)
+            response.status(200).send(ticket).end()
 
-        return
+            return
+        }, () => {
+            response.status(401).send({"error": "Unauthorized"}).end()
+            return
+        })
     })
 
     endOfEndPoint(request, response)

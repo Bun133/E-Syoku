@@ -1,5 +1,15 @@
 import {firestore} from "firebase-admin";
-import {Shop, shopSchema, Ticket, ticketSchema, TicketStatus, UniqueId} from "./types";
+import {
+    AuthEntry,
+    AuthInstance,
+    authEntrySchema,
+    Shop,
+    shopSchema,
+    Ticket,
+    ticketSchema,
+    TicketStatus,
+    UniqueId
+} from "./types";
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import Firestore = firestore.Firestore;
@@ -10,6 +20,7 @@ import CollectionReference = firestore.CollectionReference;
 export type DBRefs = {
     tickets: firestore.CollectionReference<firestore.DocumentData>,
     shops: firestore.CollectionReference<firestore.DocumentData>,
+    auths: firestore.CollectionReference<firestore.DocumentData>,
 }
 
 /**
@@ -20,6 +31,7 @@ export function dbrefs(db: Firestore): DBRefs {
     return {
         tickets: db.collection("tickets"),
         shops: db.collection("shops"),
+        auths: db.collection("auths"),
     };
 }
 
@@ -122,4 +134,20 @@ export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum
         ...data,
         uniqueId: ticketRef.id
     }
+}
+
+export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry | undefined> {
+    return await parseData(authEntrySchema, refs.auths.doc(uid));
+}
+
+/**
+ * Update Auth Data with allowance of [opAuthedBy]
+ * @param refs
+ * @param opAuthedBy
+ * @param toChangeUID
+ * @param data
+ */
+export async function updateAuthData(refs: DBRefs, opAuthedBy: AuthInstance, toChangeUID: string, data: Partial<AuthEntry>): Promise<boolean> {
+    if (opAuthedBy.authType != "ADMIN") return false
+    return await updateData(refs.auths.doc(toChangeUID), data);
 }
