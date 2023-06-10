@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import {dbrefs, registerNewTicket, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
 import {AuthInstance, ShopAuthEntry, Ticket, TicketStatus} from "./types";
-import {endOfEndPoint, onPost, requireParameter} from "./endpointUtil";
+import {applyCORSHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
 import {authedWithType} from "./auth";
@@ -12,10 +12,39 @@ const db = admin.firestore();
 const refs = dbrefs(db);
 const auth = admin.auth();
 
+export const ticketStatus = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyCORSHeaders(response)
+    handleOption(request,response)
+
+    await onPost(request, response, async () => {
+        let ticketId = requireParameter("ticketId", z.string(), request, response);
+        if (!ticketId) return
+        let ticket = await ticketById(refs, ticketId);
+        if (ticket === undefined) {
+            response.status(404).send({
+                "isSuccess": false,
+                "error": "Ticket not found"
+            }).end()
+            return
+        }
+
+        response.status(200).send({
+            "isSuccess": true,
+            "ticket": ticket
+        }).end()
+    })
+
+    endOfEndPoint(request, response)
+})
+
 /**
  * List all tickets existing in the database
  */
 export const listTickets = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyCORSHeaders(response)
+    handleOption(request,response)
+
+
     let docs = await refs.tickets.listDocuments();
     let tickets: Awaited<Ticket | undefined>[] = await Promise.all(docs.map(async (doc) => {
         return await ticketByRef(refs, doc);
@@ -35,6 +64,9 @@ export const listTickets = functions.region("asia-northeast1").https.onRequest(a
  * List all shops existing in the database
  */
 export const listShops = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyCORSHeaders(response)
+    handleOption(request,response)
+
     let docs = await refs.shops.listDocuments();
     let shops = await Promise.all(docs.map(async (doc) => {
         return await shopByRef(refs, doc);
@@ -70,6 +102,9 @@ export const resolveTicket =
 
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
     return functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+        applyCORSHeaders(response)
+        handleOption(request,response)
+
         await onPost(request, response, async () => {
             let id = requireParameter("ticketId", z.string(), request, response)
             if (!id) return;
@@ -107,6 +142,9 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
  * Randomly generate Ticket Data and register it to the database
  */
 export const registerTicket = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyCORSHeaders(response)
+    handleOption(request,response)
+
     await onPost(request, response, async () => {
         await authedWithType("SHOP", auth, refs, request, response, async (user: AuthInstance) => {
             let shopId = (user as ShopAuthEntry).shopId

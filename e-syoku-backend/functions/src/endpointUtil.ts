@@ -45,7 +45,27 @@ export function endOfEndPoint(req: Request, res: Response) {
     if (res.writableEnded) return
 
     res.status(404).send({
-        "isSuccess":false,
+        "isSuccess": false,
         "error": `No endpoint for ${req.method} Method at this endpoint`,
     })
+}
+
+let origin: string = "";
+if (process.env["FUNCTIONS_EMULATOR"]) {
+    origin = "http://localhost:3000";
+}else{
+    // TODO 書く
+    origin = "https://";
+}
+
+export function applyCORSHeaders(s: Response) {
+    s.header("Access-Control-Allow-Origin", origin);
+    s.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS, POST');
+    s.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept , Authorization");
+}
+
+export function handleOption(q: Request, s: Response) {
+    if (q.method === "OPTIONS") {
+        s.status(200).send({data:"OPTIONS"}).end();
+    }
 }
