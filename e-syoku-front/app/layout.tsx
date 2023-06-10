@@ -1,6 +1,8 @@
 import './globals.css'
 import {Inter} from 'next/font/google'
 import {HangBar} from "@/components/hangBar";
+import React from "react";
+import {FirebaseAuthProvider} from "@/lib/firebase/authentication";
 
 const inter = Inter({subsets: ['latin']})
 
@@ -18,7 +20,9 @@ export default function RootLayout({
         <html lang="en">
         <body className={inter.className}>
         <HangBar></HangBar>
-        {children}
+        <FirebaseAuthProvider>
+            {children}
+        </FirebaseAuthProvider>
         </body>
         </html>
     )
