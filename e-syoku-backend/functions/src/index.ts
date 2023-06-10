@@ -21,9 +21,12 @@ export const listTickets = functions.region("asia-northeast1").https.onRequest(a
         return await ticketByRef(refs, doc);
     }))
 
-    response.status(200).send(tickets.filter((it) => {
-        return it !== undefined
-    })).end()
+    response.status(200).send({
+        "isSuccess": true,
+        "tickets": tickets.filter((it) => {
+            return it !== undefined
+        })
+    }).end()
 
     endOfEndPoint(request, response)
 });
@@ -37,9 +40,12 @@ export const listShops = functions.region("asia-northeast1").https.onRequest(asy
         return await shopByRef(refs, doc);
     }))
 
-    response.status(200).send(shops.filter((it) => {
-        return it !== undefined
-    })).end()
+    response.status(200).send({
+        "isSuccess": true,
+        "shops": shops.filter((it) => {
+            return it !== undefined
+        })
+    }).end()
 
     endOfEndPoint(request, response)
 })
@@ -70,11 +76,14 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
             let ticket = await ticketById(refs, id)
             if (!ticket) {
-                response.status(400).send({"error": "Ticket for requested ID doesn't exist."}).end()
+                response.status(400).send({"isSuccess": false, "error": "Ticket for requested ID doesn't exist."}).end()
                 return
             }
             if (ticket.status !== fromStatus) {
-                response.status(400).send({"error": "Ticket for requested ID is not in " + fromStatus + " status. Actual Status: " + ticket.status}).end()
+                response.status(400).send({
+                    "isSuccess": false,
+                    "error": "Ticket for requested ID is not in " + fromStatus + " status. Actual Status: " + ticket.status
+                }).end()
                 return
             }
 
@@ -82,9 +91,9 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                 status: toStatus
             })
             if (called) {
-                response.status(200).send({"success": successMessage}).end()
+                response.status(200).send({"isSuccess": true, "success": successMessage}).end()
             } else {
-                response.status(400).send({"error": "Failed to Update Ticket Data"}).end()
+                response.status(400).send({"isSuccess": false, "error": "Failed to Update Ticket Data"}).end()
             }
 
             return
@@ -107,11 +116,11 @@ export const registerTicket = functions.region("asia-northeast1").https.onReques
             if (!shopId || !ticketNum) return;
 
             let ticket = await registerNewTicket(refs, shopId, ticketNum, description)
-            response.status(200).send(ticket).end()
+            response.status(200).send({"isSuccess": true, "ticket": ticket}).end()
 
             return
         }, () => {
-            response.status(401).send({"error": "Unauthorized"}).end()
+            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
             return
         })
     })

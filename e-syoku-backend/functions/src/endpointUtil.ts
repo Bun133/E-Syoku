@@ -45,6 +45,7 @@ export function endOfEndPoint(req: Request, res: Response) {
     if (res.writableEnded) return
 
     res.status(404).send({
+        "isSuccess":false,
         "error": `No endpoint for ${req.method} Method at this endpoint`,
     })
 }

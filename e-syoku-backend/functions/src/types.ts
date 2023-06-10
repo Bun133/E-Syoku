@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {UserRecord} from "firebase-admin/lib/auth";
+import {UserRecord} from "firebase-admin/auth";
 
 /**
  * Unique ID Type, used for identifying items in the database.
