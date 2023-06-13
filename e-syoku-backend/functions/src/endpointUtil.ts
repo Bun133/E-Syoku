@@ -12,6 +12,10 @@ import {safeAs} from "./safeAs";
  * @param response
  */
 export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request: Request, response: Response): Z | undefined {
+    if (typeof request.body === "string") {
+        request.body = JSON.parse(request.body)
+    }
+
     const parsed = safeAs(type, request.body[paramName]);
     if (parsed === undefined) {
         response.status(400).send({
@@ -53,19 +57,20 @@ export function endOfEndPoint(req: Request, res: Response) {
 let origin: string = "";
 if (process.env["FUNCTIONS_EMULATOR"]) {
     origin = "http://localhost:3000";
-}else{
+} else {
     // TODO 書く
     origin = "https://";
 }
 
-export function applyCORSHeaders(s: Response) {
+export function applyHeaders(s: Response) {
     s.header("Access-Control-Allow-Origin", origin);
     s.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS, POST');
     s.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept , Authorization");
+    s.header("Content-Type", "application/json")
 }
 
 export function handleOption(q: Request, s: Response) {
     if (q.method === "OPTIONS") {
-        s.status(200).send({data:"OPTIONS"}).end();
+        s.status(200).send({data: "OPTIONS"}).end();
     }
 }

@@ -9,11 +9,11 @@ export default async function Page(props: any) {
 
     const param = useParams()
     const id = param["id"]!!
-    const data = await useEndpoint(ticketStatusEndPoint, {ticketId: id})
 
-    const ticket = data.data?.ticket
+    const data = useEndpoint(ticketStatusEndPoint, {ticketId: id})
+    const ticket = data?.data?.ticket
 
-    console.log("fetched", ticket)
+    console.log("ticket",ticket)
 
     if (ticket !== undefined) {
         return (
