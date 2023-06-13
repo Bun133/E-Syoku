@@ -81,13 +81,12 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     const [state, setState] = useState<EndPointResponse<R> | undefined>(undefined)
     useEffect(() => {
         const call = async () => {
-            return await callEndpoint(endPoint, requestData)
+            setState(await callEndpoint(endPoint, requestData))
         }
 
         call().then(r => {
-            setState(r)
         })
-    }, [setState])
+    }, [])
 
     return state
 }

@@ -6,16 +6,13 @@ import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {useParams} from "next/navigation";
 
 export default async function Page(props: any) {
-
     const param = useParams()
     const id = param["id"]!!
 
     const data = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     const ticket = data?.data?.ticket
 
-    console.log("ticket",ticket)
-
-    if (ticket !== undefined) {
+    if (ticket != undefined) {
         return (
             <>
                 <PageTitle title={"食券番号 " + ticket.ticketNum}></PageTitle>
