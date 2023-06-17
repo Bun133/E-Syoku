@@ -26,6 +26,8 @@ export const ticketStatusResponse = defaultResponseFormat.and(z.object({
     ticket: ticketType.optional()
 }))
 
+export type TicketStatusResponse = z.infer<typeof ticketStatusResponse>
+
 export const listTicketResponse = defaultResponseFormat.and(z.object({
     tickets: z.array(ticketType)
 }))

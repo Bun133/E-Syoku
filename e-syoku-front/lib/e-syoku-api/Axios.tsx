@@ -1,6 +1,6 @@
 import {ZodType} from "zod";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
-import {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 
 export type EndPoint<Q, R> = {
     endpointPath: string,
@@ -78,21 +78,25 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
 
 export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: {
     [key: string]: string
-}): EndPointResponse<R> | undefined {
-    const [state, setState] = useState<EndPointResponse<R> | undefined>(undefined)
-    useEffect(() => {
-        const call = async () => {
-            return await callEndpoint(endPoint, requestData)
-        }
+}): { state: EndPointResponse<R> | undefined } {
+    const state = useState<EndPointResponse<R> | undefined>(undefined)
 
-        call().then((data) => {
-            console.log("before data:",state)
-            console.log("Object.is",Object.is(state,data))
-            setState(data)
-            console.log("setting data:",data)
-            console.log("setting State:", state)
+    const call = () => {
+        callEndpoint(endPoint, requestData).then(data => {
+            console.log("SET", data)
+            // state.current = data
+            state[1](data)
         })
-    }, [...Object.values(requestData)])
+    }
 
-    return state
+
+    const isLoaded = useRef(false)
+    useEffect(() => {
+        if (isLoaded.current) return
+        isLoaded.current = true
+        call()
+    }, [])
+
+    // return {state: state?.current}
+    return {state: state[0]}
 }

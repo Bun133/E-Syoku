@@ -4,27 +4,19 @@ import PageTitle from "@/components/pageTitle";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {useParams} from "next/navigation";
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
 
 export default async function Page(props: any) {
+    const renderCount = useRef(0)
+
+    renderCount.current = renderCount.current + 1
+    console.log("renders", renderCount.current)
+
     const param = useParams()
     const id = param["id"]!!
 
-    const data = useEndpoint(ticketStatusEndPoint, {ticketId: id})
-    const isLoading = data === undefined
-    const ticket = data?.data?.ticket
-
-    useEffect(() => {
-        console.log("Data Updated!", data)
-    }, [data])
-
-    if (isLoading){
-        return (
-            <>
-                <PageTitle title={"ローディング中"}></PageTitle>
-            </>
-        )
-    }
+    const {state} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
+    const ticket = state?.data?.ticket
 
     if (ticket != undefined) {
         return (
