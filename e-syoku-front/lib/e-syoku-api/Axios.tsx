@@ -54,6 +54,7 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
 
     let parsed = await endPoint.responseType.safeParseAsync(await data.json())
     if (parsed.success) {
+        console.log("Parsed", parsed.data)
         return {
             data: parsed.data,
             error: parsed.data.error,
@@ -81,12 +82,17 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     const [state, setState] = useState<EndPointResponse<R> | undefined>(undefined)
     useEffect(() => {
         const call = async () => {
-            setState(await callEndpoint(endPoint, requestData))
+            return await callEndpoint(endPoint, requestData)
         }
 
-        call().then(r => {
+        call().then((data) => {
+            console.log("before data:",state)
+            console.log("Object.is",Object.is(state,data))
+            setState(data)
+            console.log("setting data:",data)
+            console.log("setting State:", state)
         })
-    }, [])
+    }, [...Object.values(requestData)])
 
     return state
 }
