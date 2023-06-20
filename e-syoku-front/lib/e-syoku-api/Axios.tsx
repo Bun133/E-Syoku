@@ -78,7 +78,7 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
 
 export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: {
     [key: string]: string
-}): { state: EndPointResponse<R> | undefined } {
+}): EndPointResponse<R> | undefined {
     const state = useState<EndPointResponse<R> | undefined>(undefined)
 
     const call = () => {
@@ -97,6 +97,5 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
         call()
     }, [])
 
-    // return {state: state?.current}
-    return {state: state[0]}
+    return state[0]
 }
