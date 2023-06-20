@@ -1,3 +1,5 @@
+"use client"
+
 import {ZodType} from "zod";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
 import React, {useEffect, useRef, useState} from "react";
