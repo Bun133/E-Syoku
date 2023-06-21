@@ -4,9 +4,10 @@ import PageTitle from "@/components/pageTitle";
 import Ticket from "@/components/Ticket";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
+import Button from "@/components/button";
 
 export default function Page() {
-    const {response: tickets, isLoaded} = useEndpoint(listTicketsEndPoint, {})
+    const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
 
     if (!isLoaded) {
         return (
@@ -22,6 +23,14 @@ export default function Page() {
                         <Ticket key={ticket.uniqueId} ticket={ticket}></Ticket>
                     )
                 }) : null}
+            </div>
+
+            <div className={"flex justify-center items-center p-2"}>
+                <Button onClick={() => {
+                    reload()
+                }}>
+                    再読み込み
+                </Button>
             </div>
         </div>
     )
