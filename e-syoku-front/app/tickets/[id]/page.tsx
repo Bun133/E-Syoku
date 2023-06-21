@@ -36,8 +36,10 @@ export default function Page() {
                         <div className={""}>食券番号</div>
                         <div className={"font-bold text-xl"}>{ticket.ticketNum}</div>
                     </div>
-                    <div>只今準備中です。呼び出しまでお待ちください。</div>
-                    <div>注文内容：</div>
+                    <div>Status : {data?.data?.ticket?.status}</div>
+                    <div>Description : {data?.data?.ticket?.description}</div>
+                    <div>UniqueId : {data?.data?.ticket?.uniqueId}</div>
+                    <div>ShopId : {data?.data?.ticket?.shopId}</div>
                 </div>
             </div>
         )
