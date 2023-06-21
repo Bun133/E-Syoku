@@ -14,7 +14,7 @@ const auth = admin.auth();
 
 export const ticketStatus = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     applyHeaders(response)
-    handleOption(request,response)
+    if(handleOption(request,response)) return
 
     await onPost(request, response, async () => {
         let ticketId = requireParameter("ticketId", z.string(), request, response);
@@ -42,7 +42,7 @@ export const ticketStatus = functions.region("asia-northeast1").https.onRequest(
  */
 export const listTickets = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     applyHeaders(response)
-    handleOption(request,response)
+    if(handleOption(request,response)) return
 
 
     let docs = await refs.tickets.listDocuments();
@@ -65,7 +65,7 @@ export const listTickets = functions.region("asia-northeast1").https.onRequest(a
  */
 export const listShops = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     applyHeaders(response)
-    handleOption(request,response)
+    if(handleOption(request,response)) return
 
     let docs = await refs.shops.listDocuments();
     let shops = await Promise.all(docs.map(async (doc) => {
@@ -103,7 +103,7 @@ export const resolveTicket =
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
     return functions.region("asia-northeast1").https.onRequest(async (request, response) => {
         applyHeaders(response)
-        handleOption(request,response)
+        if(handleOption(request,response)) return
 
         await onPost(request, response, async () => {
             let id = requireParameter("ticketId", z.string(), request, response)
@@ -143,7 +143,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
  */
 export const registerTicket = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     applyHeaders(response)
-    handleOption(request,response)
+    if(handleOption(request,response)) return
 
     await onPost(request, response, async () => {
         await authedWithType("SHOP", auth, refs, request, response, async (user: AuthInstance) => {

@@ -29,6 +29,8 @@ export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request
 }
 
 export async function onPost<R extends void | Promise<void>>(req: Request, res: Response, body: () => R): Promise<void> {
+    if (res.writableFinished) return
+
     if (req.method === "POST") {
         await body();
     }
@@ -51,7 +53,7 @@ export function endOfEndPoint(req: Request, res: Response) {
     res.status(404).send({
         "isSuccess": false,
         "error": `No endpoint for ${req.method} Method at this endpoint`,
-    })
+    }).end()
 }
 
 let origin: string = "";
@@ -72,5 +74,8 @@ export function applyHeaders(s: Response) {
 export function handleOption(q: Request, s: Response) {
     if (q.method === "OPTIONS") {
         s.status(200).send({data: "OPTIONS"}).end();
+        return true
     }
+
+    return false
 }
