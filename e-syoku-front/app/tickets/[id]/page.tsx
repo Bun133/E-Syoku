@@ -11,8 +11,19 @@ export default function Page() {
     const param = useParams()
     const id = param["id"]!!
 
-    const data = useEndpoint(ticketStatusEndPoint, {ticketId: id})
+    const {response: data, isLoaded} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     const ticket = data?.data?.ticket
+
+    if (!isLoaded) {
+        return (
+            <div>
+                <PageTitle title={"読み込み中"}></PageTitle>
+                <div className={"flex flex-col items-center justify-center"}>
+                    <div className={"font-bold text-xl"}>読み込み中</div>
+                </div>
+            </div>
+        )
+    }
 
     if (ticket !== undefined) {
         return (

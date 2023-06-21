@@ -2,7 +2,7 @@
 
 import {ZodType} from "zod";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 
 export type EndPoint<Q, R> = {
     endpointPath: string,
@@ -32,7 +32,7 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
     let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
     console.log("full path", fullPath)
     const data = await fetch(fullPath, {
-        // cache: "no-cache",
+        cache: "no-store",
         method: "POST",
         body: JSON.stringify(requestData),
         headers: {
@@ -80,24 +80,23 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
 
 export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: {
     [key: string]: string
-}): EndPointResponse<R> | undefined {
-    const state = useState<EndPointResponse<R> | undefined>(undefined)
+}): { response: EndPointResponse<R> | undefined; isLoaded: boolean } {
+    const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
 
     const call = () => {
         callEndpoint(endPoint, requestData).then(data => {
             console.log("SET", data)
-            // state.current = data
-            state[1](data)
+            setResponse(data)
+            setLoaded(true)
         })
     }
 
 
-    const isLoaded = useRef(false)
+    const [isLoaded, setLoaded] = useState(false)
     useEffect(() => {
-        if (isLoaded.current) return
-        isLoaded.current = true
+        if (isLoaded) return
         call()
     }, [])
 
-    return state[0]
+    return {response, isLoaded}
 }
