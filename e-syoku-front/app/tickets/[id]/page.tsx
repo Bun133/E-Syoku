@@ -5,13 +5,14 @@ import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {useParams} from "next/navigation";
 import React from "react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
+import Button from "@/components/button";
 
 export default function Page() {
 
     const param = useParams()
     const id = param["id"]!!
 
-    const {response: data, isLoaded} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
+    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     const ticket = data?.data?.ticket
 
     if (!isLoaded) {
@@ -40,6 +41,9 @@ export default function Page() {
                     <div>Description : {data?.data?.ticket?.description}</div>
                     <div>UniqueId : {data?.data?.ticket?.uniqueId}</div>
                     <div>ShopId : {data?.data?.ticket?.shopId}</div>
+                </div>
+                <div className={"flex flex-col items-center justify-center mt-10"}>
+                    <Button onClick={() => reload()}>再読み込み</Button>
                 </div>
             </div>
         )
