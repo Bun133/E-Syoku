@@ -2,7 +2,7 @@
 
 import {ZodType} from "zod";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 
 export type EndPoint<Q, R> = {
     endpointPath: string,
@@ -76,8 +76,14 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
     }
 }
 
-export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q): {
+export type useEndPointOption = {
+    // if true, call the endpoint on mount
+    callOnMount?: boolean,
+}
+
+export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q, option?: useEndPointOption): {
     response: EndPointResponse<R> | undefined;
+    fetch: () => void;
     isLoaded: boolean
 } {
     const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
@@ -93,9 +99,16 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
 
     const [isLoaded, setLoaded] = useState(false)
     useEffect(() => {
-        if (isLoaded) return
+        if (option === undefined || option?.callOnMount){
+            if (isLoaded) return
+            call()
+        }
+    }, [])
+
+    const fetch = useCallback(() => {
+        setLoaded(false)
         call()
     }, [])
 
-    return {response, isLoaded}
+    return {response, isLoaded, fetch}
 }
