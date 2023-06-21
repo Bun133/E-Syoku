@@ -26,9 +26,7 @@ export type EndPointResponse<R extends DefaultResponseFormat> = {
 // const apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 const apiEndpointPrefix = "http://127.0.0.1:5001/e-syoku/asia-northeast1/"
 
-export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: {
-    [key: string]: string
-}): Promise<EndPointResponse<R>> {
+export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q): Promise<EndPointResponse<R>> {
     let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
     console.log("full path", fullPath)
     const data = await fetch(fullPath, {
@@ -78,9 +76,10 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
     }
 }
 
-export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: {
-    [key: string]: string
-}): { response: EndPointResponse<R> | undefined; isLoaded: boolean } {
+export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q): {
+    response: EndPointResponse<R> | undefined;
+    isLoaded: boolean
+} {
     const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
 
     const call = () => {
