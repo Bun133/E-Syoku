@@ -6,6 +6,7 @@ import {useParams} from "next/navigation";
 import React from "react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import Button from "@/components/button";
+import {Card, Col, Divider, Grid, Subtitle, Text, Title} from "@tremor/react";
 
 export default function Page() {
 
@@ -30,21 +31,27 @@ export default function Page() {
         return (
             <div>
                 <PageTitle title={"食券番号 " + ticket.ticketNum}></PageTitle>
-                <div
-                    className={"h-max p-3 mx-2 shadow-2xl rounded-2xl flex flex-col justify-center items-start"}>
-                    <div
-                        className={"w-full py-5 my-2 flex flex-col items-center justify-center bg-gray-100 rounded-2xl space-y-1"}>
-                        <div className={""}>食券番号</div>
-                        <div className={"font-bold text-xl"}>{ticket.ticketNum}</div>
-                    </div>
-                    <div>Status : {data?.data?.ticket?.status}</div>
-                    <div>Description : {data?.data?.ticket?.description}</div>
-                    <div>UniqueId : {data?.data?.ticket?.uniqueId}</div>
-                    <div>ShopId : {data?.data?.ticket?.shopId}</div>
-                </div>
-                <div className={"flex flex-col items-center justify-center mt-10"}>
-                    <Button onClick={() => reload()}>再読み込み</Button>
-                </div>
+                <Grid numItemsSm={6} numItemsMd={8} numItemsLg={12}>
+                    <Col numColSpanSm={1} numColSpanMd={2} numColSpanLg={3}></Col>
+                    <Col numColSpan={4} numColSpanMd={4} numColSpanLg={6}>
+                        <div>
+                            <Card>
+                                <Subtitle>食券番号</Subtitle>
+                                <Title>{ticket.ticketNum}</Title>
+                                <Divider/>
+                                <Text>Status : {data?.data?.ticket?.status}</Text>
+                                <Text>Description : {data?.data?.ticket?.description}</Text>
+                                <Text>UniqueId : {data?.data?.ticket?.uniqueId}</Text>
+                                <Text>ShopId : {data?.data?.ticket?.shopId}</Text>
+                            </Card>
+
+                            <div className={"flex flex-col items-center justify-center mt-10"}>
+                                <Button onClick={() => reload()}>再読み込み</Button>
+                            </div>
+                        </div>
+                    </Col>
+                    <Col numColSpanSm={1} numColSpanMd={2} numColSpanLg={3}></Col>
+                </Grid>
             </div>
         )
     } else {

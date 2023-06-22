@@ -1,21 +1,20 @@
 import React from "react";
 import Link from "next/link";
+import {Button as TremorButton} from "@tremor/react";
 
 export default function Button(props: {
     href?: string, children: React.ReactNode,
-    onClick?: () => void
+    onClick?: () => void, className?: string
 }) {
     if (props.href) {
         return (
-            <Link href={props.href} className="p-2 bg-green-400 rounded-xl m-2" onClick={props.onClick}>
-                {props.children}
+            <Link href={props.href} onClick={props.onClick} className={props.className}>
+                <TremorButton onClick={props.onClick}>{props.children}</TremorButton>
             </Link>
         );
     } else {
         return (
-            <div className="p-2 bg-green-400 rounded-xl m-2 hover:cursor-pointer hover:bg-green-500" onClick={props.onClick}>
-                {props.children}
-            </div>
+            <TremorButton onClick={props.onClick} className={props.className}>{props.children}</TremorButton>
         )
     }
 }

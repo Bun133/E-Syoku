@@ -4,7 +4,7 @@ import {Ticket} from "@/lib/e-syoku-api/Types";
 
 export default function TicketComponent(param: { ticket: Ticket }) {
     return (
-        <div className="shadow-xl bg-neutral-50 flex flex-row justify-between space-x-1">
+        <div className="shadow-xl bg-neutral-50 flex flex-row justify-between space-x-1 items-center">
             <div className="flex flex-row justify-start items-center space-x-1">
                 <div
                     className="text-xl font-bold aspect-square flex items-center justify-center p-1">{param.ticket.ticketNum}</div>
@@ -13,7 +13,7 @@ export default function TicketComponent(param: { ticket: Ticket }) {
                 </div>
             </div>
 
-            <Button href={"/tickets/" + param.ticket.uniqueId}>
+            <Button href={"/tickets/" + param.ticket.uniqueId} className={"py-1"}>
                 詳しく見る
             </Button>
         </div>
