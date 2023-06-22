@@ -14,6 +14,13 @@ export const ticketType = z.object({
 
 export type Ticket = z.infer<typeof ticketType>
 
+export const shopDetailType = z.object({
+    name: z.string(),
+    shopId: z.string()
+})
+
+export type ShopDetail = z.infer<typeof shopDetailType>
+
 export const defaultResponseFormat = z.object({
     isSuccess: z.boolean(),
     success: z.string().optional(),
@@ -33,10 +40,7 @@ export const listTicketResponse = defaultResponseFormat.and(z.object({
 }))
 
 export const listShopResponse = defaultResponseFormat.and(z.object({
-    shops: z.array(z.object({
-        name: z.string(),
-        shopId: z.string()
-    }))
+    shops: z.array(shopDetailType)
 }))
 
 
