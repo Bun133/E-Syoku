@@ -17,7 +17,7 @@ export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request
     }
 
     const parsed = safeAs(type, request.body[paramName]);
-    if (parsed === undefined) {
+    if (parsed === undefined && !type.isOptional()) {
         response.status(400).send({
             "error": `Missing parameter ${paramName} with Type ${type}`,
             "paramName": paramName
