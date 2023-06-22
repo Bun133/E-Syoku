@@ -1,7 +1,7 @@
 "use client"
 
 import PageTitle from "@/components/pageTitle";
-import {ListSelectionPrimitive} from "@/components/select/ListSelection";
+import {ListSelectionPrimitive} from "@/components/form/ListSelection";
 import {useState} from "react";
 import Button from "@/components/button";
 
