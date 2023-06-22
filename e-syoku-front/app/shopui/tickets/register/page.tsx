@@ -1,72 +1,64 @@
 "use client"
 
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
-import {registerTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
-import {useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
-import {useRef} from "react";
+import React, {useRef} from "react";
+import {callEndpoint, useEndpoint} from "@/lib/e-syoku-api/Axios";
+import {listShopsEndPoint, registerTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
+import {Loader} from "react-feather";
+import ListSelection from "@/components/form/ListSelection";
+import {ShopDetail} from "@/lib/e-syoku-api/Types";
+import {StringInput} from "@/components/form/StringInput";
 import Button from "@/components/button";
+import {useFirebaseAuth} from "@/lib/firebase/authentication";
 
 export default function () {
-    const params = useSearchParams()
-    const shopId = params.get("sid")
-    const ticketNum = params.get("tnum")
-    const description = params.get("desc")
+    const {response: shops, isLoaded} = useEndpoint(listShopsEndPoint, {})
+    const selectedShop = useRef<ShopDetail>()
+    const ticketId = useRef<string>()
+    const description = useRef<string>()
+    const token = useFirebaseAuth()
 
-
-    if (shopId == null || ticketNum == null) {
+    if (!isLoaded || shops == undefined) {
         return (
             <div>
-                <PageTitle title={"エラー"}></PageTitle>
-                パラメータの指定が違います
+                <PageTitle title={"食券新規登録"}></PageTitle>
+                <div className={"flex justify-center items-center h-max"}>
+                    <Loader></Loader>
+                </div>
             </div>
         )
-    } else {
-        // TODO ifの下に書くべきではない
-        const send = useRef(false)
-        const {response: data, isLoaded, fetch: post} = useEndpoint(registerTicketEndPoint, {
-            shopId: shopId,
-            ticketNum: ticketNum,
-            description: description == null ? undefined : description
-        })
-
-        if (send.current && isLoaded) {
-            if (data?.error) {
-                return (
-                    <div>
-                        <PageTitle title={"食券登録失敗"}></PageTitle>
-                        食券登録に失敗しました
-
-                        {JSON.stringify(data?.error)}
-                    </div>
-                )
-            }
-            return (
-                <div>
-                    <PageTitle title={"食券登録完了"}></PageTitle>
-                    食券の登録が完了しました
-
-                    {data?.data?.ticket !== undefined ? JSON.stringify(data?.data?.ticket!!) : null}
-                </div>
-            )
-        } else {
-            return (
-                <div>
-                    <PageTitle title={"食券登録"}></PageTitle>
-                    以下の内容で登録します
-
-                    ShopId: {shopId}
-                    TicketNum: {ticketNum}
-                    Description: {description}
-
-                    <Button onClick={() => {
-                        send.current = true;
-                        post()
-                    }}>
-                        登録
-                    </Button>
-                </div>
-            )
-        }
     }
+
+    return (
+        <div>
+            <PageTitle title={"食券新規登録"}></PageTitle>
+            <div className={"flex flex-col gap-4 px-40"}>
+                <ListSelection values={shops.data!!.shops.map(shop => {
+                    return {name: shop.name, value: shop}
+                })} selected={(selected) => {
+                    console.log("selected", selected)
+                    selectedShop.current = selected.value
+                }}></ListSelection>
+
+                <StringInput onChange={(value) => {
+                    ticketId.current = value
+                }} placeholder={"TicketID"}></StringInput>
+
+                <StringInput onChange={(value) => {
+                    description.current = value
+                }} placeholder={"Description"}></StringInput>
+
+                <Button onClick={() => {
+                    if (!ticketId.current) return
+                    callEndpoint(registerTicketEndPoint, token, {
+                        shopId: selectedShop.current!!.shopId,
+                        ticketNum: ticketId.current,
+                        description: description.current
+                    }).then(res => {
+                        console.log("response", res)
+                    })
+                }}>送信</Button>
+            </div>
+        </div>
+    )
 }
