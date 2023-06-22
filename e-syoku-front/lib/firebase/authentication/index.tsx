@@ -46,3 +46,7 @@ async function defaultProcess(auth: Auth) {
         await signInAnonymously(auth)
     }
 }
+
+export function useFirebaseAuth() {
+    return React.useContext(firebaseAuthContext)
+}
