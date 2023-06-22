@@ -3,6 +3,7 @@
 import {ZodType} from "zod";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
 import React, {useCallback, useEffect, useState} from "react";
+import {FirebaseAuthContextType, useFirebaseAuth} from "@/lib/firebase/authentication";
 
 export type EndPoint<Q, R> = {
     endpointPath: string,
@@ -26,15 +27,19 @@ export type EndPointResponse<R extends DefaultResponseFormat> = {
 // const apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 const apiEndpointPrefix = "http://127.0.0.1:5001/e-syoku/asia-northeast1/"
 
-export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q): Promise<EndPointResponse<R>> {
+export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, token: FirebaseAuthContextType, requestData: Q): Promise<EndPointResponse<R>> {
     let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
     console.log("full path", fullPath)
+    const tokenString = await (token.auth?.currentUser?.getIdToken(true))
+    console.log("token", tokenString)
     const data = await fetch(fullPath, {
         cache: "no-store",
         method: "POST",
         body: JSON.stringify(requestData),
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            // TODO token取得出来なければ、headerに含めない
+            "Authorization": tokenString !== undefined ? "Bearer " + tokenString : "",
         },
         mode: "cors",
     })
@@ -86,10 +91,12 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     fetch: () => void;
     isLoaded: boolean
 } {
+    const token = useFirebaseAuth()
+
     const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
 
     const call = () => {
-        callEndpoint(endPoint, requestData).then(data => {
+        callEndpoint(endPoint, token, requestData).then(data => {
             console.log("SET", data)
             setResponse(data)
             setLoaded(true)
@@ -99,7 +106,7 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
 
     const [isLoaded, setLoaded] = useState(false)
     useEffect(() => {
-        if (option === undefined || option?.callOnMount){
+        if (option === undefined || option?.callOnMount) {
             if (isLoaded) return
             call()
         }
