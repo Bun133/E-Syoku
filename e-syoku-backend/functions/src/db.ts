@@ -1,8 +1,8 @@
 import {firestore} from "firebase-admin";
 import {
     AuthEntry,
-    AuthInstance,
     authEntrySchema,
+    AuthInstance,
     Shop,
     shopSchema,
     Ticket,
@@ -121,14 +121,26 @@ export async function shopByRef(ref: DBRefs, shopRef: DocumentReference<firestor
 export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum: UniqueId, description: string | undefined): Promise<Ticket> {
     let ticketRef = await newRandomRef(ref.tickets);
     // TODO Check if shop exists with Authentication
-    let data = {
-        shopId: shopId,
-        ticketNum: ticketNum,
-        description: description,
-        status: "PROCESSING" as TicketStatus
+    let data;
+    if (description){
+        data = {
+            shopId: shopId,
+            ticketNum: ticketNum,
+            description: description,
+            status: "PROCESSING" as TicketStatus
+        }
+
+        await ticketRef.set(data);
+    }else{
+        data = {
+            shopId: shopId,
+            ticketNum: ticketNum,
+            status: "PROCESSING" as TicketStatus
+        }
+
+        await ticketRef.set(data);
     }
 
-    await ticketRef.set(data);
 
     return {
         ...data,
@@ -137,7 +149,12 @@ export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum
 }
 
 export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry | undefined> {
-    return await parseData(authEntrySchema, refs.auths.doc(uid));
+    return await parseData(authEntrySchema, refs.auths.doc(uid), (data) => {
+        return {
+            uid: uid,
+            ...data
+        }
+    });
 }
 
 /**
