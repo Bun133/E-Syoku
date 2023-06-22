@@ -57,7 +57,7 @@ export const ticketIdRequest = z.object({
     ticketId: uniqueIdSchema
 })
 
-export const ticketRegisterRequest = z.object({
+export const registerTicketRequest = z.object({
     shopId: z.string(),
     ticketNum: z.string(),
     description: z.string().optional(),
