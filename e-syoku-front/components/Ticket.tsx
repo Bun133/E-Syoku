@@ -13,9 +13,14 @@ export default function TicketComponent(param: { ticket: Ticket }) {
                 </div>
             </div>
 
-            <Button href={"/tickets/" + param.ticket.uniqueId} className={"py-1"}>
-                詳しく見る
-            </Button>
+            <div className={"py-1 px-1 flex flex-row items-center"}>
+                {param.ticket.status}
+                <div className={"w-2"}></div>
+                <Button href={"/tickets/" + param.ticket.uniqueId}>
+
+                    詳しく見る
+                </Button>
+            </div>
         </div>
     )
 }
