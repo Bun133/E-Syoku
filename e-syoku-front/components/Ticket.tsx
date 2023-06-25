@@ -1,8 +1,19 @@
 import Button from "@/components/button";
 import {Ticket} from "@/lib/e-syoku-api/Types";
+import {ReactNode} from "react";
 
 
-export default function TicketComponent(param: { ticket: Ticket }) {
+export default function TicketComponent(param: {
+    ticket: Ticket,
+    button?: ReactNode
+}) {
+    const button = param.button !== undefined ?
+        param.button :
+        (<Button href={"/tickets/" + param.ticket.uniqueId}>
+            詳しく見る
+        </Button>);
+
+
     return (
         <div className="shadow-xl bg-neutral-50 flex flex-row justify-between space-x-1 items-center">
             <div className="flex flex-row justify-start items-center space-x-1">
@@ -16,10 +27,7 @@ export default function TicketComponent(param: { ticket: Ticket }) {
             <div className={"py-1 px-1 flex flex-row items-center"}>
                 {param.ticket.status}
                 <div className={"w-2"}></div>
-                <Button href={"/tickets/" + param.ticket.uniqueId}>
-
-                    詳しく見る
-                </Button>
+                {button}
             </div>
         </div>
     )
