@@ -14,7 +14,7 @@ import {useFirebaseAuth} from "@/lib/firebase/authentication";
 export default function () {
     const {response: shops, isLoaded} = useEndpoint(listShopsEndPoint, {})
     const selectedShop = useRef<ShopDetail>()
-    const ticketId = useRef<string>()
+    const ticketNum = useRef<string>()
     const description = useRef<string>()
     const token = useFirebaseAuth()
 
@@ -41,18 +41,18 @@ export default function () {
                 }}></ListSelection>
 
                 <StringInput onChange={(value) => {
-                    ticketId.current = value
-                }} placeholder={"TicketID"}></StringInput>
+                    ticketNum.current = value
+                }} placeholder={"TicketNum"}></StringInput>
 
                 <StringInput onChange={(value) => {
                     description.current = value
                 }} placeholder={"Description"}></StringInput>
 
                 <Button onClick={() => {
-                    if (!ticketId.current) return
+                    if (!ticketNum.current) return
                     callEndpoint(registerTicketEndPoint, token, {
                         shopId: selectedShop.current!!.shopId,
-                        ticketNum: ticketId.current,
+                        ticketNum: ticketNum.current,
                         description: description.current
                     }).then(res => {
                         console.log("response", res)
