@@ -1,10 +1,11 @@
 "use client"
 
 import PageTitle from "@/components/pageTitle";
-import Ticket from "@/components/Ticket";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Button from "@/components/button";
+import {TicketSelection} from "@/components/form/TicketSelection";
+import {Ticket} from "@/lib/e-syoku-api/Types";
 
 export default function Page() {
     const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
@@ -17,13 +18,9 @@ export default function Page() {
     return (
         <div>
             <PageTitle title="食券一覧"></PageTitle>
-            <div className="p-2 flex flex-col justify-items-start items-stretch space-y-2">
-                {tickets !== undefined ? tickets.data?.tickets.map((ticket) => {
-                    return (
-                        <Ticket key={ticket.uniqueId} ticket={ticket}></Ticket>
-                    )
-                }) : null}
-            </div>
+            <TicketSelection tickets={tickets!!.data!!.tickets} onSelect={(ticket: Ticket) => {
+                console.log("selected", ticket)
+            }}></TicketSelection>
 
             <div className={"flex justify-center items-center p-2"}>
                 <Button onClick={() => {
