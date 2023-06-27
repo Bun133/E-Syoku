@@ -1,7 +1,15 @@
 "use client"
 
 import React, {createContext, useEffect, useState} from "react";
-import {Auth, getAuth, signInAnonymously, User} from "@firebase/auth";
+import {
+    Auth, browserLocalPersistence,
+    browserSessionPersistence,
+    getAuth,
+    Persistence,
+    setPersistence,
+    signInAnonymously,
+    User
+} from "@firebase/auth";
 import {firebaseApp} from "@/lib/firebase";
 
 export type FirebaseAuthContextType = {
@@ -27,6 +35,11 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
             console.log("User Instance changed to", user)
             if (user == null) setUser(undefined)
             else setUser(user)
+            setPersistence(auth, browserLocalPersistence).then(() => {
+                console.log("Persistence set to",browserSessionPersistence)
+            }).catch(() => {
+                console.log("Persistence set failed")
+            })
         })
     }, [auth])
 
