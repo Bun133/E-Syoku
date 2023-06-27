@@ -3,6 +3,8 @@ import {
     AuthEntry,
     authEntrySchema,
     AuthInstance,
+    Goods,
+    goodsSchema,
     Shop,
     shopSchema,
     Ticket,
@@ -21,6 +23,7 @@ export type DBRefs = {
     tickets: firestore.CollectionReference<firestore.DocumentData>,
     shops: firestore.CollectionReference<firestore.DocumentData>,
     auths: firestore.CollectionReference<firestore.DocumentData>,
+    goods: firestore.CollectionReference<firestore.DocumentData>
 }
 
 /**
@@ -32,6 +35,7 @@ export function dbrefs(db: Firestore): DBRefs {
         tickets: db.collection("tickets"),
         shops: db.collection("shops"),
         auths: db.collection("auths"),
+        goods: db.collection("goods")
     };
 }
 
@@ -122,7 +126,7 @@ export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum
     let ticketRef = await newRandomRef(ref.tickets);
     // TODO Check if shop exists with Authentication
     let data;
-    if (description){
+    if (description) {
         data = {
             shopId: shopId,
             ticketNum: ticketNum,
@@ -131,7 +135,7 @@ export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum
         }
 
         await ticketRef.set(data);
-    }else{
+    } else {
         data = {
             shopId: shopId,
             ticketNum: ticketNum,
@@ -167,4 +171,18 @@ export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry 
 export async function updateAuthData(refs: DBRefs, opAuthedBy: AuthInstance, toChangeUID: string, data: Partial<AuthEntry>): Promise<boolean> {
     if (opAuthedBy.authType != "ADMIN") return false
     return await updateData(refs.auths.doc(toChangeUID), data);
+}
+
+export async function getGoodsFromRef(ref: DocumentReference): Promise<Goods | undefined> {
+    return await parseData(goodsSchema, ref, (data) => {
+        return {
+            goodsId: ref.id,
+            ...data
+        }
+    })
+}
+
+export async function getAllGoods(refs: DBRefs) {
+    const all = await refs.goods.listDocuments()
+    return await Promise.all(all.map(getGoodsFromRef));
 }
