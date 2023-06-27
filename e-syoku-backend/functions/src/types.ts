@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {UserRecord} from "firebase-admin/auth";
+import {timeStampSchema} from "./typeConv";
 
 /**
  * Unique ID Type, used for identifying items in the database.
@@ -7,6 +8,9 @@ import {UserRecord} from "firebase-admin/auth";
 export const uniqueId = z.string();
 
 export type UniqueId = z.infer<typeof uniqueId>
+
+
+/////// Shop,Tickets ///////
 
 /**
  * Shop schema, expressing shop entry.
@@ -40,6 +44,10 @@ export const ticketSchema = z.object({
 });
 
 export type Ticket = z.infer<typeof ticketSchema>
+
+
+/////// Auth ////////
+
 
 const AdminAuth = z.literal("ADMIN")
 const ShopAuth = z.literal("SHOP")
@@ -85,3 +93,80 @@ export const authInstanceSchema = authEntrySchema.and(z.object({
  * This instance can be used to check user's permission.
  */
 export type AuthInstance = z.infer<typeof authInstanceSchema>
+
+
+/////// Goods ////////
+
+export const goodsSchema = z.object({
+    name: z.string(),
+    goodsId: uniqueId,
+    // the id of a shop that this goods belongs to.
+    shopId: uniqueId,
+    // YEN
+    price: z.number(),
+    description: z.string().optional(),
+    imageUrl: z.string().optional(),
+})
+
+export type Goods = z.infer<typeof goodsSchema>
+
+export const remainNumberSchema = z.object({
+    goodsId: uniqueId,
+    // the amount of goods that is still available.
+    remainCount: z.number(),
+})
+
+export const remainBooleanSchema = z.object({
+    goodsId: uniqueId,
+    // if the goods is still available or not.
+    // if true, the goods is still available.
+    // if false, the goods is not available.
+    remain: z.boolean(),
+})
+
+export const goodsRemainDataSchema = remainNumberSchema.or(remainBooleanSchema)
+
+export type GoodsRemainData = z.infer<typeof goodsRemainDataSchema>
+
+
+/////// Order ////////
+
+/**
+ * This type express an order.
+ * It is not ensured that the order is valid or paid.
+ */
+export const orderSchema = z.object({
+    items: z.array(goodsSchema)
+})
+
+/////// Payment ////////
+
+export const paidDetailSchema = z.object({
+    // Customer Account ID
+    customerId: uniqueId,
+    // the amount of money that the customer has paid.
+    paidAmount: z.number(),
+    // the time that the customer paid.
+    paidTime: timeStampSchema,
+    // the means of payment that the customer used.
+    // Maybe contain the name of user who processed this payment
+    paidMeans: z.string(),
+})
+export const paymentStateSchema = z.union([
+    z.object({
+        isPaid: z.literal("PAID"),
+        paidDetail: paidDetailSchema
+    })
+    , z.object({
+        isPaid: z.literal("UNPAID"),
+    })])
+
+export type PaymentState = z.infer<typeof paymentStateSchema>
+
+export const paymentSchema = z.object({
+    // the order which this payment organized with.
+    targetOrder: orderSchema,
+    // the amount of money that the customer must pay.
+    total: z.number(),
+    state: paymentStateSchema
+})
