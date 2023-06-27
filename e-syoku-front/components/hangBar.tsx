@@ -3,9 +3,12 @@ import {UserCheck, UserX} from "react-feather";
 import {useContext} from "react";
 import {firebaseAuthContext, FirebaseAuthContextType} from "@/lib/firebase/authentication";
 import {signOut} from "@firebase/auth";
+import {useRouter} from "next/navigation";
+import Button from "@/components/button";
 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
+    const router = useRouter()
 
     return (
         <div className="flex flex-row justify-between items-center h-16 w-full bg-blue-300">
@@ -14,9 +17,8 @@ export function HangBar() {
                 {auth.user !== undefined ? <UserCheck onClick={() => {
                     logAuthData(auth)
                 }}></UserCheck> : <UserX></UserX>}
-                <div onClick={() => {logOut(auth)}}>
-                    ログアウト
-                </div>
+                <Button onClick={() => {logOut(auth)}}>ログアウト</Button>
+                <Button onClick={() => {router.push("/auth/register")}}>本登録</Button>
             </div>
             <div className="pr-3 flex flex-row justify-between items-center space-x-2">
                 <a className="text" href="https://github.com/Bun133/E-Syoku" target="_blank">Powered By E-Syoku</a>
@@ -35,7 +37,7 @@ async function logOut(auth: FirebaseAuthContextType) {
     if (auth.auth) {
         await signOut(auth.auth)
         console.log("signOut")
-    }else{
+    } else {
         console.log("auth is not exist")
     }
 }
