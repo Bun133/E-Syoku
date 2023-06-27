@@ -217,6 +217,28 @@ paths:
                   type: string
               required:
                 - ticketNum
+  /listGoods:
+    post:
+      summary: List Goods
+      operationId: post-listGoods
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goods:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goods'
+                  isSuccess:
+                    type: boolean
+                required:
+                  - goods
+                  - isSuccess
+      description: List all goods that is available to customers at this point
 components:
   schemas:
     Ticket:
@@ -253,6 +275,29 @@ components:
       required:
         - name
         - shopId
+    Goods:
+      title: Goods
+      x-stoplight:
+        id: jt9lutbvruw86
+      type: object
+      properties:
+        name:
+          type: string
+        goodsId:
+          type: string
+        shopId:
+          type: string
+        price:
+          type: number
+        description:
+          type: string
+        imageUrl:
+          type: string
+      required:
+        - name
+        - goodsId
+        - shopId
+        - price
   responses:
     ErrorResponse:
       description: Error Response
