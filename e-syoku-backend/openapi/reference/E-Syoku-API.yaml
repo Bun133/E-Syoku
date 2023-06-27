@@ -1,0 +1,275 @@
+openapi: 3.1.0
+x-stoplight:
+  id: 7so9ipqmimawq
+info:
+  title: E-Syoku API
+  version: '1.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /ticketStatus:
+    post:
+      summary: Fetch Ticket Status
+      operationId: post-ticketStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                  ticket:
+                    $ref: '#/components/schemas/Ticket'
+                required:
+                  - isSuccess
+                  - ticket
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+      description: Fetch Ticket Status with given ticketID
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticketId:
+                  type: string
+              required:
+                - ticketId
+        description: ''
+  /listTickets:
+    post:
+      summary: List Tickets
+      operationId: post-listTickets
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                  tickets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ticket'
+                required:
+                  - isSuccess
+                  - tickets
+      description: |-
+        List Up All Tickets
+        // TODO Scope data with authentication infomation
+  /listShops:
+    post:
+      summary: List Shop
+      operationId: post-listShops
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                  shops:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Shop'
+                required:
+                  - isSuccess
+                  - shops
+      description: List Up All Shops
+  /callTicket:
+    post:
+      summary: Call Ticket
+      operationId: post-callTicket
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                required:
+                  - isSuccess
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticketId:
+                  type: string
+              required:
+                - ticketId
+  /cancelCalling:
+    post:
+      summary: Cancel calling Ticket
+      operationId: post-cancelTicket
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                required:
+                  - isSuccess
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticketId:
+                  type: string
+              required:
+                - ticketId
+  /resolveTicket:
+    post:
+      summary: Resolve Ticket
+      operationId: post-resolveTicket
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                required:
+                  - isSuccess
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticketId:
+                  type: string
+              required:
+                - ticketId
+  /registerTicket:
+    post:
+      summary: Register New Ticket
+      operationId: post-registerTicket
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                required:
+                  - isSuccess
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSuccess:
+                    type: boolean
+                  error:
+                    type: string
+                required:
+                  - isSuccess
+                  - error
+      description: Register New Ticket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticketNum:
+                  type: string
+                description:
+                  type: string
+              required:
+                - ticketNum
+components:
+  schemas:
+    Ticket:
+      title: Ticket
+      x-stoplight:
+        id: hadfz4r3q53gj
+      type: object
+      properties:
+        uniqueId:
+          type: string
+        shopId:
+          type: string
+        ticketNum:
+          type: string
+        status:
+          type: string
+        description:
+          type: string
+      required:
+        - uniqueId
+        - shopId
+        - ticketNum
+        - status
+    Shop:
+      title: Shop
+      x-stoplight:
+        id: ry3a9s97ukafe
+      type: object
+      properties:
+        name:
+          type: string
+        shopId:
+          type: string
+      required:
+        - name
+        - shopId
+  responses:
+    ErrorResponse:
+      description: Error Response
+      content:
+        application/json:
+          schema:
+            type: object
+            x-examples:
+              example-1:
+                isSuccess: false
+                error: Ticket not found
+            properties:
+              isSuccess:
+                type: boolean
+              error:
+                type: string
+                description: Error Message
+            required:
+              - isSuccess
+              - error
