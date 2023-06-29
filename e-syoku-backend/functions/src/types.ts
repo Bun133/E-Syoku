@@ -10,7 +10,7 @@ export const uniqueId = z.string();
 export type UniqueId = z.infer<typeof uniqueId>
 
 
-/////// Shop,Tickets ///////
+/////// Shop ///////
 
 /**
  * Shop schema, expressing shop entry.
@@ -21,30 +21,6 @@ export const shopSchema = z.object({
 });
 
 export type Shop = z.infer<typeof shopSchema>
-
-export const ticketStatusSchema = z.union([
-    // Registered ticket but the item is not prepared yet.
-    z.literal("PROCESSING"),
-    // Registered ticket and the item is ready, the customer is called!
-    z.literal("CALLED"),
-    // Registered ticket but there is something wrong,And the shop needs customer to come to the shop.
-    z.literal("INFORMED"),
-    // Registered ticket and customer has picked up the item.
-    z.literal("RESOLVED"),
-]);
-
-export type TicketStatus = z.infer<typeof ticketStatusSchema>
-
-export const ticketSchema = z.object({
-    uniqueId: uniqueId,
-    shopId: uniqueId,
-    ticketNum: z.string(),
-    status: ticketStatusSchema,
-    description: z.string().optional(),
-});
-
-export type Ticket = z.infer<typeof ticketSchema>
-
 
 /////// Auth ////////
 
@@ -95,27 +71,28 @@ export const authInstanceSchema = authEntrySchema.and(z.object({
 export type AuthInstance = z.infer<typeof authInstanceSchema>
 
 
-/////// Goods ////////
+/////// Goods(商品) ////////
 
+// 商品データ
 export const goodsSchema = z.object({
-    name: z.string(),
+    // 商品ID
     goodsId: uniqueId,
-    // the id of a shop that this goods belongs to.
+    // 販売店舗ID
     shopId: uniqueId,
-    // YEN
+    // 表示名
+    name: z.string(),
+    // 価格
     price: z.number(),
+    // 商品説明文
     description: z.string().optional(),
+    // 商品画像
     imageUrl: z.string().optional(),
 })
 
 export type Goods = z.infer<typeof goodsSchema>
 
-export const remainNumberSchema = z.object({
-    goodsId: uniqueId,
-    // the amount of goods that is still available.
-    remainCount: z.number(),
-})
-
+// 在庫データ
+// ①在庫あり/なし
 export const remainBooleanSchema = z.object({
     goodsId: uniqueId,
     // if the goods is still available or not.
@@ -124,49 +101,120 @@ export const remainBooleanSchema = z.object({
     remain: z.boolean(),
 })
 
+// 在庫データ
+// ②残り在庫〇個
+export const remainNumberSchema = z.object({
+    goodsId: uniqueId,
+    // the amount of goods that is still available.
+    remainCount: z.number(),
+})
+
+// 在庫データ
 export const goodsRemainDataSchema = remainNumberSchema.or(remainBooleanSchema)
 
 export type GoodsRemainData = z.infer<typeof goodsRemainDataSchema>
 
 
-/////// Order ////////
+/////// Order(注文内容データ) ////////
 
 /**
  * This type express an order.
  * It is not ensured that the order is valid or paid.
  */
 export const orderSchema = z.object({
-    items: z.array(goodsSchema)
+    items: z.array(z.object({
+        // 商品ID
+        goodsId: uniqueId,
+        // 注文数
+        count: z.number(),
+    }))
 })
 
-/////// Payment ////////
+export type Order = z.infer<typeof orderSchema>
 
+/////// Payment(決済セッションデータ) ////////
+
+// 決済完了データ
 export const paidDetailSchema = z.object({
-    // Customer Account ID
+    // 決済ID
+    paymentId: uniqueId,
+    // 決済取扱者ID
+    paymentStaffId: uniqueId,
+    // 購入者UserID
     customerId: uniqueId,
-    // the amount of money that the customer has paid.
-    paidAmount: z.number(),
-    // the time that the customer paid.
+    // 決済完了時刻
     paidTime: timeStampSchema,
-    // the means of payment that the customer used.
-    // Maybe contain the name of user who processed this payment
+    // 決済完了金額
+    paidAmount: z.number(),
+    // 決済方法(現金,クレカ･･･)
     paidMeans: z.string(),
+    // 備考
+    remark: z.string().optional(),
 })
-export const paymentStateSchema = z.union([
-    z.object({
-        isPaid: z.literal("PAID"),
-        paidDetail: paidDetailSchema
-    })
-    , z.object({
-        isPaid: z.literal("UNPAID"),
-    })])
+
+// 決済状況ステータス
+export const paymentStateSchema = z.enum([
+    // ①未支払い
+    "UNPAID",
+    // ②支払い済み(決済完了データが決済セッションデータに含まれる)
+    "PAID"
+])
 
 export type PaymentState = z.infer<typeof paymentStateSchema>
 
-export const paymentSchema = z.object({
-    // the order which this payment organized with.
-    targetOrder: orderSchema,
-    // the amount of money that the customer must pay.
-    total: z.number(),
-    state: paymentStateSchema
+// 決済セッションデータ
+export const paymentSessionSchema = z.object({
+    // 決済セッションID
+    sessionId: uniqueId,
+    // 購入者UserID
+    customerId: uniqueId,
+    // 注文内容
+    orderContent: orderSchema,
+    // 合計金額
+    totalAmount: z.number(),
+    // 決済状況ステータス
+    state: paymentStateSchema,
+    // 決済完了データ
+    paidDetail: paidDetailSchema.optional(),
 })
+
+/////// Ticket(食券データ) ///////
+
+
+// 食券ステータスデータ
+export const ticketStatusSchema = z.union([
+    // ①調理前
+    z.literal("PROCESSING"),
+    // ②調理中
+    z.literal("COOKING"),
+    // ③調理済み・受け取り前
+    z.literal("CALLED"),
+    // ④受け取り後
+    z.literal("RESOLVED"),
+    // ⑤呼び出し(何かあったとき)
+    z.literal("INFORMED"),
+]);
+
+export type TicketStatus = z.infer<typeof ticketStatusSchema>
+
+// 食券データ
+export const ticketSchema = z.object({
+    // 食券ID
+    uniqueId: uniqueId,
+    // 食券番号
+    ticketNum: z.string(),
+    // 店舗ID
+    shopId: uniqueId,
+    // 購入者UserId
+    customerId: uniqueId,
+    // 食券発行時刻
+    issueTime: timeStampSchema,
+    // 注文内容データ
+    orderData: orderSchema,
+    // 決済セッションID
+    paymentSessionId: uniqueId,
+    // 食券ステータスデータ
+    status: ticketStatusSchema
+});
+
+export type Ticket = z.infer<typeof ticketSchema>
