@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import {dbrefs, getAllGoods, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
-import {Ticket, TicketStatus} from "./types";
+import {Ticket, TicketStatus} from "./types/types";
 import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";

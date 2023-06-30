@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {UserRecord} from "firebase-admin/auth";
-import {timeStampSchema} from "./typeConv";
+import {timeStampSchema} from "../typeConv";
 
 /**
  * Unique ID Type, used for identifying items in the database.

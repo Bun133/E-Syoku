@@ -2,7 +2,7 @@ import {auth} from "firebase-admin";
 import {HttpsFunction, onRequest, Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {DBRefs, getAuthData} from "./db";
-import {AuthInstance, AuthType} from "./types";
+import {AuthInstance, AuthType} from "./types/types";
 import Auth = auth.Auth;
 
 /**

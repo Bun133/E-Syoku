@@ -12,7 +12,7 @@ import {
     ticketSchema,
     TicketStatus,
     UniqueId
-} from "./types";
+} from "./types/types";
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import Firestore = firestore.Firestore;
