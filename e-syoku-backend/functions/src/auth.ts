@@ -1,9 +1,10 @@
 import {auth} from "firebase-admin";
 import {HttpsFunction, onRequest, Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
-import {DBRefs, getAuthData} from "./db";
-import {AuthInstance, AuthType} from "./types/types";
+import {DBRefs} from "./db";
 import Auth = auth.Auth;
+import {AuthInstance, AuthType} from "./types/auth";
+import {getAuthData} from "./impls/auth";
 
 /**
  * Using [authed] function, authenticate the request by checking request headers and firebase authentication.

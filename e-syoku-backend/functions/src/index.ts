@@ -1,10 +1,15 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import {dbrefs, getAllGoods, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
-import {Ticket, TicketStatus} from "./types/types";
+import {dbrefs} from "./db";
 import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
+import {Ticket, TicketStatus} from "./types/ticket";
+import {authedWithType} from "./auth";
+import {AuthInstance} from "./types/auth";
+import {ticketById, ticketByRef, updateTicketById} from "./impls/ticket";
+import {shopByRef} from "./impls/shop";
+import {getAllGoods} from "./impls/goods";
 
 admin.initializeApp()
 const db = admin.firestore();
@@ -138,11 +143,15 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
     })
 }
 
+// 在庫がある商品リスト
 export const listGoods = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
+        await authedWithType("ANONYMOUS", auth, refs, request, response, async (authInstance: AuthInstance) => {
+
+        })
         const data = await getAllGoods(refs)
         response.status(200).send({"isSuccess": true, "goods": data}).end()
     })
