@@ -5,6 +5,7 @@ import {
     AuthInstance,
     Goods,
     goodsSchema,
+    Order,
     Shop,
     shopSchema,
     Ticket,
@@ -18,6 +19,7 @@ import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
 import CollectionReference = firestore.CollectionReference;
+import Timestamp = firestore.Timestamp;
 
 export type DBRefs = {
     tickets: firestore.CollectionReference<firestore.DocumentData>,
@@ -122,33 +124,40 @@ export async function shopByRef(ref: DBRefs, shopRef: DocumentReference<firestor
     })
 }
 
-export async function registerNewTicket(ref: DBRefs, shopId: UniqueId, ticketNum: UniqueId, description: string | undefined): Promise<Ticket> {
+/**
+ * Register New Ticket.
+ * This function should not be called directly.
+ * @param ref
+ * @param shopId
+ * @param ticketNum
+ * @param customerId
+ * @param orderData
+ * @param paymentSessionId
+ */
+export async function registerNewTicket(ref: DBRefs,
+                                        shopId: UniqueId,
+                                        ticketNum: UniqueId,
+                                        customerId: UniqueId,
+                                        orderData: Order,
+                                        paymentSessionId: UniqueId): Promise<Ticket> {
     let ticketRef = await newRandomRef(ref.tickets);
     // TODO Check if shop exists with Authentication
-    let data;
-    if (description) {
-        data = {
-            shopId: shopId,
-            ticketNum: ticketNum,
-            description: description,
-            status: "PROCESSING" as TicketStatus
-        }
-
-        await ticketRef.set(data);
-    } else {
-        data = {
-            shopId: shopId,
-            ticketNum: ticketNum,
-            status: "PROCESSING" as TicketStatus
-        }
-
-        await ticketRef.set(data);
+    let data = {
+        ticketNum: ticketNum,
+        shopId: shopId,
+        customerId: customerId,
+        issueTime: Timestamp.now(),
+        orderData: orderData,
+        paymentSessionId: paymentSessionId,
+        status: "PROCESSING" as TicketStatus
     }
+
+    await ticketRef.set(data);
 
 
     return {
-        ...data,
-        uniqueId: ticketRef.id
+        uniqueId: ticketRef.id,
+        ...data
     }
 }
 

@@ -1,15 +1,15 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import {dbrefs, getAllGoods, registerNewTicket, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
-import {AuthInstance, ShopAuthEntry, Ticket, TicketStatus} from "./types";
+import {dbrefs, getAllGoods, shopByRef, ticketById, ticketByRef, updateTicketById} from "./db";
+import {Ticket, TicketStatus} from "./types";
 import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
-import {authedWithType} from "./auth";
 
 admin.initializeApp()
 const db = admin.firestore();
 const refs = dbrefs(db);
+// @ts-ignore
 const auth = admin.auth();
 
 export const ticketStatus = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
@@ -137,34 +137,6 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
         endOfEndPoint(request, response)
     })
 }
-
-/**
- * Randomly generate Ticket Data and register it to the database
- */
-export const registerTicket = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
-    await onPost(request, response, async () => {
-        await authedWithType("SHOP", auth, refs, request, response, async (user: AuthInstance) => {
-            let shopId = (user as ShopAuthEntry).shopId
-            let ticketNum = requireParameter("ticketNum", z.string(), request, response)
-            let description = requireParameter("description", z.string().optional(), request, response)
-
-            if (!shopId || !ticketNum) return;
-
-            let ticket = await registerNewTicket(refs, shopId, ticketNum, description)
-            response.status(200).send({"isSuccess": true, "ticket": ticket}).end()
-
-            return
-        }, () => {
-            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
-            return
-        })
-    })
-
-    endOfEndPoint(request, response)
-})
 
 export const listGoods = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
     applyHeaders(response)
