@@ -1,5 +1,5 @@
 import {Goods, goodsRemainDataSchema, goodsSchema} from "../types/goods";
-import {DBRefs, parseData} from "../db";
+import {DBRefs, parseData} from "../utils/db";
 import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import DocumentReference = firestore.DocumentReference;

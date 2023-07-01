@@ -1,11 +1,11 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import {dbrefs} from "./db";
-import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./endpointUtil";
+import {dbrefs} from "./utils/db";
+import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./utils/endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
 import {Ticket, TicketStatus} from "./types/ticket";
-import {authedWithType} from "./auth";
+import {authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {ticketById, ticketByRef, updateTicketById} from "./impls/ticket";
 import {shopByRef} from "./impls/shop";

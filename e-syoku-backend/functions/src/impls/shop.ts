@@ -1,6 +1,6 @@
 import {Shop, shopSchema} from "../types/shop";
 import {firestore} from "firebase-admin";
-import {DBRefs, parseData} from "../db";
+import {DBRefs, parseData} from "../utils/db";
 import DocumentReference = firestore.DocumentReference;
 
 export async function shopById(ref: DBRefs, id: string): Promise<Shop | undefined> {

@@ -1,5 +1,5 @@
 import {AuthEntry, authEntrySchema, AuthInstance} from "../types/auth";
-import {DBRefs, parseData, updateData} from "../db";
+import {DBRefs, parseData, updateData} from "../utils/db";
 
 export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry | undefined> {
     return await parseData(authEntrySchema, refs.auths.doc(uid), (data) => {

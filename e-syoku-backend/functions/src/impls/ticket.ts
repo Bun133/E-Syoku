@@ -1,6 +1,6 @@
 import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
-import {DBRefs, newRandomRef, parseData, updateData} from "../db";
+import {DBRefs, newRandomRef, parseData, updateData} from "../utils/db";
 import DocumentReference = firestore.DocumentReference;
 import {UniqueId} from "../types/types";
 import {Order} from "../types/order";
