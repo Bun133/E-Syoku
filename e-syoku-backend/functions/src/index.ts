@@ -9,7 +9,7 @@ import {authedWithType} from "./auth";
 import {AuthInstance} from "./types/auth";
 import {ticketById, ticketByRef, updateTicketById} from "./impls/ticket";
 import {shopByRef} from "./impls/shop";
-import {getAllGoods} from "./impls/goods";
+import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 
 admin.initializeApp()
 const db = admin.firestore();
@@ -149,11 +149,15 @@ export const listGoods = functions.region("asia-northeast1").https.onRequest(asy
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType("ANONYMOUS", auth, refs, request, response, async (authInstance: AuthInstance) => {
-
+        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const goods = await getAllGoods(refs)
+            const remainData = await Promise.all(goods.filter((it) => {
+                return it != undefined
+            }).map(async (it) => {
+                return await getRemainDataOfGoods(refs, it!!.goodsId)
+            }))
+            response.status(200).send({"isSuccess": true, "goods": goods, "remains": remainData}).end()
         })
-        const data = await getAllGoods(refs)
-        response.status(200).send({"isSuccess": true, "goods": data}).end()
     })
 
     endOfEndPoint(request, response)

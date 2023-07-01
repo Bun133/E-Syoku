@@ -1,5 +1,5 @@
+import { UserRecord } from "firebase-admin/auth";
 import {z} from "zod";
-import {UserRecord} from "firebase-admin/lib/auth";
 import {uniqueId} from "./types";
 
 const AdminAuth = z.literal("ADMIN")

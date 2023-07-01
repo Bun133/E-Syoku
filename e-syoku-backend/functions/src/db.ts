@@ -10,7 +10,8 @@ export type DBRefs = {
     tickets: firestore.CollectionReference<firestore.DocumentData>,
     shops: firestore.CollectionReference<firestore.DocumentData>,
     auths: firestore.CollectionReference<firestore.DocumentData>,
-    goods: firestore.CollectionReference<firestore.DocumentData>
+    goods: firestore.CollectionReference<firestore.DocumentData>,
+    remains: firestore.CollectionReference<firestore.DocumentData>,
 }
 
 /**
@@ -22,7 +23,8 @@ export function dbrefs(db: Firestore): DBRefs {
         tickets: db.collection("tickets"),
         shops: db.collection("shops"),
         auths: db.collection("auths"),
-        goods: db.collection("goods")
+        goods: db.collection("goods"),
+        remains: db.collection("remains"),
     };
 }
 
