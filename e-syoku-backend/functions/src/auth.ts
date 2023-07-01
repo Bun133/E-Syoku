@@ -2,9 +2,9 @@ import {auth} from "firebase-admin";
 import {HttpsFunction, onRequest, Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {DBRefs} from "./db";
-import Auth = auth.Auth;
 import {AuthInstance, AuthType} from "./types/auth";
 import {getAuthData} from "./impls/auth";
+import Auth = auth.Auth;
 
 /**
  * Using [authed] function, authenticate the request by checking request headers and firebase authentication.
@@ -71,13 +71,22 @@ export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Respon
 }
 
 
-export async function authedWithType(authType: AuthType, auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure?: () => void) {
+export async function authedWithType(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure?: () => void | Promise<void>) {
+    const failureFunc = failure !== undefined ? failure : () => {
+        res.status(401).send({"isSuccess": false, "error": "Unauthorized"});
+    }
     await authed(auth, refs, req, res, async (user: AuthInstance) => {
-        if (user.authType === authType) {
-            await success(user);
+        if (Array.isArray(authType)) {
+            if (authType.includes(user.authType)) {
+                await success(user);
+            } else {
+                await failureFunc();
+            }
         } else {
-            if (failure) {
-                failure();
+            if (user.authType === authType) {
+                await success(user);
+            } else {
+                await failureFunc();
             }
         }
     }, failure);
