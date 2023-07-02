@@ -2,7 +2,7 @@ import {Goods} from "@/lib/e-syoku-api/Types";
 import {Card, CardBody, CardHeader} from "@chakra-ui/card";
 import {Heading} from "@chakra-ui/layout";
 
-export default function Goods(param: { goods: Goods }) {
+export default function Goods(param: { goods: Goods, footer?: React.ReactNode }) {
     return (
         <Card>
             <CardHeader>
@@ -15,6 +15,7 @@ export default function Goods(param: { goods: Goods }) {
                 <br/>
                 商品価格：{param.goods.price}円
             </CardBody>
+            {param.footer}
         </Card>
     )
 }

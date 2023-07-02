@@ -5,6 +5,7 @@ import PageTitle from "@/components/pageTitle";
 import {Loader} from "react-feather";
 import {Center} from "@chakra-ui/layout";
 import Goods from "@/components/goods";
+import {OrderSelection} from "@/components/form/OrderSelection";
 
 export default function () {
     const {response: data} = useEndpoint(listGoodsEndPoint, {})
@@ -12,13 +13,7 @@ export default function () {
         return (
             <div>
                 <PageTitle title={"商品一覧"}></PageTitle>
-                <Center>
-                    {data.data!.data.map((d, index) => {
-                        return (
-                            <Goods goods={d.key}></Goods>
-                        )
-                    })}
-                </Center>
+                <OrderSelection goods={data.data!.data} callBack={console.log}></OrderSelection>
             </div>
         )
 

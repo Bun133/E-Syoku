@@ -5,8 +5,8 @@ export const uniqueId = z.string()
 export const ticketStatus = z.enum(["PROCESSING", "CALLED", "INFORMED", "RESOLVED"])
 
 const timeStampSchema = z.object({
-    _second:z.number(),
-    _nanosecond:z.number()
+    _second: z.number(),
+    _nanosecond: z.number()
 })
 
 export const orderSchema = z.array(z.object({
@@ -15,6 +15,8 @@ export const orderSchema = z.array(z.object({
     // 注文数
     count: z.number(),
 }))
+
+export type Order = z.infer<typeof orderSchema>
 
 export const ticketType = z.object({
     // 食券ID
@@ -127,9 +129,14 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 
 export const ticketIdRequest = z.object({
     ticketId: uniqueId,
-    uid:uniqueId
+    uid: uniqueId
 })
 
+export const goodsWithRemainDataSchema = z.object({key: goodsSchema, value: goodsRemainDataSchema})
+
+
+export type GoodsWithRemainData = z.infer<typeof goodsWithRemainDataSchema>
+
 export const listGoodsResponse = defaultResponseFormat.and(z.object({
-    data: z.array(z.object({key: goodsSchema, value: goodsRemainDataSchema}))
+    data: z.array(goodsWithRemainDataSchema)
 }))
