@@ -9,17 +9,22 @@ export default function Btn(props: {
     onClick?: () => void, className?: string,
     disabled?: boolean
 }) {
-    const disabled = props.disabled ? props.disabled : false;
+    const disabled = props.disabled != undefined ? props.disabled : false;
+    const onClickProxy = (e: React.MouseEvent<any>) => {
+        if (props.onClick != undefined && !disabled) {
+            props.onClick();
+        }
+    }
     if (props.href && !disabled) {
         return (
-            <Link href={props.href} onClick={props.onClick} className={props.className}>
-                <Button disabled={disabled} colorScheme={"blue"} variant={"solid"}
-                        onClick={props.onClick}>{props.children}</Button>
+            <Link href={props.href} onClick={onClickProxy} className={props.className}>
+                <Button isDisabled={disabled} colorScheme={"blue"} variant={"solid"}
+                        onClick={onClickProxy}>{props.children}</Button>
             </Link>
         );
     } else {
         return (
-            <Button disabled={disabled} colorScheme={"blue"} variant={"solid"} onClick={props.onClick}
+            <Button isDisabled={disabled} colorScheme={"blue"} variant={"solid"} onClick={onClickProxy}
                     className={props.className}>{props.children}</Button>
         )
     }
