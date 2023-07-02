@@ -10,6 +10,8 @@ import {AuthInstance} from "./types/auth";
 import {ticketById, ticketByRef, updateTicketById} from "./impls/ticket";
 import {shopByRef} from "./impls/shop";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
+import "./utils/collectionUtils"
+
 
 admin.initializeApp()
 const db = admin.firestore();
@@ -155,7 +157,9 @@ export const listGoods = functions.region("asia-northeast1").https.onRequest(asy
                 .filterNotNull({toLog: {message: "Null entry in retrieved goods list"}})
                 .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
                 .filterValueNotNull({toLog: {message: "Failed to get remain data for some goods"}})
-            response.status(200).send({"isSuccess": true, "data": remainData}).end()
+            response.status(200).send({"isSuccess": true, "data": remainData.toJson()}).end()
+        }, () => {
+            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
         })
     })
 
