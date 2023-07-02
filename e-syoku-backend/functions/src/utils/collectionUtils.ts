@@ -29,6 +29,8 @@ declare global {
         filterKeyNotNull(option?: CollectionUtilOption): Map<NonNullable<K>, V>
 
         filterNotNull(option?: CollectionUtilOption): Map<NonNullable<K>, NonNullable<V>>
+
+        toJson(): Array<{ key: K, value: V }>
     }
 }
 
@@ -36,7 +38,7 @@ Array.prototype.filterNotNull = function <T>(option: CollectionUtilOption): Arra
     let anyNull = false
     const r = this.filter((x) => {
         const b = x !== null && x !== undefined
-        if (b) anyNull = true
+        if (!b) anyNull = true
         return b
     }) as Array<NonNullable<T>>
     if (anyNull && option.toLog) warn(option.toLog.message)
@@ -109,4 +111,13 @@ Map.prototype.filterNotNull = function <K, V>(option: CollectionUtilOption): Map
     })
     if (anyNull && option.toLog) warn(option.toLog.message)
     return new Map(r);
+}
+
+Map.prototype.toJson = function <K, V>(): Array<{ key: K, value: V }> {
+    return this.toArray().map((x) => {
+        return {
+            key: x[0],
+            value: x[1]
+        }
+    })
 }
