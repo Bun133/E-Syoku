@@ -12,8 +12,8 @@ export default function Page() {
             <Button href="/shopui/tickets/call">
                 食券呼び出し(店舗側)
             </Button>
-            <Button href="/goods/">
-                商品一覧
+            <Button href="/order/">
+                メニュー
             </Button>
         </div>
     )
