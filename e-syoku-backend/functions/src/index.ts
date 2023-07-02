@@ -4,10 +4,10 @@ import {dbrefs} from "./utils/db";
 import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./utils/endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
-import {Ticket, TicketStatus} from "./types/ticket";
-import {authedWithType} from "./utils/auth";
+import {TicketStatus} from "./types/ticket";
+import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
-import {ticketById, ticketByRef, updateTicketById} from "./impls/ticket";
+import {listTicketForUser, ticketById, updateTicketById} from "./impls/ticket";
 import {shopByRef} from "./impls/shop";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
@@ -24,21 +24,25 @@ export const ticketStatus = functions.region("asia-northeast1").https.onRequest(
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        let ticketId = requireParameter("ticketId", z.string(), request, response);
-        if (!ticketId) return
-        let ticket = await ticketById(refs, ticketId);
-        if (ticket === undefined) {
-            response.status(404).send({
-                "isSuccess": false,
-                "error": "Ticket not found"
-            }).end()
-            return
-        }
+        await authedWithType(["ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            let ticketId = requireParameter("ticketId", z.string(), request, response);
+            let uid = requireParameter("uid", z.string(), request, response);
+            if (!ticketId || !uid) return
+            let ticket = await ticketById(refs, uid, ticketId);
+            if (ticket === undefined) {
+                response.status(404).send({
+                    "isSuccess": false,
+                    "error": "Ticket not found"
+                }).end()
+                return
+            }
 
-        response.status(200).send({
-            "isSuccess": true,
-            "ticket": ticket
-        }).end()
+            response.status(200).send({
+                "isSuccess": true,
+                "ticket": ticket
+            }).end()
+        }, () => {
+        })
     })
 
     endOfEndPoint(request, response)
@@ -51,18 +55,19 @@ export const listTickets = functions.region("asia-northeast1").https.onRequest(a
     applyHeaders(response)
     if (handleOption(request, response)) return
 
+    await onPost(request, response, async () => {
+        await authedWithType(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+                let allTickets = await listTicketForUser(refs, authInstance.uid);
 
-    let docs = await refs.tickets.listDocuments();
-    let tickets: Awaited<Ticket | undefined>[] = await Promise.all(docs.map(async (doc) => {
-        return await ticketByRef(refs, doc);
-    }))
-
-    response.status(200).send({
-        "isSuccess": true,
-        "tickets": tickets.filter((it) => {
-            return it !== undefined
-        })
-    }).end()
+                response.status(200).send({
+                    "isSuccess": true,
+                    "tickets": allTickets
+                }).end()
+            },
+            () => {
+                response.status(401).send({"isSuccess": false, "error": "Authentication failed"}).end()
+            })
+    })
 
     endOfEndPoint(request, response)
 });
@@ -113,32 +118,39 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
         if (handleOption(request, response)) return
 
         await onPost(request, response, async () => {
-            let id = requireParameter("ticketId", z.string(), request, response)
-            if (!id) return;
+            await authed(auth, refs, request, response, async (authInstance: AuthInstance) => {
+                let id = requireParameter("ticketId", z.string(), request, response)
+                if (!id) return;
 
-            let ticket = await ticketById(refs, id)
-            if (!ticket) {
-                response.status(400).send({"isSuccess": false, "error": "Ticket for requested ID doesn't exist."}).end()
-                return
-            }
-            if (ticket.status !== fromStatus) {
-                response.status(400).send({
-                    "isSuccess": false,
-                    "error": "Ticket for requested ID is not in " + fromStatus + " status. Actual Status: " + ticket.status
-                }).end()
-                return
-            }
+                let ticket = await ticketById(refs, authInstance.uid, id)
+                if (!ticket) {
+                    response.status(400).send({
+                        "isSuccess": false,
+                        "error": "Ticket for requested ID doesn't exist."
+                    }).end()
+                    return
+                }
+                if (ticket.status !== fromStatus) {
+                    response.status(400).send({
+                        "isSuccess": false,
+                        "error": "Ticket for requested ID is not in " + fromStatus + " status. Actual Status: " + ticket.status
+                    }).end()
+                    return
+                }
 
-            let called = await updateTicketById(refs, id, {
-                status: toStatus
+                let called = await updateTicketById(refs, authInstance.uid, id, {
+                    status: toStatus
+                })
+                if (called) {
+                    response.status(200).send({"isSuccess": true, "success": successMessage}).end()
+                } else {
+                    response.status(400).send({"isSuccess": false, "error": "Failed to Update Ticket Data"}).end()
+                }
+
+                return
+            }, () => {
+                response.status(401).send({"isSuccess": false, "error": "Authentication failed"}).end()
             })
-            if (called) {
-                response.status(200).send({"isSuccess": true, "success": successMessage}).end()
-            } else {
-                response.status(400).send({"isSuccess": false, "error": "Failed to Update Ticket Data"}).end()
-            }
-
-            return
         })
 
         endOfEndPoint(request, response)
