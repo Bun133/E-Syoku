@@ -3,12 +3,11 @@ import {z} from "zod";
 import {
     callTicketResponse,
     cancelCallingResponse,
+    listGoodsResponse,
     listShopResponse,
     listTicketResponse,
-    registerTicketResponse,
     resolveTicketResponse,
     ticketIdRequest,
-    registerTicketRequest,
     ticketStatusResponse
 } from "@/lib/e-syoku-api/Types";
 
@@ -18,4 +17,5 @@ export const listShopsEndPoint = endpoint("listShops", z.object({}), listShopRes
 export const callTicketEndPoint = endpoint("callTicket", ticketIdRequest, callTicketResponse)
 export const cancelCallingEndPoint = endpoint("cancelCalling", ticketIdRequest, cancelCallingResponse)
 export const resolveTicketEndPoint = endpoint("resolveTicket", ticketIdRequest, resolveTicketResponse)
-export const registerTicketEndPoint = endpoint("registerTicket", registerTicketRequest, registerTicketResponse)
+
+export const listGoodsEndPoint = endpoint("listGoods", z.object({}), listGoodsResponse)

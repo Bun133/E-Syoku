@@ -1,11 +1,11 @@
 import {z} from "zod"
 
-export const uniqueIdSchema = z.string()
+export const uniqueId = z.string()
 
 export const ticketStatus = z.enum(["PROCESSING", "CALLED", "INFORMED", "RESOLVED"])
 
 export const ticketType = z.object({
-    uniqueId: uniqueIdSchema,
+    uniqueId: uniqueId,
     shopId: z.string(),
     ticketNum: z.string(),
     status: ticketStatus,
@@ -20,6 +20,51 @@ export const shopDetailType = z.object({
 })
 
 export type ShopDetail = z.infer<typeof shopDetailType>
+
+////// Goods(商品) //////
+
+// 商品データ
+export const goodsSchema = z.object({
+    // 商品ID
+    goodsId: uniqueId,
+    // 販売店舗ID
+    shopId: uniqueId,
+    // 表示名
+    name: z.string(),
+    // 価格
+    price: z.number(),
+    // 商品説明文
+    description: z.string().optional(),
+    // 商品画像
+    imageUrl: z.string().optional(),
+})
+
+export type Goods = z.infer<typeof goodsSchema>
+
+///// 在庫データ /////
+
+// ①在庫あり/なし
+export const remainBooleanSchema = z.object({
+    goodsId: uniqueId,
+    // if the goods is still available or not.
+    // if true, the goods is still available.
+    // if false, the goods is not available.
+    remain: z.boolean(),
+})
+
+// 在庫データ
+// ②残り在庫〇個
+export const remainNumberSchema = z.object({
+    goodsId: uniqueId,
+    // the amount of goods that is still available.
+    remainCount: z.number(),
+})
+
+// 在庫データ
+export type GoodsRemainData = z.infer<typeof goodsRemainDataSchema>
+
+export const goodsRemainDataSchema = remainNumberSchema.or(remainBooleanSchema)
+
 
 export const defaultResponseFormat = z.object({
     isSuccess: z.boolean(),
@@ -58,11 +103,9 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 /// Request
 
 export const ticketIdRequest = z.object({
-    ticketId: uniqueIdSchema
+    ticketId: uniqueId
 })
 
-export const registerTicketRequest = z.object({
-    shopId: z.string(),
-    ticketNum: z.string(),
-    description: z.string().optional(),
-})
+export const listGoodsResponse = defaultResponseFormat.and(z.object({
+    data: z.array(z.object({key: goodsSchema, value: goodsRemainDataSchema}))
+}))
