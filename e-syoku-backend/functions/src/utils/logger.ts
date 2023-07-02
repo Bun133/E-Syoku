@@ -1,4 +1,4 @@
-import {error as fError, info as fInfo, warn as fWarn} from "firebase-functions/lib/logger";
+import {error as fError, info as fInfo, warn as fWarn} from "firebase-functions/logger";
 
 export function info(...obj: any) {
     fInfo(obj)
