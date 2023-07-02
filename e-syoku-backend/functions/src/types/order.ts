@@ -7,13 +7,12 @@ import {z} from "zod";
  * This type express an order.
  * It is not ensured that the order is valid or paid.
  */
-export const orderSchema = z.object({
-    items: z.array(z.object({
-        // 商品ID
-        goodsId: uniqueId,
-        // 注文数
-        count: z.number(),
-    }))
-})
+export const orderSchema = z.array(z.object({
+    // 商品ID
+    goodsId: uniqueId,
+    // 注文数
+    count: z.number(),
+}))
+
 
 export type Order = z.infer<typeof orderSchema>
