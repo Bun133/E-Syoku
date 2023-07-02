@@ -24,6 +24,11 @@ export function HangBar() {
                 <Btn onClick={() => {
                     router.push("/auth/register")
                 }}>本登録</Btn>
+                <Btn onClick={() => {
+                    router.push("/auth/login")
+                }}>
+                    ログイン
+                </Btn>
             </HStack>
             <Spacer/>
             <HStack>
