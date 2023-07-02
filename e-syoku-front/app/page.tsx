@@ -9,11 +9,11 @@ export default function Page() {
             <Button href="/tickets/add">
                 食券登録(クライアント側)
             </Button>
-            <Button href="/shopui/tickets/register">
-                食券登録(店舗側)
-            </Button>
             <Button href="/shopui/tickets/call">
                 食券呼び出し(店舗側)
+            </Button>
+            <Button href="/goods/">
+                商品一覧
             </Button>
         </div>
     )
