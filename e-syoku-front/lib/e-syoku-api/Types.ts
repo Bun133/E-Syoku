@@ -5,8 +5,8 @@ export const uniqueId = z.string()
 export const ticketStatus = z.enum(["PROCESSING", "CALLED", "INFORMED", "RESOLVED"])
 
 const timeStampSchema = z.object({
-    _second: z.number(),
-    _nanosecond: z.number()
+    _seconds: z.number(),
+    _nanoseconds: z.number()
 })
 
 export const orderSchema = z.array(z.object({

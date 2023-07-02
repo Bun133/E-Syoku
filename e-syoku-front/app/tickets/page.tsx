@@ -6,7 +6,7 @@ import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
 import {TicketSelection} from "@/components/form/TicketSelection";
 import {Ticket} from "@/lib/e-syoku-api/Types";
-import {Center, VStack} from "@chakra-ui/layout";
+import {VStack} from "@chakra-ui/layout";
 
 export default function Page() {
     const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
