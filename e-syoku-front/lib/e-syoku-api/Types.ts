@@ -4,12 +4,35 @@ export const uniqueId = z.string()
 
 export const ticketStatus = z.enum(["PROCESSING", "CALLED", "INFORMED", "RESOLVED"])
 
+const timeStampSchema = z.object({
+    _second:z.number(),
+    _nanosecond:z.number()
+})
+
+export const orderSchema = z.array(z.object({
+    // 商品ID
+    goodsId: uniqueId,
+    // 注文数
+    count: z.number(),
+}))
+
 export const ticketType = z.object({
+    // 食券ID
     uniqueId: uniqueId,
-    shopId: z.string(),
+    // 食券番号
     ticketNum: z.string(),
-    status: ticketStatus,
-    description: z.string().optional(),
+    // 店舗ID
+    shopId: uniqueId,
+    // 購入者UserId
+    customerId: uniqueId,
+    // 食券発行時刻
+    issueTime: timeStampSchema,
+    // 注文内容データ
+    orderData: orderSchema,
+    // 決済セッションID
+    paymentSessionId: uniqueId,
+    // 食券ステータスデータ
+    status: ticketStatus
 })
 
 export type Ticket = z.infer<typeof ticketType>
@@ -103,7 +126,8 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 /// Request
 
 export const ticketIdRequest = z.object({
-    ticketId: uniqueId
+    ticketId: uniqueId,
+    uid:uniqueId
 })
 
 export const listGoodsResponse = defaultResponseFormat.and(z.object({

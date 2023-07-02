@@ -1,6 +1,7 @@
 import Btn from "@/components/btn";
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
+import {Heading, VStack} from "@chakra-ui/layout";
 
 
 export default function TicketComponent(param: {
@@ -15,20 +16,16 @@ export default function TicketComponent(param: {
 
 
     return (
-        <div className="shadow-xl bg-neutral-50 flex flex-row justify-between space-x-1 items-center">
-            <div className="flex flex-row justify-start items-center space-x-1">
-                <div
-                    className="text-xl font-bold aspect-square flex items-center justify-center p-1">{param.ticket.ticketNum}</div>
-                <div className="flex-col justify-center items-start">
-                    {param.ticket.description}
-                </div>
-            </div>
+        <VStack>
+            <VStack>
+                <Heading>{param.ticket.ticketNum}</Heading>
+            </VStack>
 
-            <div className={"py-1 px-1 flex flex-row items-center"}>
+            <VStack>
                 {param.ticket.status}
                 <div className={"w-2"}></div>
                 {button}
-            </div>
-        </div>
+            </VStack>
+        </VStack>
     )
 }
