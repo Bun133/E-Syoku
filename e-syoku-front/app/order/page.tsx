@@ -4,6 +4,7 @@ import {listGoodsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import PageTitle from "@/components/pageTitle";
 import {Loader} from "react-feather";
 import {Center} from "@chakra-ui/layout";
+import Goods from "@/components/goods";
 
 export default function () {
     const {response: data} = useEndpoint(listGoodsEndPoint, {})
@@ -14,9 +15,7 @@ export default function () {
                 <Center>
                     {data.data!.data.map((d, index) => {
                         return (
-                            <div>
-                                {d.key.name + ":" + d.key.goodsId + ":" + JSON.stringify(d.value)}
-                            </div>
+                            <Goods goods={d.key}></Goods>
                         )
                     })}
                 </Center>
