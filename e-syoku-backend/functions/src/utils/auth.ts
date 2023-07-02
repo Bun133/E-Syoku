@@ -62,8 +62,13 @@ export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Respon
 
             await success(authInstance);
         } else {
-            failed();
-            return;
+            // Succeeded to authenticate user,but failed to get auth data
+            const authInstance: AuthInstance = {
+                authType: "ANONYMOUS",
+                uid: uid,
+                auth: user
+            }
+            await success(authInstance);
         }
     } else {
         failed();
