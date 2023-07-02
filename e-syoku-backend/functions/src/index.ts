@@ -151,12 +151,11 @@ export const listGoods = functions.region("asia-northeast1").https.onRequest(asy
     await onPost(request, response, async () => {
         await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const goods = await getAllGoods(refs)
-            const remainData = await Promise.all(goods.filter((it) => {
-                return it != undefined
-            }).map(async (it) => {
-                return await getRemainDataOfGoods(refs, it!!.goodsId)
-            }))
-            response.status(200).send({"isSuccess": true, "goods": goods, "remains": remainData}).end()
+            const remainData = (await goods
+                .filterNotNull({toLog: {message: "Null entry in retrieved goods list"}})
+                .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
+                .filterValueNotNull({toLog: {message: "Failed to get remain data for some goods"}})
+            response.status(200).send({"isSuccess": true, "data": remainData}).end()
         })
     })
 
