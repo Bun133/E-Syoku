@@ -34,18 +34,18 @@ declare global {
     }
 }
 
-Array.prototype.filterNotNull = function <T>(option: CollectionUtilOption): Array<NonNullable<T>> {
+Array.prototype.filterNotNull = function <T>(option?: CollectionUtilOption): Array<NonNullable<T>> {
     let anyNull = false
     const r = this.filter((x) => {
         const b = x !== null && x !== undefined
         if (!b) anyNull = true
         return b
     }) as Array<NonNullable<T>>
-    if (anyNull && option.toLog) warn(option.toLog.message)
+    if (anyNull && option && option.toLog) warn(option.toLog.message)
     return r;
 }
 
-Array.prototype.filterInstance = function <Z>(type: ZodType<Z>, option: CollectionUtilOption): Array<Z> {
+Array.prototype.filterInstance = function <Z>(type: ZodType<Z>, option?: CollectionUtilOption): Array<Z> {
     return this.filter((x) => {
         const b = type.safeParse(x)
         if (b.success) {
@@ -91,14 +91,14 @@ Map.prototype.filterValueNotNull = function <K, V>(option: CollectionUtilOption)
     return new Map(r);
 }
 
-Map.prototype.filterKeyNotNull = function <K, V>(option: CollectionUtilOption): Map<K, NonNullable<V>> {
+Map.prototype.filterKeyNotNull = function <K, V>(option?: CollectionUtilOption): Map<K, NonNullable<V>> {
     let anyNull = false
     const r: [K, NonNullable<V>][] = this.toArray().filter((x: [K, V]) => {
         const b = x[0] !== null && x[0] !== undefined
         if (!b) anyNull = true
         return b
     })
-    if (anyNull && option.toLog) warn(option.toLog.message)
+    if (anyNull && option && option.toLog) warn(option.toLog.message)
     return new Map(r);
 }
 
