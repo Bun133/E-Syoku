@@ -6,7 +6,7 @@ import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
 import {TicketSelection} from "@/components/form/TicketSelection";
 import {Ticket} from "@/lib/e-syoku-api/Types";
-import {Center} from "@chakra-ui/layout";
+import {Center, VStack} from "@chakra-ui/layout";
 
 export default function Page() {
     const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
@@ -19,7 +19,7 @@ export default function Page() {
     return (
         <div>
             <PageTitle title="食券一覧"></PageTitle>
-            <Center>
+            <VStack>
                 <TicketSelection tickets={tickets!!.data!!.tickets} onSelect={(ticket: Ticket) => {
                     console.log("selected", ticket)
                 }}></TicketSelection>
@@ -29,7 +29,7 @@ export default function Page() {
                 }}>
                     再読み込み
                 </Btn>
-            </Center>
+            </VStack>
         </div>
     )
 }
