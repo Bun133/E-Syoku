@@ -7,8 +7,12 @@ import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
 import CollectionReference = firestore.CollectionReference;
 
+export type DynamicCollectionReference<T> = (t: T) => firestore.CollectionReference<firestore.DocumentData>
+// this type is actually string,but this type refers to the id of the user.
+export type UserIdDBKey = string
+
 export type DBRefs = {
-    tickets: firestore.CollectionReference<firestore.DocumentData>,
+    tickets: DynamicCollectionReference<UserIdDBKey>,
     shops: firestore.CollectionReference<firestore.DocumentData>,
     auths: firestore.CollectionReference<firestore.DocumentData>,
     goods: firestore.CollectionReference<firestore.DocumentData>,
@@ -21,7 +25,7 @@ export type DBRefs = {
  */
 export function dbrefs(db: Firestore): DBRefs {
     return {
-        tickets: db.collection("tickets"),
+        tickets: (uid) => db.collection("tickets").doc(uid).collection("tickets"),
         shops: db.collection("shops"),
         auths: db.collection("auths"),
         goods: db.collection("goods"),
@@ -48,9 +52,12 @@ export function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<firesto
                 const parsed = type.safeParse(processed);
                 if (parsed.success) {
                     return parsed.data;
+                }else{
+                    error("in ParseData,zod parse failed", parsed.error)
+                    return undefined;
                 }
             } catch (e) {
-                error("in ParseData,zod threw an error",e)
+                error("in ParseData,zod threw an error", e)
             }
 
             return undefined;
