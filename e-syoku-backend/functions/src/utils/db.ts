@@ -1,6 +1,7 @@
 import {firestore} from "firebase-admin";
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
+import {error} from "./logger";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
@@ -43,10 +44,15 @@ export function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<firesto
                 processed = processing(data)
             }
 
-            const parsed = type.safeParse(processed);
-            if (parsed.success) {
-                return parsed.data;
+            try {
+                const parsed = type.safeParse(processed);
+                if (parsed.success) {
+                    return parsed.data;
+                }
+            } catch (e) {
+                error("in ParseData,zod threw an error",e)
             }
+
             return undefined;
         } else {
             return undefined;
