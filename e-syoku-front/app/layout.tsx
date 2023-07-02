@@ -2,7 +2,7 @@
 import {HangBar} from "@/components/hangBar";
 import React from "react";
 import {FirebaseAuthProvider} from "@/lib/firebase/authentication";
-import {ChakraBaseProvider, extendBaseTheme} from '@chakra-ui/react'
+import {ChakraProvider, extendBaseTheme} from '@chakra-ui/react'
 
 
 export const metadata = {
@@ -20,12 +20,12 @@ export default function RootLayout({
     return (
         <html lang="en">
         <body>
-        <ChakraBaseProvider theme={theme}>
+        <ChakraProvider>
             <FirebaseAuthProvider>
                 <HangBar></HangBar>
                 {children}
             </FirebaseAuthProvider>
-        </ChakraBaseProvider>
+        </ChakraProvider>
         </body>
         </html>
     )

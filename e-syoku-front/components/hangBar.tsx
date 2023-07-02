@@ -4,27 +4,33 @@ import {useContext} from "react";
 import {firebaseAuthContext, FirebaseAuthContextType} from "@/lib/firebase/authentication";
 import {signOut} from "@firebase/auth";
 import {useRouter} from "next/navigation";
-import Button from "@/components/button";
+import Btn from "@/components/btn";
+import {Flex, HStack} from "@chakra-ui/layout";
+import {Spacer} from "@chakra-ui/react";
 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
     const router = useRouter()
 
     return (
-        <div className="flex flex-row justify-between items-center h-16 w-full bg-blue-300">
-            <div className="pl-2 flex flex-row justify-between items-center space-x-2">
-                {/* TODO アイコン差し替え */}
+        <Flex backgroundColor={"blue.300"} w={"full"} py={2} mb={1}>
+            <HStack>
                 {auth.user !== undefined ? <UserCheck onClick={() => {
                     logAuthData(auth)
                 }}></UserCheck> : <UserX></UserX>}
-                <Button onClick={() => {logOut(auth)}}>ログアウト</Button>
-                <Button onClick={() => {router.push("/auth/register")}}>本登録</Button>
-            </div>
-            <div className="pr-3 flex flex-row justify-between items-center space-x-2">
+                <Btn onClick={() => {
+                    logOut(auth)
+                }}>ログアウト</Btn>
+                <Btn onClick={() => {
+                    router.push("/auth/register")
+                }}>本登録</Btn>
+            </HStack>
+            <Spacer/>
+            <HStack>
                 <a className="text" href="https://github.com/Bun133/E-Syoku" target="_blank">Powered By E-Syoku</a>
-            </div>
-        </div>
-    );
+            </HStack>
+        </Flex>
+    )
 }
 
 function logAuthData(auth: FirebaseAuthContextType) {

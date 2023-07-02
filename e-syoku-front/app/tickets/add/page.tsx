@@ -3,7 +3,8 @@
 import PageTitle from "@/components/pageTitle";
 import {ListSelectionPrimitive} from "@/components/form/ListSelection";
 import {useState} from "react";
-import Button from "@/components/button";
+import Btn from "@/components/btn";
+import {Heading, HStack, VStack} from "@chakra-ui/layout";
 
 export default function Page() {
     let [firstLetter, setFirstLetter] = useState<string>()
@@ -12,9 +13,9 @@ export default function Page() {
     return (
         <div>
             <PageTitle title="食券登録"></PageTitle>
-            <div className="flex flex-col items-center justify-start space-y-1">
-                <h1>食券番号を入力してください</h1>
-                <div className="flex flex-row items-center space-x-3">
+            <VStack>
+                <Heading>食券番号を入力してください</Heading>
+                <HStack>
                     <ListSelectionPrimitive values={["A", "B", "C"]} selected={(it) => {
                         setFirstLetter(it)
                     }}></ListSelectionPrimitive>
@@ -24,16 +25,16 @@ export default function Page() {
                     <ListSelectionPrimitive values={[0, 1, 2, 3]} selected={(it) => {
                         setNum(it)
                     }}></ListSelectionPrimitive>
-                </div>
+                </HStack>
 
-                <div className="font-bold">
+                <Heading>
                     {firstLetter} - {num}
-                </div>
+                </Heading>
 
-                <Button href={"/tickets/add/" + firstLetter + "-" + num}>
+                <Btn href={"/tickets/add/" + firstLetter + "-" + num}>
                     登録
-                </Button>
-            </div>
+                </Btn>
+            </VStack>
         </div>
     );
 }

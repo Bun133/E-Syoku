@@ -3,9 +3,10 @@
 import PageTitle from "@/components/pageTitle";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
-import Button from "@/components/button";
+import Btn from "@/components/btn";
 import {TicketSelection} from "@/components/form/TicketSelection";
 import {Ticket} from "@/lib/e-syoku-api/Types";
+import {Center} from "@chakra-ui/layout";
 
 export default function Page() {
     const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
@@ -18,17 +19,17 @@ export default function Page() {
     return (
         <div>
             <PageTitle title="食券一覧"></PageTitle>
-            <TicketSelection tickets={tickets!!.data!!.tickets} onSelect={(ticket: Ticket) => {
-                console.log("selected", ticket)
-            }}></TicketSelection>
+            <Center>
+                <TicketSelection tickets={tickets!!.data!!.tickets} onSelect={(ticket: Ticket) => {
+                    console.log("selected", ticket)
+                }}></TicketSelection>
 
-            <div className={"flex justify-center items-center p-2"}>
-                <Button onClick={() => {
+                <Btn onClick={() => {
                     reload()
                 }}>
                     再読み込み
-                </Button>
-            </div>
+                </Btn>
+            </Center>
         </div>
     )
 }

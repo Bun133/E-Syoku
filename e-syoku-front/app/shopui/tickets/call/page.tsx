@@ -5,7 +5,7 @@ import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {useRouter} from "next/navigation";
-import Button from "@/components/button";
+import Btn from "@/components/btn";
 
 export default function () {
     const {response: data} = useEndpoint(listTicketsEndPoint, {})
@@ -16,7 +16,7 @@ export default function () {
             <PageTitle title={"食券呼び出し"}></PageTitle>
             <TicketSelection tickets={data?.data?.tickets} onSelect={(ticket: Ticket) => {
                 router.push("/shopui/tickets/call/" + ticket.uniqueId)
-            }} button={() => (<Button>呼び出し</Button>)}></TicketSelection>
+            }} button={() => (<Btn>呼び出し</Btn>)}></TicketSelection>
         </div>
     )
 }

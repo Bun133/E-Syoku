@@ -5,7 +5,7 @@ import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {useParams} from "next/navigation";
 import React from "react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
-import Button from "@/components/button";
+import Btn from "@/components/btn";
 
 export default function Page() {
 
@@ -37,7 +37,7 @@ export default function Page() {
                     <div>UniqueId : {data?.data?.ticket?.uniqueId}</div>
                     <div>ShopId : {data?.data?.ticket?.shopId}</div>
                     <div className={"flex flex-col items-center justify-center mt-10"}>
-                        <Button onClick={() => reload()}>再読み込み</Button>
+                        <Btn onClick={() => reload()}>再読み込み</Btn>
                     </div>
                 </div>
             </div>

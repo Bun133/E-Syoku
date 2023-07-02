@@ -1,6 +1,6 @@
 "use client"
 import {useParams} from "next/navigation";
-import Button from "@/components/button";
+import Btn from "@/components/btn";
 import PageTitle from "@/components/pageTitle";
 
 export default function () {
@@ -15,8 +15,8 @@ export default function () {
                 <div className="text-xl">でお間違いありませんか?</div>
 
                 <div className="flex flex-row justify-evenly items-center w-full">
-                    <Button href={"/tickets/add/"}>キャンセル</Button>
-                    <Button href={"/tickets/add/" + id + "/submit"}>続行</Button>
+                    <Btn href={"/tickets/add/"}>キャンセル</Btn>
+                    <Btn href={"/tickets/add/" + id + "/submit"}>続行</Btn>
                 </div>
             </div>
         </>

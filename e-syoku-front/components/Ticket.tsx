@@ -1,4 +1,4 @@
-import Button from "@/components/button";
+import Btn from "@/components/btn";
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
 
@@ -9,9 +9,9 @@ export default function TicketComponent(param: {
 }) {
     const button = param.button !== undefined ?
         param.button :
-        (<Button href={"/tickets/" + param.ticket.uniqueId}>
+        (<Btn href={"/tickets/" + param.ticket.uniqueId}>
             詳しく見る
-        </Button>);
+        </Btn>);
 
 
     return (
