@@ -13,6 +13,7 @@ import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
+import {getAllPayments} from "./impls/payment";
 
 
 admin.initializeApp()
@@ -192,10 +193,29 @@ export const submitOrder = functions.region("asia-northeast1").https.onRequest(a
             const createPaymentResult = await createPaymentSession(refs, authInstance, order)
             if (!createPaymentResult.isSuccess) {
                 response.status(400).send(createPaymentResult).end()
-            }else{
+            } else {
                 // Succeeded in creating Payment Session
                 response.status(200).send(createPaymentResult).end()
             }
+        }, () => {
+            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+        })
+    })
+
+    endOfEndPoint(request, response)
+})
+
+/**
+ * ユーザーに紐づいている決済セッションのデータをすべて送信します
+ */
+export const listPayments = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyHeaders(response)
+    if (handleOption(request, response)) return
+
+    await onPost(request, response, async () => {
+        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const payments = await getAllPayments(refs, authInstance.uid)
+            response.status(200).send({"isSuccess": true, "payments": payments}).end()
         }, () => {
             response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
         })

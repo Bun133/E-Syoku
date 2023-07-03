@@ -1,8 +1,10 @@
-import {DBRefs, newRandomRef} from "../utils/db";
+import {DBRefs, newRandomRef, parseData} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
-import {PaymentSession} from "../types/payment";
+import {PaymentSession, paymentSessionSchema} from "../types/payment";
 import {getGoodsById} from "./goods";
+import {firestore} from "firebase-admin";
+import DocumentReference = firestore.DocumentReference;
 
 /**
  * 実際に決済セッションを作成し、DBに登録
@@ -67,4 +69,22 @@ async function calculateTotalAmount(ref: DBRefs, order: Order) {
         success: true,
         totalAmount: totalAmount
     }
+}
+
+export async function getPaymentSessionById(ref: DBRefs, userid: string, paymentSessionId: string) {
+    return getPaymentSessionByRef(ref, ref.payments(userid).doc(paymentSessionId))
+}
+
+export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentReference) {
+    return parseData(paymentSessionSchema, paymentRef, (data) => {
+        return {
+            sessionId: paymentRef.id,
+            ...data
+        }
+    })
+}
+
+export async function getAllPayments(ref: DBRefs, userid: string) {
+    const docs = await ref.payments(userid).listDocuments()
+    return (await Promise.all(docs.map(doc => getPaymentSessionByRef(ref, doc)))).filterNotNullStrict({toLog: {message: "in getAllPayments,Failed to get some payment data."}})
 }
