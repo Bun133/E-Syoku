@@ -11,6 +11,8 @@ import {listTicketForUser, ticketById, updateTicketById} from "./impls/ticket";
 import {shopByRef} from "./impls/shop";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
+import {orderSchema} from "./types/order";
+import {createPaymentSession} from "./impls/order";
 
 
 admin.initializeApp()
@@ -170,6 +172,30 @@ export const listGoods = functions.region("asia-northeast1").https.onRequest(asy
                 .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
                 .filterValueNotNull({toLog: {message: "Failed to get remain data for some goods"}})
             response.status(200).send({"isSuccess": true, "data": remainData.toJson()}).end()
+        }, () => {
+            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+        })
+    })
+
+    endOfEndPoint(request, response)
+})
+
+// 注文内容データから新規決済セッション作成
+export const submitOrder = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyHeaders(response)
+    if (handleOption(request, response)) return
+
+    await onPost(request, response, async () => {
+        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const order = requireParameter("order", orderSchema, request, response)
+            if (!order) return;
+            const createPaymentResult = await createPaymentSession(refs, authInstance, order)
+            if (!createPaymentResult.isSuccess) {
+                response.status(400).send(createPaymentResult).end()
+            }else{
+                // Succeeded in creating Payment Session
+                response.status(200).send(createPaymentResult).end()
+            }
         }, () => {
             response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
         })

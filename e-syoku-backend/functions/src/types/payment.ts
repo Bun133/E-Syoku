@@ -49,3 +49,5 @@ export const paymentSessionSchema = z.object({
     // 決済完了データ
     paidDetail: paidDetailSchema.optional(),
 })
+
+export type PaymentSession = z.infer<typeof paymentSessionSchema>

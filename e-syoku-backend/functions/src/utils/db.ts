@@ -1,7 +1,7 @@
 import {firestore} from "firebase-admin";
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
-import {error} from "./logger";
+import {error, warn} from "./logger";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
@@ -17,6 +17,7 @@ export type DBRefs = {
     auths: firestore.CollectionReference<firestore.DocumentData>,
     goods: firestore.CollectionReference<firestore.DocumentData>,
     remains: firestore.CollectionReference<firestore.DocumentData>,
+    payments: DynamicCollectionReference<UserIdDBKey>,
 }
 
 /**
@@ -30,6 +31,7 @@ export function dbrefs(db: Firestore): DBRefs {
         auths: db.collection("auths"),
         goods: db.collection("goods"),
         remains: db.collection("remains"),
+        payments: (uid) => db.collection("payments").doc(uid).collection("payments"),
     };
 }
 
@@ -83,7 +85,7 @@ export async function newRandomRef(parent: CollectionReference): Promise<Documen
     let ref = parent.doc(uuid);
     let data = await ref.get();
     if (data.exists) {
-        console.log("UUID Collided!")
+        warn("UUID Collided!")
         return newRandomRef(parent);
     }
 
