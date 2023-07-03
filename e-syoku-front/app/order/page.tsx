@@ -5,16 +5,20 @@ import PageTitle from "@/components/pageTitle";
 import {Loader} from "react-feather";
 import {Center, VStack} from "@chakra-ui/layout";
 import {OrderSelection} from "@/components/form/OrderSelection";
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {Order} from "@/lib/e-syoku-api/Types";
 import Goods from "@/components/goods";
 import Btn from "@/components/btn";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
+import {useDisclosure} from "@chakra-ui/hooks";
+import MessageModal from "@/components/modal/MessageModal";
 
 export default function () {
     const {response: itemsData} = useEndpoint(listGoodsEndPoint, {})
     const [order, setOrder] = useState<Order>()
     const auth = useFirebaseAuth()
+    const {isOpen, onOpen, onClose} = useDisclosure()
+    const message = useRef([""])
 
     if (order && itemsData) {
         return (
@@ -34,9 +38,11 @@ export default function () {
                     <Center>
                         <Btn onClick={() => {
                             callEndpoint(submitOrderEndPoint, auth, {order: order}).then((d) => {
-                                console.log("Submit Result", d)
+                                message.current = ["Response:", JSON.stringify(d)]
+                                onOpen()
                             })
                         }}>注文を確定</Btn>
+                        <MessageModal message={message.current} isOpen={isOpen} onClose={onClose}></MessageModal>
                     </Center>
                 </VStack>
             </div>
