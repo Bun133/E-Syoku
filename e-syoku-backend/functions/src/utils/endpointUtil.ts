@@ -58,7 +58,7 @@ export function endOfEndPoint(req: Request, res: Response) {
 
 let origin: string = "";
 if (process.env["FUNCTIONS_EMULATOR"]) {
-    origin = "http://localhost:3000";
+    origin = "*";
 } else {
     // TODO 書く
     origin = "https://";
