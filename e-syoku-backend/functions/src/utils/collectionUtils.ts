@@ -14,6 +14,12 @@ declare global {
     interface Array<T> {
         filterNotNull(option?: CollectionUtilOption): Array<NonNullable<T>>
 
+        /**
+         * もし一つでもnullishならundefinedを返す
+         * @param option
+         */
+        filterNotNullStrict(option?: CollectionUtilOption): Array<NonNullable<T>> | undefined
+
         filterInstance<Z>(type: ZodType<Z>, option?: CollectionUtilOption): Array<Z>
 
         associateWith<V>(f: (x: T) => V): Map<T, V>
@@ -43,6 +49,20 @@ Array.prototype.filterNotNull = function <T>(option?: CollectionUtilOption): Arr
     }) as Array<NonNullable<T>>
     if (anyNull && option && option.toLog) warn(option.toLog.message)
     return r;
+}
+
+Array.prototype.filterNotNullStrict = function <T>(option?: CollectionUtilOption): Array<NonNullable<T>> | undefined {
+    let anyNull = false
+    const r = this.filter((x) => {
+        const b = x !== null && x !== undefined
+        if (!b) anyNull = true
+        return b
+    }) as Array<NonNullable<T>>
+    if (anyNull && option && option.toLog) warn(option.toLog.message)
+    if (anyNull) {
+        return undefined
+    }
+    return r
 }
 
 Array.prototype.filterInstance = function <Z>(type: ZodType<Z>, option?: CollectionUtilOption): Array<Z> {
