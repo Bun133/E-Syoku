@@ -1,6 +1,6 @@
 "use client"
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
-import {listGoodsEndPoint} from "@/lib/e-syoku-api/EndPoints";
+import {callEndpoint, useEndpoint} from "@/lib/e-syoku-api/Axios";
+import {listGoodsEndPoint, submitOrderEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import PageTitle from "@/components/pageTitle";
 import {Loader} from "react-feather";
 import {Center, VStack} from "@chakra-ui/layout";
@@ -9,10 +9,12 @@ import {useState} from "react";
 import {Order} from "@/lib/e-syoku-api/Types";
 import Goods from "@/components/goods";
 import Btn from "@/components/btn";
+import {useFirebaseAuth} from "@/lib/firebase/authentication";
 
 export default function () {
     const {response: itemsData} = useEndpoint(listGoodsEndPoint, {})
     const [order, setOrder] = useState<Order>()
+    const auth = useFirebaseAuth()
 
     if (order && itemsData) {
         return (
@@ -31,7 +33,9 @@ export default function () {
 
                     <Center>
                         <Btn onClick={() => {
-                            // TODO send order
+                            callEndpoint(submitOrderEndPoint, auth, {order: order}).then((d) => {
+                                console.log("Submit Result", d)
+                            })
                         }}>注文を確定</Btn>
                     </Center>
                 </VStack>

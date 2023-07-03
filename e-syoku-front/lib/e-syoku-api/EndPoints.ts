@@ -6,7 +6,9 @@ import {
     listGoodsResponse,
     listShopResponse,
     listTicketResponse,
+    orderSchema,
     resolveTicketResponse,
+    submitOrderResponse,
     ticketIdRequest,
     ticketStatusResponse
 } from "@/lib/e-syoku-api/Types";
@@ -19,3 +21,5 @@ export const cancelCallingEndPoint = endpoint("cancelCalling", ticketIdRequest, 
 export const resolveTicketEndPoint = endpoint("resolveTicket", ticketIdRequest, resolveTicketResponse)
 
 export const listGoodsEndPoint = endpoint("listGoods", z.object({}), listGoodsResponse)
+
+export const submitOrderEndPoint = endpoint("submitOrder", z.object({order: orderSchema}), submitOrderResponse)

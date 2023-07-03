@@ -140,3 +140,11 @@ export type GoodsWithRemainData = z.infer<typeof goodsWithRemainDataSchema>
 export const listGoodsResponse = defaultResponseFormat.and(z.object({
     data: z.array(goodsWithRemainDataSchema)
 }))
+
+// TODO Error Message Handling
+export const submitOrderResponse = defaultResponseFormat.and(z.object({
+    paymentSessionId: z.string()
+}).or(z.object({
+    error: z.literal("一部の商品の在庫がなくなりました"),
+    missedItems: z.array(z.string())
+})))
