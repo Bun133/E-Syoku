@@ -32,23 +32,23 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
     console.log("full path", fullPath)
     const tokenString = await (token.auth?.currentUser?.getIdToken(true))
     console.log("token", tokenString)
-    const data = await fetch(fullPath, {
-        cache: "no-store",
-        method: "POST",
-        body: JSON.stringify(requestData),
-        headers: {
-            "Content-Type": "application/json",
-            // TODO token取得出来なければ、headerに含めない
-            "Authorization": tokenString !== undefined ? "Bearer " + tokenString : "",
-        },
-        mode: "cors",
-    })
-
-    if (!data.ok) {
-        console.log("Error:", data.status)
+    let data: Response
+    try {
+        data = await fetch(fullPath, {
+            cache: "no-store",
+            method: "POST",
+            body: JSON.stringify(requestData),
+            headers: {
+                "Content-Type": "application/json",
+                // TODO token取得出来なければ、headerに含めない
+                "Authorization": tokenString !== undefined ? "Bearer " + tokenString : "",
+            },
+            mode: "cors",
+        })
+    } catch (e: any) {
         return {
             data: undefined,
-            error: data.statusText,
+            error: e.message ?? "Unknown Error",
             success: undefined,
             parseFailed: false,
             fetchFailed: true,
