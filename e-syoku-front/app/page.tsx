@@ -18,6 +18,9 @@ export default function Page() {
                 <Btn href="/order/">
                     メニュー
                 </Btn>
+                <Btn href="/payment/">
+                    決済一覧
+                </Btn>
             </HStack>
         </Center>
     )
