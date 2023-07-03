@@ -75,7 +75,7 @@ export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Respon
     }
 }
 
-
+// TODO failure を必須にする
 export async function authedWithType(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure?: () => void | Promise<void>) {
     const failureFunc = failure !== undefined ? failure : () => {
         res.status(401).send({"isSuccess": false, "error": "Unauthorized"});
