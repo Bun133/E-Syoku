@@ -60,8 +60,7 @@ let origin: string = "";
 if (process.env["FUNCTIONS_EMULATOR"]) {
     origin = "*";
 } else {
-    // TODO 書く
-    origin = "https://";
+    origin = "https://e-syoku.web.app/";
 }
 
 export function applyHeaders(s: Response) {

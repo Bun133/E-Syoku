@@ -24,8 +24,7 @@ export type EndPointResponse<R extends DefaultResponseFormat> = {
     isSuccess: boolean,
 }
 
-// const apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
-const apiEndpointPrefix = "http://127.0.0.1:5001/e-syoku/asia-northeast1/"
+let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 
 export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, token: FirebaseAuthContextType, requestData: Q): Promise<EndPointResponse<R>> {
     let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
