@@ -29,9 +29,8 @@ export const ticketStatus = functions.region("asia-northeast1").https.onRequest(
     await onPost(request, response, async () => {
         await authedWithType(["ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request, response);
-            let uid = requireParameter("uid", z.string(), request, response);
-            if (!ticketId || !uid) return
-            let ticket = await ticketById(refs, uid, ticketId);
+            if (!ticketId) return
+            let ticket = await ticketById(refs, authInstance.uid, ticketId);
             if (ticket === undefined) {
                 response.status(404).send({
                     "isSuccess": false,
