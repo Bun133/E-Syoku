@@ -16,7 +16,7 @@ import {
     ticketStatusResponse
 } from "@/lib/e-syoku-api/Types";
 
-export const ticketStatusEndPoint = endpoint("ticketStatus", ticketIdRequest, ticketStatusResponse)
+export const ticketStatusEndPoint = endpoint("ticketStatus", ticketIdRequest.and(z.object({uid:z.string()})), ticketStatusResponse)
 export const listTicketsEndPoint = endpoint("listTickets", z.object({}), listTicketResponse)
 export const listShopsEndPoint = endpoint("listShops", z.object({}), listShopResponse)
 export const callTicketEndPoint = endpoint("callTicket", ticketIdRequest, callTicketResponse)

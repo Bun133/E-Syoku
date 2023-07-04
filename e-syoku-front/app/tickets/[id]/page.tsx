@@ -6,13 +6,26 @@ import {useParams} from "next/navigation";
 import React from "react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import Btn from "@/components/btn";
+import {useFirebaseAuth} from "@/lib/firebase/authentication";
+import {Center} from "@chakra-ui/layout";
+import {Loader} from "react-feather";
 
 export default function Page() {
 
     const param = useParams()
     const id = param["id"]!!
+    const auth = useFirebaseAuth()
 
-    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
+    if (!auth.user){
+        return (
+            <>
+                <PageTitle title={"読み込み中"}/>
+                <Center><Loader/></Center>
+            </>
+        )
+    }
+
+    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id,uid: auth.user?.uid})
     const ticket = data?.data?.ticket
 
     if (!isLoaded) {
@@ -33,7 +46,6 @@ export default function Page() {
                 <div>
                     <div className={"flex flex-col items-center justify-center"}>{ticket.ticketNum}</div>
                     <div>Status : {data?.data?.ticket?.status}</div>
-                    <div>Description : {data?.data?.ticket?.description}</div>
                     <div>UniqueId : {data?.data?.ticket?.uniqueId}</div>
                     <div>ShopId : {data?.data?.ticket?.shopId}</div>
                     <div className={"flex flex-col items-center justify-center mt-10"}>
