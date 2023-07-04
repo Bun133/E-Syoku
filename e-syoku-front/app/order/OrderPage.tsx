@@ -13,7 +13,7 @@ import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {useDisclosure} from "@chakra-ui/hooks";
 import MessageModal from "@/components/modal/MessageModal";
 
-export default function () {
+export function OrderPage() {
     const {response: itemsData} = useEndpoint(listGoodsEndPoint, {})
     const [order, setOrder] = useState<Order>()
     const auth = useFirebaseAuth()

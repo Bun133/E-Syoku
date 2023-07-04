@@ -7,7 +7,7 @@ import {Ticket} from "@/lib/e-syoku-api/Types";
 import {useRouter} from "next/navigation";
 import Btn from "@/components/btn";
 
-export default function () {
+export function TicketCallPage() {
     const {response: data} = useEndpoint(listTicketsEndPoint, {})
     const router = useRouter()
 

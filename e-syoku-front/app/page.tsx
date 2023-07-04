@@ -2,7 +2,7 @@
 import Btn from "@/components/btn";
 import {Center, HStack} from "@chakra-ui/layout";
 
-export default function Page() {
+export default function Home() {
     return (
         <Center>
             <HStack>

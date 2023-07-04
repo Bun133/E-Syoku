@@ -10,7 +10,7 @@ import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {Center} from "@chakra-ui/layout";
 import {Loader} from "react-feather";
 
-export default function Page() {
+export function TicketPage() {
 
     const param = useParams()
     const id = param["id"]!!

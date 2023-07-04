@@ -10,7 +10,7 @@ import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Text} from "@chakra-ui/react";
 import QRCode from "react-qr-code"
 
-export default function () {
+export function PaymentStatusPage() {
     const {id} = useParams()
     if (!id) {
         return (
