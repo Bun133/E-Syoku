@@ -7,17 +7,7 @@ import {callTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
 
 export function TicketCalledPage() {
-    const param = useParams()
-    const ticketUniqueId = param.id
-    if (!ticketUniqueId) {
-        return (
-            <div>
-                <PageTitle title={"取得失敗"}></PageTitle>
-                情報取得に失敗しました。もう一度お試しください。
-            </div>
-        )
-    }
-
+    const {ticketUniqueId} = useParams()
     const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: ticketUniqueId}, {callOnMount: true})
     if (!data) {
         return (

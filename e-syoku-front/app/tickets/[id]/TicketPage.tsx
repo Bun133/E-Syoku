@@ -11,21 +11,9 @@ import {Center} from "@chakra-ui/layout";
 import {Loader} from "react-feather";
 
 export function TicketPage() {
+    const {id} = useParams()
 
-    const param = useParams()
-    const id = param["id"]!!
-    const auth = useFirebaseAuth()
-
-    if (!auth.user){
-        return (
-            <>
-                <PageTitle title={"読み込み中"}/>
-                <Center><Loader/></Center>
-            </>
-        )
-    }
-
-    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id,uid: auth.user?.uid})
+    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     const ticket = data?.data?.ticket
 
     if (!isLoaded) {
