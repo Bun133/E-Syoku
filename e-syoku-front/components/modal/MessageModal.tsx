@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/modal";
 import Btn from "@/components/btn";
 
-export default function (param: { message: string[], isOpen: boolean, onClose: () => void }) {
+export function MessageModal(param: { message: string[], isOpen: boolean, onClose: () => void }) {
     return (
         <>
             <Modal isOpen={param.isOpen} onClose={param.onClose}>

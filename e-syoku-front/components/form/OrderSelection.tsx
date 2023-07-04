@@ -41,7 +41,7 @@ export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: 
             <SimpleGrid spacing={4} templateColumns={"repeat(2, 1fr)"} w={"100%"} h={"100%"} p={4}>
                 {param.goods.map((g, index) => {
                     return (
-                        <Goods goods={g.key}
+                        <Goods goods={g.key} key={g.key.goodsId}
                                footer={(
                                    <OrderSelectionFooter onChange={(to) => {
                                        const copy = listRefs.slice()

@@ -6,7 +6,7 @@ import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {callTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
 
-export default function () {
+export function TicketCalledPage() {
     const param = useParams()
     const ticketUniqueId = param.id
     if (!ticketUniqueId) {

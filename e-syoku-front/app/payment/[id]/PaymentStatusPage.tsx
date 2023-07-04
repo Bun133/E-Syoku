@@ -51,7 +51,7 @@ export function PaymentStatusPage() {
                                         </Text>
                                         {data.data.payment.orderContent.map((item, index) => {
                                             return (
-                                                <Text>
+                                                <Text key={index}>
                                                     商品Id: {item.goodsId} ,個数:{item.count}
                                                 </Text>
                                             )
