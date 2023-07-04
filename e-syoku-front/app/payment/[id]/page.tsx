@@ -8,6 +8,7 @@ import {Loader} from "react-feather";
 import Btn from "@/components/btn";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Text} from "@chakra-ui/react";
+import QRCode from "react-qr-code"
 
 export default function () {
     const {id} = useParams()
@@ -37,12 +38,14 @@ export default function () {
                     <Center>
                         <VStack>
                             <Card>
-                                <CardHeader>決済セッション:{data.data.payment.sessionId}</CardHeader>
+                                <CardHeader><Center><QRCode
+                                    value={data.data.payment.customerId + ":" + data.data.payment.sessionId}/></Center></CardHeader>
                                 <CardBody>
                                     <VStack>
                                         <Text>
                                             顧客UserId:{data.data.payment.customerId}
                                         </Text>
+                                        <Text>決済セッション:{data.data.payment.sessionId}</Text>
                                         <Text>
                                             State:{data.data.payment.state}
                                         </Text>
