@@ -3,10 +3,13 @@ import {z} from "zod";
 import {
     callTicketResponse,
     cancelCallingResponse,
-    listGoodsResponse, listPaymentResponse,
+    listGoodsResponse,
+    listPaymentResponse,
     listShopResponse,
     listTicketResponse,
     orderSchema,
+    paymentIdRequest,
+    paymentStatusResponse,
     resolveTicketResponse,
     submitOrderResponse,
     ticketIdRequest,
@@ -25,3 +28,5 @@ export const listGoodsEndPoint = endpoint("listGoods", z.object({}), listGoodsRe
 export const submitOrderEndPoint = endpoint("submitOrder", z.object({order: orderSchema}), submitOrderResponse)
 
 export const listPaymentsEndPoint = endpoint("listPayments", z.object({}), listPaymentResponse)
+
+export const paymentStatusEndPoint = endpoint("paymentStatus", paymentIdRequest, paymentStatusResponse)

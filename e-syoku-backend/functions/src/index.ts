@@ -13,7 +13,7 @@ import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
-import {getAllPayments} from "./impls/payment";
+import {getAllPayments, getPaymentSessionById} from "./impls/payment";
 
 
 admin.initializeApp()
@@ -216,6 +216,31 @@ export const listPayments = functions.region("asia-northeast1").https.onRequest(
         await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const payments = await getAllPayments(refs, authInstance.uid)
             response.status(200).send({"isSuccess": true, "payments": payments}).end()
+        }, () => {
+            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+        })
+    })
+
+    endOfEndPoint(request, response)
+})
+
+/**
+ * 指定された決済セッションのデータを返却します
+ */
+export const paymentStatus = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    applyHeaders(response)
+    if (handleOption(request, response)) return
+
+    await onPost(request, response, async () => {
+        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const id = requireParameter("paymentId", z.string(), request, response)
+            if (!id) return;
+            const payment = await getPaymentSessionById(refs, authInstance.uid, id)
+            if (!payment) {
+                response.status(400).send({"isSuccess": false, "error": "Payment for requested ID doesn't exist."}).end()
+                return
+            }
+            response.status(200).send({"isSuccess": true, "payment": payment}).end()
         }, () => {
             response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
         })
