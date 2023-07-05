@@ -10,7 +10,6 @@ import {Spacer} from "@chakra-ui/react";
 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
-    const router = useRouter()
 
     return (
         <Flex backgroundColor={"blue.300"} w={"full"} py={2} mb={1}>
@@ -21,12 +20,10 @@ export function HangBar() {
                 <Btn onClick={() => {
                     logOut(auth)
                 }}>ログアウト</Btn>
-                <Btn onClick={() => {
-                    router.push("/auth/register")
-                }}>本登録</Btn>
-                <Btn onClick={() => {
-                    router.push("/auth/login")
-                }}>
+                <Btn href="/auth/register">
+                    本登録
+                </Btn>
+                <Btn href="/auth/login">
                     ログイン
                 </Btn>
             </HStack>

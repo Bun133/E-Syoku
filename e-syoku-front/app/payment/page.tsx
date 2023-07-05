@@ -6,7 +6,7 @@ import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {Loader} from "react-feather";
 import {PaymentSelection} from "@/components/form/PaymentSelection";
 
-export function PaymentListPage() {
+export default function Page() {
     const {response: data} = useEndpoint(listPaymentsEndPoint, {})
     if (data) {
         if (data.data) {

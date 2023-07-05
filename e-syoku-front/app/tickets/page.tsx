@@ -8,7 +8,7 @@ import {TicketSelection} from "@/components/form/TicketSelection";
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {VStack} from "@chakra-ui/layout";
 
-export function TicketListPage() {
+export default function Page() {
     const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
 
     if (!isLoaded) {

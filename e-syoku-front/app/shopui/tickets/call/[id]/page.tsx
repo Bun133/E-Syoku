@@ -6,7 +6,7 @@ import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {callTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
 
-export function TicketCalledPage() {
+export default function Page() {
     const {ticketUniqueId} = useParams()
     const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: ticketUniqueId}, {callOnMount: true})
     if (!data) {
