@@ -110,6 +110,10 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     const isHandledFirstReq = useRef(false)
 
     const call = () => {
+        if (token.user == undefined) {
+            // 見なかったことにする
+            return
+        }
         isRequestPending.current = true
         callEndpoint(endPoint, token.user, requestData, abort.current).then(data => {
             console.log("SET", data)
