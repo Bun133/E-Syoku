@@ -10,7 +10,7 @@ export default function TicketComponent(param: {
 }) {
     const button = param.button !== undefined ?
         param.button :
-        (<Btn href={"/tickets/" + param.ticket.uniqueId}>
+        (<Btn href={"/tickets/id?id=" + param.ticket.uniqueId}>
             詳しく見る
         </Btn>);
 

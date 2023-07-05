@@ -2,16 +2,25 @@
 
 import PageTitle from "@/components/pageTitle";
 import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
-import {useParams} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 import React from "react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import Btn from "@/components/btn";
-import {useFirebaseAuth} from "@/lib/firebase/authentication";
-import {Center} from "@chakra-ui/layout";
-import {Loader} from "react-feather";
+import {Center, Heading} from "@chakra-ui/layout";
 
 export default function Page() {
-    const {id} = useParams()
+    const params = useSearchParams()
+    const id = params.get("id")
+    if (id === null) {
+        return (
+            <>
+                <PageTitle title={"エラー"}></PageTitle>
+                <Center>
+                    <Heading>IDが指定されていません</Heading>
+                </Center>
+            </>
+        )
+    }
 
     const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     const ticket = data?.data?.ticket

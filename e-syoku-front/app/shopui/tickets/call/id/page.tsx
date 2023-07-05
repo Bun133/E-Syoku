@@ -1,14 +1,27 @@
 "use client"
 
 import PageTitle from "@/components/pageTitle";
-import {useParams} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {callTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
+import {Center, Heading} from "@chakra-ui/layout";
+import React from "react";
 
 export default function Page() {
-    const {ticketUniqueId} = useParams()
-    const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: ticketUniqueId}, {callOnMount: true})
+    const params = useSearchParams()
+    const id = params.get("id")
+    if (id === null) {
+        return (
+            <>
+                <PageTitle title={"エラー"}></PageTitle>
+                <Center>
+                    <Heading>idが指定されていません</Heading>
+                </Center>
+            </>
+        )
+    }
+    const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: id}, {callOnMount: true})
     if (!data) {
         return (
             <div>

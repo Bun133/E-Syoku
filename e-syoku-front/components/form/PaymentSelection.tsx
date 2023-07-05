@@ -30,7 +30,7 @@ export function PaymentSelection(props: {
 function PaymentCard(param: { session: PaymentSession, button?: ReactNode }) {
     const button = param.button !== undefined ?
         param.button :
-        (<Btn href={"/payment/" + param.session.sessionId}>
+        (<Btn href={"/payment/id?id=" + param.session.sessionId}>
             詳しく見る
         </Btn>);
 

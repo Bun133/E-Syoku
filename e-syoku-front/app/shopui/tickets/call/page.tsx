@@ -15,7 +15,7 @@ export default function Page() {
         <div>
             <PageTitle title={"食券呼び出し"}></PageTitle>
             <TicketSelection tickets={data?.data?.tickets} onSelect={(ticket: Ticket) => {
-                router.push("/shopui/tickets/call/" + ticket.uniqueId)
+                router.push("/shopui/tickets/call/id?id=" + ticket.uniqueId)
             }} button={() => (<Btn>呼び出し</Btn>)}></TicketSelection>
         </div>
     )

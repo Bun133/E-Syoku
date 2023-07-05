@@ -1,7 +1,7 @@
 "use client"
-import {useParams} from "next/navigation";
+import {useParams, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
-import {Center, VStack} from "@chakra-ui/layout";
+import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {paymentStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
@@ -9,9 +9,21 @@ import Btn from "@/components/btn";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Text} from "@chakra-ui/react";
 import QRCode from "react-qr-code"
+import React from "react";
 
 export default function Page() {
-    const {id} = useParams()
+    const params = useSearchParams()
+    const id = params.get("id")
+    if (id === null) {
+        return (
+            <>
+                <PageTitle title={"エラー"}></PageTitle>
+                <Center>
+                    <Heading>idが指定されていません</Heading>
+                </Center>
+            </>
+        )
+    }
     const {response: data, isLoaded, fetch: reload} = useEndpoint(paymentStatusEndPoint, {paymentId: id})
     if (!isLoaded) {
         return (
