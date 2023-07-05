@@ -1,9 +1,8 @@
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions";
 import {dbrefs} from "./utils/db";
 import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./utils/endpointUtil";
 import {z} from "zod";
-import {HttpsFunction} from "firebase-functions/v2/https";
+import {HttpsFunction, onRequest} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
@@ -22,7 +21,7 @@ const refs = dbrefs(db);
 // @ts-ignore
 const auth = admin.auth();
 
-export const ticketStatus = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const ticketStatus = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -53,7 +52,7 @@ export const ticketStatus = functions.region("asia-northeast1").https.onRequest(
 /**
  * List all tickets existing in the database
  */
-export const listTickets = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const listTickets = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -77,7 +76,7 @@ export const listTickets = functions.region("asia-northeast1").https.onRequest(a
 /**
  * List all shops existing in the database
  */
-export const listShops = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const listShops = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -115,7 +114,7 @@ export const resolveTicket =
     ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved")
 
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
-    return functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+    return onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
         applyHeaders(response)
         if (handleOption(request, response)) return
 
@@ -160,7 +159,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 }
 
 // 在庫がある商品リスト
-export const listGoods = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const listGoods = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -181,7 +180,7 @@ export const listGoods = functions.region("asia-northeast1").https.onRequest(asy
 })
 
 // 注文内容データから新規決済セッション作成
-export const submitOrder = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const submitOrder = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -207,7 +206,7 @@ export const submitOrder = functions.region("asia-northeast1").https.onRequest(a
 /**
  * ユーザーに紐づいている決済セッションのデータをすべて送信します
  */
-export const listPayments = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const listPayments = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -226,7 +225,7 @@ export const listPayments = functions.region("asia-northeast1").https.onRequest(
 /**
  * 指定された決済セッションのデータを返却します
  */
-export const paymentStatus = functions.region("asia-northeast1").https.onRequest(async (request, response) => {
+export const paymentStatus = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
