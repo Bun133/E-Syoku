@@ -11,6 +11,7 @@ import React from "react";
 export default function Page() {
     const params = useSearchParams()
     const id = params.get("id")
+    const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: id}, {callOnMount: true})
     if (id === null) {
         return (
             <>
@@ -21,7 +22,6 @@ export default function Page() {
             </>
         )
     }
-    const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: id}, {callOnMount: true})
     if (!data) {
         return (
             <div>

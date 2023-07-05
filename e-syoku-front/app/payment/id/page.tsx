@@ -14,6 +14,7 @@ import React from "react";
 export default function Page() {
     const params = useSearchParams()
     const id = params.get("id")
+    const {response: data, isLoaded, fetch: reload} = useEndpoint(paymentStatusEndPoint, {paymentId: id})
     if (id === null) {
         return (
             <>
@@ -24,7 +25,6 @@ export default function Page() {
             </>
         )
     }
-    const {response: data, isLoaded, fetch: reload} = useEndpoint(paymentStatusEndPoint, {paymentId: id})
     if (!isLoaded) {
         return (
             <>

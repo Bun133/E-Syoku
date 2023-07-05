@@ -11,6 +11,7 @@ import {Center, Heading} from "@chakra-ui/layout";
 export default function Page() {
     const params = useSearchParams()
     const id = params.get("id")
+    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     if (id === null) {
         return (
             <>
@@ -22,7 +23,6 @@ export default function Page() {
         )
     }
 
-    const {response: data, isLoaded, fetch: reload} = useEndpoint(ticketStatusEndPoint, {ticketId: id})
     const ticket = data?.data?.ticket
 
     if (!isLoaded) {
