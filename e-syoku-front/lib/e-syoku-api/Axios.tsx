@@ -2,8 +2,9 @@
 
 import {ZodType} from "zod";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
-import React, {useCallback, useEffect, useState} from "react";
-import {FirebaseAuthContextType, useFirebaseAuth} from "@/lib/firebase/authentication";
+import React, {useEffect, useRef, useState} from "react";
+import {useFirebaseAuth} from "@/lib/firebase/authentication";
+import {User} from "@firebase/auth";
 
 export type EndPoint<Q, R> = {
     endpointPath: string,
@@ -26,10 +27,20 @@ export type EndPointResponse<R extends DefaultResponseFormat> = {
 
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 
-export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, token: FirebaseAuthContextType, requestData: Q): Promise<EndPointResponse<R>> {
+export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
     console.log("full path", fullPath)
-    const tokenString = await (token.auth?.currentUser?.getIdToken(true))
+    if (user == undefined) {
+        return {
+            data: undefined,
+            error: "No user instance",
+            success: undefined,
+            parseFailed: false,
+            fetchFailed: false,
+            isSuccess: false,
+        }
+    }
+    const tokenString = await (user.getIdToken(true))
     console.log("token", tokenString)
     let data: Response
     try {
@@ -39,10 +50,10 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
             body: JSON.stringify(requestData),
             headers: {
                 "Content-Type": "application/json",
-                // TODO token取得出来なければ、headerに含めない
-                "Authorization": tokenString !== undefined ? "Bearer " + tokenString : "",
+                "Authorization": "Bearer " + tokenString
             },
             mode: "cors",
+            signal: abortController ? abortController.signal : undefined
         })
     } catch (e: any) {
         return {
@@ -93,28 +104,42 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     const token = useFirebaseAuth()
 
     const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
+    const abort = useRef(new AbortController())
+    const isRequestPending = useRef(false)
+    const [isLoaded, setLoaded] = useState(false)
+    const isHandledFirstReq = useRef(false)
 
     const call = () => {
-        callEndpoint(endPoint, token, requestData).then(data => {
+        isRequestPending.current = true
+        callEndpoint(endPoint, token.user, requestData, abort.current).then(data => {
             console.log("SET", data)
             setResponse(data)
             setLoaded(true)
+            isRequestPending.current = false
         })
     }
 
-
-    const [isLoaded, setLoaded] = useState(false)
-    useEffect(() => {
-        if (option === undefined || option?.callOnMount) {
-            if (isLoaded) return
-            call()
+    const fetch = () => {
+        if (isRequestPending.current) {
+            // abort previous request
+            abort.current.abort()
+            console.log("Aborting previous request")
         }
-    }, [])
-
-    const fetch = useCallback(() => {
         setLoaded(false)
         call()
-    }, [])
+    }
 
-    return {response, isLoaded, fetch}
+
+    useEffect(() => {
+        if (!isHandledFirstReq && (option === undefined || option?.callOnMount)) {
+            // first fetch
+            fetch()
+        } else if (isHandledFirstReq) {
+            // re-fetch
+            fetch()
+        }
+        isHandledFirstReq.current = true
+    }, [token.user])
+
+    return {response, isLoaded, fetch: fetch}
 }

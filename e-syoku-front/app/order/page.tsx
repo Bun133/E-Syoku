@@ -37,7 +37,7 @@ export default function Page() {
 
                     <Center>
                         <Btn onClick={() => {
-                            callEndpoint(submitOrderEndPoint, auth, {order: order}).then((d) => {
+                            callEndpoint(submitOrderEndPoint, auth.user, {order: order}).then((d) => {
                                 message.current = ["Response:", JSON.stringify(d)]
                                 onOpen()
                             })
