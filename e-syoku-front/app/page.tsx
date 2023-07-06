@@ -21,6 +21,9 @@ export default function Home() {
                 <Btn href="/payment/">
                     決済一覧
                 </Btn>
+                <Btn href="/shopui/payment/scan">
+                    決済処理取り扱い(店舗側)
+                </Btn>
             </HStack>
         </Center>
     )
