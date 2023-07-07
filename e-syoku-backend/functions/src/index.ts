@@ -21,7 +21,11 @@ const refs = dbrefs(db);
 // @ts-ignore
 const auth = admin.auth();
 
-export const ticketStatus = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const ticketStatus = onRequest({
+    region: "asia-northeast1",
+    memory: "256MiB",
+    cpu: 1
+}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -52,7 +56,11 @@ export const ticketStatus = onRequest({region:"asia-northeast1",memory:"256MiB",
 /**
  * List all tickets existing in the database
  */
-export const listTickets = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const listTickets = onRequest({
+    region: "asia-northeast1",
+    memory: "256MiB",
+    cpu: 1
+}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -76,7 +84,7 @@ export const listTickets = onRequest({region:"asia-northeast1",memory:"256MiB",c
 /**
  * List all shops existing in the database
  */
-export const listShops = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const listShops = onRequest({region: "asia-northeast1", memory: "256MiB", cpu: 1}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -114,7 +122,7 @@ export const resolveTicket =
     ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved")
 
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
-    return onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+    return onRequest({region: "asia-northeast1", memory: "256MiB", cpu: 1}, async (request, response) => {
         applyHeaders(response)
         if (handleOption(request, response)) return
 
@@ -159,7 +167,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 }
 
 // 在庫がある商品リスト
-export const listGoods = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const listGoods = onRequest({region: "asia-northeast1", memory: "256MiB", cpu: 1}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -180,7 +188,11 @@ export const listGoods = onRequest({region:"asia-northeast1",memory:"256MiB",cpu
 })
 
 // 注文内容データから新規決済セッション作成
-export const submitOrder = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const submitOrder = onRequest({
+    region: "asia-northeast1",
+    memory: "256MiB",
+    cpu: 1
+}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -206,7 +218,11 @@ export const submitOrder = onRequest({region:"asia-northeast1",memory:"256MiB",c
 /**
  * ユーザーに紐づいている決済セッションのデータをすべて送信します
  */
-export const listPayments = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const listPayments = onRequest({
+    region: "asia-northeast1",
+    memory: "256MiB",
+    cpu: 1
+}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
@@ -225,20 +241,44 @@ export const listPayments = onRequest({region:"asia-northeast1",memory:"256MiB",
 /**
  * 指定された決済セッションのデータを返却します
  */
-export const paymentStatus = onRequest({region:"asia-northeast1",memory:"256MiB",cpu:1},async (request, response) => {
+export const paymentStatus = onRequest({
+    region: "asia-northeast1",
+    memory: "256MiB",
+    cpu: 1
+}, async (request, response) => {
     applyHeaders(response)
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
         await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
-            const id = requireParameter("paymentId", z.string(), request, response)
-            if (!id) return;
-            const payment = await getPaymentSessionById(refs, authInstance.uid, id)
-            if (!payment) {
-                response.status(400).send({"isSuccess": false, "error": "Payment for requested ID doesn't exist."}).end()
-                return
+            if (authInstance.authType == "ANONYMOUS") {
+                const id = requireParameter("paymentId", z.string(), request, response)
+                if (!id) return;
+                const payment = await getPaymentSessionById(refs, authInstance.uid, id)
+                if (!payment) {
+                    response.status(400).send({
+                        "isSuccess": false,
+                        "error": "Payment for requested ID doesn't exist."
+                    }).end()
+                    return
+                }
+                response.status(200).send({"isSuccess": true, "payment": payment}).end()
+            } else if (authInstance.authType == "SHOP" || authInstance.authType == "ADMIN") {
+                const id = requireParameter("paymentId", z.string(), request, response)
+                const userId = requireParameter("userId", z.string().optional(), request, response)
+                if (!id) return;
+                // お客さんの決済セッションデータを閲覧できるように
+                let uid = userId == undefined ? authInstance.uid : userId
+                const payment = await getPaymentSessionById(refs, uid, id)
+                if (!payment) {
+                    response.status(400).send({
+                        "isSuccess": false,
+                        "error": "Payment for requested ID doesn't exist."
+                    }).end()
+                    return
+                }
+                response.status(200).send({"isSuccess": true, "payment": payment}).end()
             }
-            response.status(200).send({"isSuccess": true, "payment": payment}).end()
         }, () => {
             response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
         })
