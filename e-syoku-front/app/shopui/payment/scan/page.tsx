@@ -1,15 +1,13 @@
 "use client"
 import {QRCodeReader} from "@/components/reader/QRCodeReader";
 import PageTitle from "@/components/pageTitle";
-import {Container, List, ListItem} from "@chakra-ui/react";
+import {Container} from "@chakra-ui/react";
 import {Html5QrcodeResult} from "html5-qrcode/es2015/core";
-import {useState} from "react";
-import {PaymentIdRequest} from "@/lib/e-syoku-api/Types";
 import {VStack} from "@chakra-ui/layout";
+import {useRouter} from "next/navigation";
 
 export default function Page() {
-    const [reqs, setReqs] = useState<PaymentIdRequest[]>([])
-
+    const router = useRouter()
     return (
         <>
             <PageTitle title={"QR Code Reader"}/>
@@ -18,20 +16,9 @@ export default function Page() {
                     <QRCodeReader fps={10} onScan={(decodedText, result) => {
                         const parsed = onScan(decodedText, result)
                         if (parsed) {
-                            setReqs(reqs.concat([parsed]))
+                            router.push("/shopui/payment/lookup?uid=" + parsed.userId + "&paymentId=" + parsed.paymentId)
                         }
                     }} qrBox={{width: 300, height: 300}}></QRCodeReader>
-                </Container>
-                <Container>
-                    <List>
-                        {reqs.map((req, index) => {
-                            return (
-                                <ListItem key={index}>
-                                    {req.userId}:{req.paymentId}
-                                </ListItem>
-                            )
-                        })}
-                    </List>
                 </Container>
             </VStack>
         </>
