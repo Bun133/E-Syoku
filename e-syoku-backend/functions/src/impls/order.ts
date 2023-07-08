@@ -4,6 +4,8 @@ import {getRemainDataOfGoods, remainDataIsEnough} from "./goods";
 import {GoodsRemainData} from "../types/goods";
 import {AuthInstance} from "../types/auth";
 import {internalCreatePaymentSession} from "./payment";
+import {injectError, itemGoneError} from "./errors";
+import {Error, Success} from "../types/errors";
 
 /**
  * 与えられたOrder内の商品の在庫を確認する
@@ -39,25 +41,21 @@ export async function createPaymentSession(ref: DBRefs, customer: AuthInstance, 
     // Check Items availability
     const {items, isAllEnough} = await checkOrderRemainStatus(ref, orderData)
     if (!isAllEnough) {
-        return {
+        const err: Error = {
             isSuccess: false,
-            error: "一部の商品の在庫がなくなりました",
-            missedItems: items.filter((item) => !item.isEnough).map((item) => item.goodsId)
+            ...injectError(itemGoneError(items.filter((item) => !item.isEnough).map((item) => item.goodsId)))
         }
+        return err
     }
 
     // Create Payment Session
     const paymentSession = await internalCreatePaymentSession(ref, customer, orderData)
-    if (!paymentSession.success) {
+    if (!paymentSession.isSuccess) {
         // Failed to create Payment Session
-        return {
-            isSuccess: false,
-            error: paymentSession.message
-        }
+        const err: Error = paymentSession
+        return err
     }
 
-    return {
-        isSuccess: true,
-        paymentSessionId: paymentSession.paymentSessionId
-    }
+    const suc: Success & { paymentSessionId: string } = paymentSession
+    return suc
 }

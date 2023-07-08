@@ -4,6 +4,8 @@ import {AuthInstance} from "../types/auth";
 import {PaymentSession, paymentSessionSchema} from "../types/payment";
 import {getGoodsById} from "./goods";
 import {firestore} from "firebase-admin";
+import {Error, Success} from "../types/errors";
+import {calculateTotalAmountFailed, injectError} from "./errors";
 import DocumentReference = firestore.DocumentReference;
 
 /**
@@ -17,11 +19,9 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
     const paymentSessionRef = await newRandomRef(ref.payments(customer.uid))
 
     const totalAmount = await calculateTotalAmount(ref, order)
-    if (!totalAmount.success) {
-        return {
-            success: false,
-            message: totalAmount.message
-        }
+    if (!totalAmount.isSuccess) {
+        const err: Error = totalAmount
+        return err
     }
 
     const paymentSession: PaymentSession = {
@@ -40,10 +40,12 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         totalAmount: paymentSession.totalAmount
     })
 
-    return {
-        success: true,
+    const suc:Success & { paymentSessionId: string } = {
+        isSuccess: true,
         paymentSessionId: paymentSession.sessionId
     }
+
+    return suc
 }
 
 async function calculateTotalAmount(ref: DBRefs, order: Order) {
@@ -57,18 +59,20 @@ async function calculateTotalAmount(ref: DBRefs, order: Order) {
 
     if (!amounts) {
         // since the amounts is undefined, the operation is terminated
-        return {
-            success: false,
-            message: "Failed to get goods data.Operation Terminated"
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(calculateTotalAmountFailed)
         }
+        return err
     }
 
     const totalAmount = amounts.reduce((a, b) => a + b, 0)
 
-    return {
-        success: true,
+    const suc: Success & { totalAmount: number } = {
+        isSuccess: true,
         totalAmount: totalAmount
     }
+    return suc
 }
 
 export async function getPaymentSessionById(ref: DBRefs, userid: string, paymentSessionId: string) {
