@@ -1,19 +1,37 @@
 import * as admin from "firebase-admin";
 import {dbrefs} from "./utils/db";
-import {applyHeaders, endOfEndPoint, handleOption, onPost, requireParameter} from "./utils/endpointUtil";
+import {
+    applyHeaders,
+    endOfEndPoint,
+    handleOption,
+    onPost,
+    requireOptionalParameter,
+    requireParameter,
+    ResultOrPromise
+} from "./utils/endpointUtil";
 import {z} from "zod";
 import {HttpsFunction, onRequest} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {listTicketForUser, ticketById, updateTicketById} from "./impls/ticket";
-import {shopByRef} from "./impls/shop";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById} from "./impls/payment";
 import {error} from "./utils/logger";
+import {
+    authFailedError,
+    failedToUpdateTicket,
+    injectError,
+    internalError,
+    paymentNotFoundError,
+    ticketNotFoundError,
+    ticketStatusInvalidError
+} from "./impls/errors";
+import {Error, Success} from "./types/errors";
+import {shopByRef} from "./impls/shop";
 
 
 admin.initializeApp()
@@ -31,23 +49,35 @@ export const ticketStatus = onRequest({
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType(["ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
-            let ticketId = requireParameter("ticketId", z.string(), request, response);
-            if (!ticketId) return
-            let ticket = await ticketById(refs, authInstance.uid, ticketId);
+        return authedWithType<ResultOrPromise>(["ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            let ticketId = requireParameter("ticketId", z.string(), request);
+            if (ticketId.param === undefined) return {result: ticketId.error}
+            let ticket = await ticketById(refs, authInstance.uid, ticketId.param);
             if (ticket === undefined) {
-                response.status(404).send({
+                const err: Error = {
                     "isSuccess": false,
-                    "error": "Ticket not found"
-                }).end()
-                return
+                    ...injectError(ticketNotFoundError)
+                }
+                return {
+                    result: err
+                }
             }
 
-            response.status(200).send({
+            const suc: Success = {
                 "isSuccess": true,
-                "ticket": ticket
-            }).end()
+                "ticket": ticket,
+            }
+            return {
+                result: suc
+            }
         }, () => {
+            const err: Error = {
+                "isSuccess": false,
+                ...injectError(authFailedError)
+            }
+            return {
+                result: err
+            }
         })
     })
 
@@ -66,16 +96,25 @@ export const listTickets = onRequest({
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType<ResultOrPromise>(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
                 let allTickets = await listTicketForUser(refs, authInstance.uid);
 
-                response.status(200).send({
+                const suc: Success = {
                     "isSuccess": true,
                     "tickets": allTickets
-                }).end()
+                }
+                return {
+                    result: suc
+                }
             },
             () => {
-                response.status(401).send({"isSuccess": false, "error": "Authentication failed"}).end()
+                const err: Error = {
+                    "isSuccess": false,
+                    ...injectError(authFailedError)
+                }
+                return {
+                    result: err
+                }
             })
     })
 
@@ -89,17 +128,32 @@ export const listShops = onRequest({region: "asia-northeast1", memory: "256MiB",
     applyHeaders(response)
     if (handleOption(request, response)) return
 
-    let docs = await refs.shops.listDocuments();
-    let shops = await Promise.all(docs.map(async (doc) => {
-        return await shopByRef(refs, doc);
-    }))
+    await onPost(request, response, async () => {
+        return await authedWithType<ResultOrPromise>(["ADMIN", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            let docs = await refs.shops.listDocuments();
+            let shops = await Promise.all(docs.map(async (doc) => {
+                return await shopByRef(refs, doc);
+            }))
 
-    response.status(200).send({
-        "isSuccess": true,
-        "shops": shops.filter((it) => {
-            return it !== undefined
+            const suc: Success = {
+                "isSuccess": true,
+                "shops": shops.filter((it) => {
+                    return it !== undefined
+                })
+            }
+            return {
+                result: suc
+            }
+        }, () => {
+            const err: Error = {
+                "isSuccess": false,
+                ...injectError(authFailedError)
+            }
+            return {
+                result: err
+            }
         })
-    }).end()
+    })
 
     endOfEndPoint(request, response)
 })
@@ -128,38 +182,53 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
         if (handleOption(request, response)) return
 
         await onPost(request, response, async () => {
-            await authed(auth, refs, request, response, async (authInstance: AuthInstance) => {
-                let id = requireParameter("ticketId", z.string(), request, response)
-                if (!id) return;
+            return authed<ResultOrPromise>(auth, refs, request, response, async (authInstance: AuthInstance) => {
+                let id = requireParameter("ticketId", z.string(), request)
+                if (id.param == undefined) return {result: id.error}
 
-                let ticket = await ticketById(refs, authInstance.uid, id)
+                let ticket = await ticketById(refs, authInstance.uid, id.param)
                 if (!ticket) {
-                    response.status(400).send({
+                    const err: Error = {
                         "isSuccess": false,
-                        "error": "Ticket for requested ID doesn't exist."
-                    }).end()
-                    return
+                        ...injectError(ticketNotFoundError)
+                    }
+                    return {
+                        statusCode: 400,
+                        result: err
+                    }
                 }
                 if (ticket.status !== fromStatus) {
-                    response.status(400).send({
+                    const err: Error = {
                         "isSuccess": false,
-                        "error": "Ticket for requested ID is not in " + fromStatus + " status. Actual Status: " + ticket.status
-                    }).end()
-                    return
+                        ...injectError(ticketStatusInvalidError(fromStatus, ticket.status))
+                    }
+                    return {
+                        statusCode: 400,
+                        result: err
+                    }
                 }
 
-                let called = await updateTicketById(refs, authInstance.uid, id, {
+                let called = await updateTicketById(refs, authInstance.uid, id.param, {
                     status: toStatus
                 })
                 if (called) {
-                    response.status(200).send({"isSuccess": true, "success": successMessage}).end()
+                    const suc: Success = {"isSuccess": true, "success": successMessage}
+                    return {result: suc}
                 } else {
-                    response.status(400).send({"isSuccess": false, "error": "Failed to Update Ticket Data"}).end()
+                    const err: Error = {"isSuccess": false, ...injectError(failedToUpdateTicket)}
+                    return {
+                        statusCode: 400,
+                        result: err
+                    }
                 }
-
-                return
             }, () => {
-                response.status(401).send({"isSuccess": false, "error": "Authentication failed"}).end()
+                const err: Error = {
+                    "isSuccess": false,
+                    ...injectError(authFailedError)
+                }
+                return {
+                    result: err
+                }
             })
         })
 
@@ -173,15 +242,25 @@ export const listGoods = onRequest({region: "asia-northeast1", memory: "256MiB",
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const goods = await getAllGoods(refs)
             const remainData = (await goods
                 .filterNotNull({toLog: {message: "Null entry in retrieved goods list"}})
                 .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
                 .filterValueNotNull({toLog: {message: "Failed to get remain data for some goods"}})
-            response.status(200).send({"isSuccess": true, "data": remainData.toJson()}).end()
+
+            const suc: Success = {"isSuccess": true, "data": remainData.toJson()}
+            return {
+                result: suc
+            }
         }, () => {
-            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+            const err: Error = {
+                "isSuccess": false,
+                ...injectError(authFailedError)
+            }
+            return {
+                result: err
+            }
         })
     })
 
@@ -198,18 +277,32 @@ export const submitOrder = onRequest({
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
-            const order = requireParameter("order", orderSchema, request, response)
-            if (!order) return;
-            const createPaymentResult = await createPaymentSession(refs, authInstance, order)
+        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const order = requireParameter("order", orderSchema, request)
+            if (order.param == undefined) return {result: order.error};
+            const createPaymentResult = await createPaymentSession(refs, authInstance, order.param)
             if (!createPaymentResult.isSuccess) {
-                response.status(400).send(createPaymentResult).end()
+                const err: Error = createPaymentResult
+                return {
+                    statusCode: 400,
+                    result: err
+                }
             } else {
                 // Succeeded in creating Payment Session
-                response.status(200).send(createPaymentResult).end()
+                const suc: Success = createPaymentResult
+                return {
+                    statusCode: 200,
+                    result: suc
+                }
             }
         }, () => {
-            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+            const err: Error = {
+                "isSuccess": false,
+                ...injectError(authFailedError)
+            }
+            return {
+                result: err
+            }
         })
     })
 
@@ -228,11 +321,20 @@ export const listPayments = onRequest({
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const payments = await getAllPayments(refs, authInstance.uid)
-            response.status(200).send({"isSuccess": true, "payments": payments}).end()
+            const suc: Success = {"isSuccess": true, "payments": payments}
+            return {
+                result: suc
+            }
         }, () => {
-            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+            const err: Error = {
+                "isSuccess": false,
+                ...injectError(authFailedError)
+            }
+            return {
+                result: err
+            }
         })
     })
 
@@ -251,14 +353,14 @@ export const paymentStatus = onRequest({
     if (handleOption(request, response)) return
 
     await onPost(request, response, async () => {
-        await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
-            const id = requireParameter("paymentId", z.string(), request, response)
-            if (!id) return;
+        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const id = requireParameter("paymentId", z.string(), request)
+            if (id.param == undefined) return {result: id.error}
             let userId: string | undefined
             if (authInstance.authType == "ANONYMOUS") {
                 userId = authInstance.uid
             } else if (authInstance.authType == "ADMIN" || authInstance.authType == "SHOP") {
-                userId = requireParameter("userId", z.string().optional(), request, response)
+                userId = requireOptionalParameter("userId", z.string().optional(), request).param
                 if (!userId) {
                     // 自分のpaymentを見たい可能性
                     userId = authInstance.uid
@@ -267,21 +369,35 @@ export const paymentStatus = onRequest({
             if (!userId) {
                 // Failed to get User ID
                 error("in paymentStatus Endpoint,failed to get User Id")
-                response.status(500).send({"isSuccess": false, "error": "[INTERNAL]Failed to get User Id"}).end()
-                return
+                const err: Error = {"isSuccess": false, ...injectError(internalError("Failed to get User Id"))}
+                return {
+                    statusCode: 500,
+                    result: err
+                }
             }
 
-            const payment = await getPaymentSessionById(refs, userId, id)
+            const payment = await getPaymentSessionById(refs, userId, id.param)
             if (!payment) {
-                response.status(400).send({
+                const err: Error = {
                     "isSuccess": false,
-                    "error": "Payment for requested ID doesn't exist."
-                }).end()
-                return
+                    ...injectError(paymentNotFoundError)
+                }
+                return {
+                    result: err
+                }
             }
-            response.status(200).send({"isSuccess": true, "payment": payment}).end()
+            const suc: Success = {"isSuccess": true, "payment": payment}
+            return {
+                result: suc
+            }
         }, () => {
-            response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
+            const err: Error = {
+                "isSuccess": false,
+                ...injectError(authFailedError)
+            }
+            return {
+                result: err
+            }
         })
     })
 
