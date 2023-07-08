@@ -1,8 +1,8 @@
 "use client"
-import {useParams, useSearchParams} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
+import {useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
 import {paymentStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
 import Btn from "@/components/btn";
@@ -14,7 +14,7 @@ import React from "react";
 export default function Page() {
     const params = useSearchParams()
     const id = params.get("id")
-    const {response: data, isLoaded, fetch: reload} = useEndpoint(paymentStatusEndPoint, {paymentId: id})
+    const {response: data, isLoaded, fetch: reload, firstCall} = useLazyEndpoint(paymentStatusEndPoint)
     if (id === null) {
         return (
             <>
@@ -26,6 +26,7 @@ export default function Page() {
         )
     }
     if (!isLoaded) {
+        firstCall({paymentId: id})
         return (
             <>
                 <PageTitle title={"決済セッション:" + id}/>
@@ -66,6 +67,9 @@ export default function Page() {
                                 支払金額: {data.data.payment.totalAmount}円
                             </CardFooter>
                         </Card>
+                        <Btn onClick={() => {
+                            reload({paymentId: id})
+                        }}>再読み込み</Btn>
                     </VStack>
                 </Center>
             </>
@@ -76,7 +80,7 @@ export default function Page() {
             <PageTitle title={"読み込みに失敗しました"}/>
             <Center>
                 <Btn onClick={() => {
-                    reload()
+                    reload({paymentId: id})
                 }}>再読み込み</Btn>
             </Center>
         </>

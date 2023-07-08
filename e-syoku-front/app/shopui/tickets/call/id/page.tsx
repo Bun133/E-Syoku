@@ -2,7 +2,7 @@
 
 import PageTitle from "@/components/pageTitle";
 import {useSearchParams} from "next/navigation";
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
+import {useEndpoint, useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
 import {callTicketEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Loader} from "react-feather";
 import {Center, Heading} from "@chakra-ui/layout";
@@ -11,7 +11,7 @@ import React from "react";
 export default function Page() {
     const params = useSearchParams()
     const id = params.get("id")
-    const {response: data} = useEndpoint(callTicketEndPoint, {ticketId: id}, {callOnMount: true})
+    const {response: data,firstCall} = useLazyEndpoint(callTicketEndPoint)
     if (id === null) {
         return (
             <>
@@ -23,6 +23,7 @@ export default function Page() {
         )
     }
     if (!data) {
+        firstCall({ticketId: id})
         return (
             <div>
                 <PageTitle title={"食券呼び出し"}></PageTitle>
