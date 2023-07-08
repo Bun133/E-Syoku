@@ -2,6 +2,8 @@ import {ZodType} from "zod";
 import {Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {safeAs} from "./safeAs";
+import {Error, Result} from "../types/errors";
+import {error, logTrace} from "./logger";
 
 /**
  * Require a parameter from the request
@@ -9,36 +11,85 @@ import {safeAs} from "./safeAs";
  * @param paramName
  * @param type
  * @param request
- * @param response
  */
-export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request: Request, response: Response): Z | undefined {
+export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request: Request): {
+    param: Z
+} | {
+    param: undefined,
+    error: Error
+} {
     if (typeof request.body === "string") {
         request.body = JSON.parse(request.body)
     }
 
     const parsed = safeAs(type, request.body[paramName]);
-    if (parsed === undefined && !type.isOptional()) {
-        response.status(400).send({
-            "error": `Missing parameter ${paramName} with Type ${type}`,
-            "paramName": paramName
-        }).end();
-        return undefined;
+    if (parsed === undefined) {
+        return {
+            param: undefined,
+            error: {
+                isSuccess: false,
+                error: `Missing parameter ${paramName} with Type ${type}`,
+                errorCode: "MISSING_PARAMETER"
+            }
+        }
     } else {
-        return parsed;
+        return {
+            param: parsed
+        }
     }
 }
 
-export async function onPost<R extends void | Promise<void>>(req: Request, res: Response, body: () => R): Promise<void> {
-    if (res.writableFinished) return
+export function requireOptionalParameter<Z>(paramName: string, type: ZodType<Z>, request: Request): {
+    param: Z | undefined
+} {
+    if (!type.isOptional()) {
+        error("requireOptionalParameter called on non optional type")
+    }
+    if (typeof request.body === "string") {
+        request.body = JSON.parse(request.body)
+    }
+    const parsed = safeAs(type, request.body[paramName]);
+    return {
+        param: parsed
+    }
+}
 
+export type ResultOrPromise = {
+    result: Result,
+    statusCode?: number
+} | Promise<{
+    result: Result,
+    statusCode?: number
+}>
+
+async function handleRequest<R extends ResultOrPromise>(request: Request, response: Response, body: () => R) {
+    if (response.writableFinished) {
+        // response already sent
+        error("in handleRequest, response already sent")
+        logTrace()
+        return
+    }
+    const result = await body();
+    if (result.statusCode === undefined) {
+        if (result.result.isSuccess) {
+            response.status(200).send(result.result).end();
+        } else {
+            response.status(500).send(result.result).end();
+        }
+    } else {
+        response.status(result.statusCode).send(result.result).end();
+    }
+}
+
+export async function onPost<R extends ResultOrPromise>(req: Request, res: Response, body: () => R): Promise<void> {
     if (req.method === "POST") {
-        await body();
+        await handleRequest(req, res, body)
     }
 }
 
-export async function onGet<R extends void | Promise<void>>(req: Request, res: Response, body: () => R): Promise<void> {
+export async function onGet<R extends ResultOrPromise>(req: Request, res: Response, body: () => R): Promise<void> {
     if (req.method === "GET") {
-        await body();
+        await handleRequest(req, res, body)
     }
 }
 
