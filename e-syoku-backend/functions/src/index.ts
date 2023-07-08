@@ -13,6 +13,7 @@ import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById} from "./impls/payment";
+import {error} from "./utils/logger";
 
 
 admin.initializeApp()
@@ -251,34 +252,34 @@ export const paymentStatus = onRequest({
 
     await onPost(request, response, async () => {
         await authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            const id = requireParameter("paymentId", z.string(), request, response)
+            if (!id) return;
+            let userId: string | undefined
             if (authInstance.authType == "ANONYMOUS") {
-                const id = requireParameter("paymentId", z.string(), request, response)
-                if (!id) return;
-                const payment = await getPaymentSessionById(refs, authInstance.uid, id)
-                if (!payment) {
-                    response.status(400).send({
-                        "isSuccess": false,
-                        "error": "Payment for requested ID doesn't exist."
-                    }).end()
-                    return
+                userId = authInstance.uid
+            } else if (authInstance.authType == "ADMIN" || authInstance.authType == "SHOP") {
+                userId = requireParameter("userId", z.string().optional(), request, response)
+                if (!userId) {
+                    // 自分のpaymentを見たい可能性
+                    userId = authInstance.uid
                 }
-                response.status(200).send({"isSuccess": true, "payment": payment}).end()
-            } else if (authInstance.authType == "SHOP" || authInstance.authType == "ADMIN") {
-                const id = requireParameter("paymentId", z.string(), request, response)
-                const userId = requireParameter("userId", z.string().optional(), request, response)
-                if (!id) return;
-                // お客さんの決済セッションデータを閲覧できるように
-                let uid = userId == undefined ? authInstance.uid : userId
-                const payment = await getPaymentSessionById(refs, uid, id)
-                if (!payment) {
-                    response.status(400).send({
-                        "isSuccess": false,
-                        "error": "Payment for requested ID doesn't exist."
-                    }).end()
-                    return
-                }
-                response.status(200).send({"isSuccess": true, "payment": payment}).end()
             }
+            if (!userId) {
+                // Failed to get User ID
+                error("in paymentStatus Endpoint,failed to get User Id")
+                response.status(500).send({"isSuccess": false, "error": "[INTERNAL]Failed to get User Id"}).end()
+                return
+            }
+
+            const payment = await getPaymentSessionById(refs, userId, id)
+            if (!payment) {
+                response.status(400).send({
+                    "isSuccess": false,
+                    "error": "Payment for requested ID doesn't exist."
+                }).end()
+                return
+            }
+            response.status(200).send({"isSuccess": true, "payment": payment}).end()
         }, () => {
             response.status(401).send({"isSuccess": false, "error": "Unauthorized"}).end()
         })
