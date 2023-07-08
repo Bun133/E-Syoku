@@ -147,3 +147,46 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
 
     return {response, isLoaded, fetch: fetch}
 }
+
+export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>) {
+    const token = useFirebaseAuth()
+    const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
+    const [isLoaded, setLoaded] = useState(false)
+    const abort = useRef(new AbortController())
+    const isRequestPending = useRef(false)
+    const isFirstReqSent = useRef(false)
+
+    const call = (requestData: Q) => {
+        if (token.user == undefined) {
+            // 見なかったことにする
+            return
+        }
+        isRequestPending.current = true
+        callEndpoint(endPoint, token.user, requestData, abort.current).then(data => {
+            console.log("SET", data)
+            setResponse(data)
+            setLoaded(true)
+            isRequestPending.current = false
+        })
+    }
+
+    const fetch = (requestData: Q) => {
+        if (isRequestPending.current) {
+            // abort previous request
+            abort.current.abort()
+            console.log("Aborting previous request")
+        }
+        setLoaded(false)
+        call(requestData)
+    }
+
+    const firstCall = (requestData: Q) => {
+        if (!isFirstReqSent.current) {
+            // Send first request
+            fetch(requestData)
+            isFirstReqSent.current = true
+        }
+    }
+
+    return {response, isLoaded, fetch: fetch, firstCall}
+}
