@@ -17,7 +17,7 @@ import Auth = auth.Auth;
  *
  * @return HttpsFunction
  */
-export function onAuthedRequest(auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void, failure?: () => void): HttpsFunction {
+export function onAuthedRequest(auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void, failure: () => void): HttpsFunction {
     return onRequest(async (req: Request, res: Response) => {
         await authed(auth, refs, req, res, success, failure);
     });
@@ -34,17 +34,10 @@ export function onAuthedRequest(auth: Auth, refs: DBRefs, req: Request, res: Res
  *
  * @return Promise<void>
  */
-export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure ?: () => void): Promise<void> {
-    function failed() {
-        if (failure) {
-            failure();
-        }
-    }
-
+export async function authed<R>(auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => R | Promise<R>, failure: () => R | Promise<R>): Promise<R> {
     let token = req.headers.authorization;
     if (!token) {
-        failed();
-        return;
+        return failure();
     }
 
     token = token.replace("Bearer ", "");
@@ -60,7 +53,7 @@ export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Respon
                 auth: user
             }
 
-            await success(authInstance);
+            return success(authInstance);
         } else {
             // Succeeded to authenticate user,but failed to get auth data
             const authInstance: AuthInstance = {
@@ -68,30 +61,26 @@ export async function authed(auth: Auth, refs: DBRefs, req: Request, res: Respon
                 uid: uid,
                 auth: user
             }
-            await success(authInstance);
+            return success(authInstance);
         }
     } else {
-        failed();
+        return failure();
     }
 }
 
-// TODO failure を必須にする
-export async function authedWithType(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => void | Promise<void>, failure?: () => void | Promise<void>) {
-    const failureFunc = failure !== undefined ? failure : () => {
-        res.status(401).send({"isSuccess": false, "error": "Unauthorized"});
-    }
-    await authed(auth, refs, req, res, async (user: AuthInstance) => {
+export async function authedWithType<R>(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => R | Promise<R>, failure: () => R | Promise<R>): Promise<R> {
+    return authed(auth, refs, req, res, async (user: AuthInstance) => {
         if (Array.isArray(authType)) {
             if (authType.includes(user.authType)) {
-                await success(user);
+                return success(user);
             } else {
-                await failureFunc();
+                return failure();
             }
         } else {
             if (user.authType === authType) {
-                await success(user);
+                return success(user);
             } else {
-                await failureFunc();
+                return failure();
             }
         }
     }, failure);
