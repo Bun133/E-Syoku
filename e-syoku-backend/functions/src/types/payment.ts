@@ -51,3 +51,8 @@ export const paymentSessionSchema = z.object({
 })
 
 export type PaymentSession = z.infer<typeof paymentSessionSchema>
+export const paymentSessionDataWithRemainCheckSchema = paymentSessionSchema.and(
+    z.object({remains: z.literal(true)}).or(
+        z.object({remains: z.literal(false)})
+    )
+)
