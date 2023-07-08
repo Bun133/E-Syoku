@@ -11,3 +11,7 @@ export function warn(...obj: any) {
 export function error(...obj: any) {
     fError(obj)
 }
+
+export function logTrace() {
+    console.trace()
+}
