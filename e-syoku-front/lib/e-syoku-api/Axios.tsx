@@ -34,7 +34,8 @@ let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 
 export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     const r = await internalCallEndpoint(endPoint, user, requestData, abortController)
-    console.log("[callEndpoint]", r)
+    console.log("[callEndpoint:Request]", requestData)
+    console.log("[callEndpoint:Response]", r)
     return r
 }
 
