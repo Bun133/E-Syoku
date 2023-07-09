@@ -1,16 +1,13 @@
 import * as admin from "firebase-admin";
 import {dbrefs} from "./utils/db";
 import {
-    applyHeaders,
-    endOfEndPoint,
-    handleOption,
     onPost,
     requireOptionalParameter,
     requireParameter,
-    ResultOrPromise
+    ResultOrPromise, standardFunction
 } from "./utils/endpointUtil";
 import {z} from "zod";
-import {HttpsFunction, onRequest} from "firebase-functions/v2/https";
+import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
@@ -40,14 +37,7 @@ const refs = dbrefs(db);
 // @ts-ignore
 const auth = admin.auth();
 
-export const ticketStatus = onRequest({
-    region: "asia-northeast1",
-    memory: "256MiB",
-    cpu: 1
-}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType<ResultOrPromise>(["ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
@@ -80,21 +70,12 @@ export const ticketStatus = onRequest({
             }
         })
     })
-
-    endOfEndPoint(request, response)
 })
 
 /**
  * List all tickets existing in the database
  */
-export const listTickets = onRequest({
-    region: "asia-northeast1",
-    memory: "256MiB",
-    cpu: 1
-}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const listTickets = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType<ResultOrPromise>(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
                 let allTickets = await listTicketForUser(refs, authInstance.uid);
@@ -117,17 +98,12 @@ export const listTickets = onRequest({
                 }
             })
     })
-
-    endOfEndPoint(request, response)
 });
 
 /**
  * List all shops existing in the database
  */
-export const listShops = onRequest({region: "asia-northeast1", memory: "256MiB", cpu: 1}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const listShops = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return await authedWithType<ResultOrPromise>(["ADMIN", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let docs = await refs.shops.listDocuments();
@@ -154,8 +130,6 @@ export const listShops = onRequest({region: "asia-northeast1", memory: "256MiB",
             }
         })
     })
-
-    endOfEndPoint(request, response)
 })
 
 /**
@@ -177,10 +151,7 @@ export const resolveTicket =
     ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved")
 
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
-    return onRequest({region: "asia-northeast1", memory: "256MiB", cpu: 1}, async (request, response) => {
-        applyHeaders(response)
-        if (handleOption(request, response)) return
-
+    return standardFunction( async (request, response) => {
         await onPost(request, response, async () => {
             return authed<ResultOrPromise>(auth, refs, request, response, async (authInstance: AuthInstance) => {
                 let id = requireParameter("ticketId", z.string(), request)
@@ -231,16 +202,11 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                 }
             })
         })
-
-        endOfEndPoint(request, response)
     })
 }
 
 // 在庫がある商品リスト
-export const listGoods = onRequest({region: "asia-northeast1", memory: "256MiB", cpu: 1}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const listGoods = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const goods = await getAllGoods(refs)
@@ -263,19 +229,10 @@ export const listGoods = onRequest({region: "asia-northeast1", memory: "256MiB",
             }
         })
     })
-
-    endOfEndPoint(request, response)
 })
 
 // 注文内容データから新規決済セッション作成
-export const submitOrder = onRequest({
-    region: "asia-northeast1",
-    memory: "256MiB",
-    cpu: 1
-}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const submitOrder = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const order = requireParameter("order", orderSchema, request)
@@ -305,21 +262,12 @@ export const submitOrder = onRequest({
             }
         })
     })
-
-    endOfEndPoint(request, response)
 })
 
 /**
  * ユーザーに紐づいている決済セッションのデータをすべて送信します
  */
-export const listPayments = onRequest({
-    region: "asia-northeast1",
-    memory: "256MiB",
-    cpu: 1
-}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const listPayments = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const payments = await getAllPayments(refs, authInstance.uid)
@@ -337,21 +285,12 @@ export const listPayments = onRequest({
             }
         })
     })
-
-    endOfEndPoint(request, response)
 })
 
 /**
  * 指定された決済セッションのデータを返却します
  */
-export const paymentStatus = onRequest({
-    region: "asia-northeast1",
-    memory: "256MiB",
-    cpu: 1
-}, async (request, response) => {
-    applyHeaders(response)
-    if (handleOption(request, response)) return
-
+export const paymentStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const id = requireParameter("paymentId", z.string(), request)
@@ -400,6 +339,8 @@ export const paymentStatus = onRequest({
             }
         })
     })
+})
 
-    endOfEndPoint(request, response)
+export const markPaymentPaid = standardFunction(async(req, res)=>{
+
 })

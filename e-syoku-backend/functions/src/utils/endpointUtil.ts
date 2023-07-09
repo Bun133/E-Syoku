@@ -4,6 +4,7 @@ import {Response} from "firebase-functions";
 import {safeAs} from "./safeAs";
 import {Error, Result} from "../types/errors";
 import {error, logTrace} from "./logger";
+import {onRequest} from "firebase-functions/lib/v2/providers/https";
 
 /**
  * Require a parameter from the request
@@ -128,4 +129,17 @@ export function handleOption(q: Request, s: Response) {
     }
 
     return false
+}
+
+export function standardFunction(f: (req: Request, res: Response) => Promise<void>) {
+    return onRequest({
+        region: "asia-northeast1",
+        memory: "256MiB",
+        cpu: 1
+    }, async (request, response) => {
+        applyHeaders(response)
+        if (handleOption(request, response)) return
+        await f(request, response);
+        endOfEndPoint(request, response)
+    })
 }
