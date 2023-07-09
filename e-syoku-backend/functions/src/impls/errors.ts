@@ -57,3 +57,13 @@ export const failedToUpdateTicket: ErrorType = {
     error: "チケット情報の更新に失敗しました",
     errorCode: "FAILED_TO_UPDATE_TICKET"
 }
+
+export const paidWrongAmountError: ErrorType = {
+    error: "決済金額が決済セッションの合計金額と合致しません",
+    errorCode: "PAID_WRONG_AMOUNT"
+}
+
+export const alreadyPaidError: ErrorType = {
+    error: "すでに決済が完了している決済セッションです",
+    errorCode: "ALREADY_PAID"
+}
