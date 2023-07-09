@@ -1,5 +1,5 @@
 "use client"
-import {useSearchParams} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Container, Text} from "@chakra-ui/react";
 import {useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
@@ -15,6 +15,8 @@ export default function Page() {
     const uid = params.get("uid")
     const paymentId = params.get("paymentId")
     const {response: data, firstCall, fetch: reload} = useLazyEndpoint(paymentStatusEndPoint)
+    const router = useRouter()
+
     if (!uid || !paymentId) {
         return (
             <>
@@ -40,7 +42,7 @@ export default function Page() {
         if (data && data.data) {
             return (
                 <>
-                    <PageTitle title={"決済セッション:" + uid +":" + paymentId}/>
+                    <PageTitle title={"決済セッション:" + uid + ":" + paymentId}/>
                     <Center>
                         <VStack>
                             <Card>
@@ -68,6 +70,9 @@ export default function Page() {
                                     支払金額: {data.data.payment.totalAmount}円
                                 </CardFooter>
                             </Card>
+                            <Btn onClick={() => {
+                                router.push(`/shopui/payment/pay?uid=${uid}&paymentId=${paymentId}`)
+                            }}>決済取扱い</Btn>
                             <Btn onClick={() => {
                                 reload({paymentId: paymentId, userId: uid})
                             }}>再読み込み</Btn>
