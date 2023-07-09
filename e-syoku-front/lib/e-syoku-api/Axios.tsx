@@ -1,18 +1,18 @@
 "use client"
 
 import {ZodType} from "zod";
-import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
+import {defaultResponseFormat, DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
 import React, {useEffect, useRef, useState} from "react";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {User} from "@firebase/auth";
 
-export type EndPoint<Q, R> = {
+export type EndPoint<Q, R extends DefaultResponseFormat> = {
     endpointPath: string,
     requestType: ZodType<Q>,
     responseType: ZodType<R>
 }
 
-export function endpoint<Q, R>(endpointPath: string, requestType: ZodType<Q>, responseType: ZodType<R>): EndPoint<Q, R> {
+export function endpoint<Q, R extends DefaultResponseFormat>(endpointPath: string, requestType: ZodType<Q>, responseType: ZodType<R>): EndPoint<Q, R> {
     return {endpointPath: endpointPath, requestType: requestType, responseType: responseType}
 }
 
@@ -20,14 +20,25 @@ export type EndPointResponse<R extends DefaultResponseFormat> = {
     data: R | undefined,
     error: string | undefined,
     success: string | undefined,
+    // defaultResponseFormatでもparse出来なかった
     parseFailed: boolean,
+    // fetch中にerrorがthrowされた
     fetchFailed: boolean,
+    // 正常にparseできたときのAPIResponseのisSuccess
+    // 正常にparse出来なかったときはfalse
+    // defaultResponseFormatでparse出来てもfalse
     isSuccess: boolean,
 }
 
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 
 export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
+    const r = await internalCallEndpoint(endPoint, user, requestData, abortController)
+    console.log("[callEndpoint]", r)
+    return r
+}
+
+async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
     console.log("full path", fullPath)
     if (user == undefined) {
@@ -66,27 +77,70 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
         }
     }
 
-
-    let parsed = await endPoint.responseType.safeParseAsync(await data.json())
+    const json = await data.json()
+    let parsed = await endPoint.responseType.safeParseAsync(json)
     if (parsed.success) {
-        console.log("Parsed", parsed.data)
-        return {
-            data: parsed.data,
-            error: parsed.data.error,
-            success: parsed.data.success,
-            parseFailed: false,
-            fetchFailed: false,
-            isSuccess: parsed.data.isSuccess,
+        // Success parsing
+        if (parsed.data.isSuccess) {
+            // Success Response
+            return {
+                data: parsed.data,
+                error: undefined,
+                success: parsed.data.success,
+                parseFailed: false,
+                fetchFailed: false,
+                isSuccess: parsed.data.isSuccess
+            }
+        } else {
+            // Failed Response
+            return {
+                data: parsed.data,
+                error: parsed.data.error,
+                success: undefined,
+                parseFailed: false,
+                fetchFailed: false,
+                isSuccess: parsed.data.isSuccess,
+            }
         }
     } else {
-        console.log("Endpoint Error:", parsed.error.message)
-        return {
-            data: undefined,
-            error: parsed.error.message,
-            success: undefined,
-            parseFailed: true,
-            fetchFailed: false,
-            isSuccess: false,
+        // Failed to parse,but still be able to parse as DefaultResponseFormat
+        console.log("Try parsing DefaultResponseFormat")
+        const defaultParsed = await defaultResponseFormat.safeParseAsync(json)
+        if (defaultParsed.success) {
+            // Success parsing as DefaultResponseFormat
+            console.log("Success Fallback Parsing")
+            if (defaultParsed.data.isSuccess) {
+                // TODO このパターンが謎
+                return {
+                    data: undefined,
+                    success: defaultParsed.data.success,
+                    error: undefined,
+                    parseFailed: false,
+                    fetchFailed: false,
+                    isSuccess: false
+                }
+            } else {
+                const r = {
+                    data: undefined,
+                    success: undefined,
+                    parseFailed: false,
+                    error: `CODE:[${defaultParsed.data.errorCode}] ${defaultParsed.data.error}`,
+                    fetchFailed: false,
+                    isSuccess: false
+                }
+                return r
+            }
+        } else {
+            // failed fallback parsing as DefaultResponseFormat
+            console.log("Endpoint Fallback Parsing Failed")
+            return {
+                data: undefined,
+                error: parsed.error.message,
+                success: undefined,
+                parseFailed: true,
+                fetchFailed: false,
+                isSuccess: false,
+            }
         }
     }
 }

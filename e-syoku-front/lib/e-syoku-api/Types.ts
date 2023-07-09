@@ -140,11 +140,20 @@ export const paymentSessionSchema = z.object({
 export type PaymentSession = z.infer<typeof paymentSessionSchema>
 
 
-export const defaultResponseFormat = z.object({
-    isSuccess: z.boolean(),
-    success: z.string().optional(),
-    error: z.string().optional(),
+export const successSchema = z.object({
+    isSuccess: z.literal(true),
+    success: z.string().optional()
+}).passthrough()
+
+export const errorSchema = z.object({
+    isSuccess: z.literal(false),
+    error: z.string(),
+    errorCode: z.string()
 })
+
+export const resultSchema = successSchema.or(errorSchema)
+
+export const defaultResponseFormat = resultSchema
 
 export type DefaultResponseFormat = z.infer<typeof defaultResponseFormat>
 

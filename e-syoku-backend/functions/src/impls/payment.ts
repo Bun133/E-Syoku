@@ -158,6 +158,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     }
 
     // TODO 商品の在庫を確保する(在庫数を減らす)
+    // TODO 食券を発行する
 
     // change state
     const updated: PaymentSession = {
