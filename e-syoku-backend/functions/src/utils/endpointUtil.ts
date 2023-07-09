@@ -4,7 +4,7 @@ import {Response} from "firebase-functions";
 import {safeAs} from "./safeAs";
 import {Error, Result} from "../types/errors";
 import {error, logTrace} from "./logger";
-import {onRequest} from "firebase-functions/lib/v2/providers/https";
+import {onRequest} from "firebase-functions/v2/https";
 
 /**
  * Require a parameter from the request
