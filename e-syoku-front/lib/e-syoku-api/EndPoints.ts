@@ -2,11 +2,11 @@ import {endpoint} from "@/lib/e-syoku-api/Axios";
 import {z} from "zod";
 import {
     callTicketResponse,
-    cancelCallingResponse,
+    cancelCallingResponse, defaultResponseFormat,
     listGoodsResponse,
     listPaymentResponse,
     listShopResponse,
-    listTicketResponse,
+    listTicketResponse, markPaymentPaidRequest,
     orderSchema,
     paymentIdRequest,
     paymentStatusResponse,
@@ -30,3 +30,5 @@ export const submitOrderEndPoint = endpoint("submitOrder", z.object({order: orde
 export const listPaymentsEndPoint = endpoint("listPayments", z.object({}), listPaymentResponse)
 
 export const paymentStatusEndPoint = endpoint("paymentStatus", paymentIdRequest, paymentStatusResponse)
+
+export const markPaymentPaidEndpoint = endpoint("markPaymentPaid", markPaymentPaidRequest, defaultResponseFormat)
