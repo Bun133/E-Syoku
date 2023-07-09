@@ -4,7 +4,8 @@ import {
     onPost,
     requireOptionalParameter,
     requireParameter,
-    ResultOrPromise, standardFunction
+    ResultOrPromise,
+    standardFunction
 } from "./utils/endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
@@ -16,7 +17,7 @@ import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
-import {getAllPayments, getPaymentSessionById} from "./impls/payment";
+import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
 import {
     authFailedError,
@@ -29,6 +30,8 @@ import {
 } from "./impls/errors";
 import {Error, Success} from "./types/errors";
 import {shopByRef} from "./impls/shop";
+import {PaidDetail} from "./types/payment";
+import {Timestamp} from "firebase-admin/firestore";
 
 
 admin.initializeApp()
@@ -151,7 +154,7 @@ export const resolveTicket =
     ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved")
 
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
-    return standardFunction( async (request, response) => {
+    return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
             return authed<ResultOrPromise>(auth, refs, request, response, async (authInstance: AuthInstance) => {
                 let id = requireParameter("ticketId", z.string(), request)
@@ -341,6 +344,43 @@ export const paymentStatus = standardFunction(async (request, response) => {
     })
 })
 
-export const markPaymentPaid = standardFunction(async(req, res)=>{
+/**
+ * 決済セッションのステータスをPAIDに変更します
+ */
+export const markPaymentPaid = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authedWithType(["SHOP", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+            let userId = requireParameter("userId", z.string(), req)
+            if (userId.param == undefined) return {result: userId.error}
+            let paymentId = requireParameter("paymentId", z.string(), req)
+            if (paymentId.param == undefined) return {result: paymentId.error}
+            let paidAmount = requireParameter("paidAmount", z.number(), req)
+            if (paidAmount.param == undefined) return {result: paidAmount.error}
+            let paidMeans = requireParameter("paidMeans", z.string(), req)
+            if (paidMeans.param == undefined) return {result: paidMeans.error}
+            let remark = requireOptionalParameter("remark", z.string().optional(), req)
 
+            const paidDetail: PaidDetail = {
+                paymentId: paymentId.param,
+                customerId: userId.param,
+                paymentStaffId: authInstance.uid,
+                paidTime: Timestamp.now(),
+                paidAmount: paidAmount.param,
+                paidMeans: paidMeans.param,
+                remark: remark.param
+            }
+
+            const result = await markPaymentAsPaid(refs, userId.param, paymentId.param, paidDetail)
+            return {
+                result: result
+            }
+        }, () => {
+            return {
+                result: {
+                    "isSuccess": false,
+                    ...injectError(authFailedError)
+                }
+            }
+        })
+    })
 })
