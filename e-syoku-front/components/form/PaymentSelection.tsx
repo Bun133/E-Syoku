@@ -1,7 +1,9 @@
 import {PaymentSession} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
-import {Heading, HStack, VStack} from "@chakra-ui/layout";
+import {Divider, Heading, VStack} from "@chakra-ui/layout";
 import Btn from "@/components/btn";
+import {Card, CardBody, CardHeader} from "@chakra-ui/card";
+import {Container, Spacer} from "@chakra-ui/react";
 
 export function PaymentSelection(props: {
     payments: PaymentSession[] | undefined,
@@ -14,16 +16,35 @@ export function PaymentSelection(props: {
         : ((session: PaymentSession) => undefined)
 
     return (
-        <HStack>
-            {props.payments !== undefined ? props.payments.map((session: PaymentSession) => {
-                return (
-                    <PaymentCard
-                        key={session.sessionId}
-                        session={session}
-                        button={button(session)}></PaymentCard>
-                )
-            }) : null}
-        </HStack>
+        <Container>
+            <Heading>UNPAID</Heading>
+            <Divider/>
+            <VStack>
+                {props.payments !== undefined ? props.payments.filter((session) => session.state === "UNPAID").map((session: PaymentSession) => {
+                    return (
+                        <PaymentCard
+                            key={session.sessionId}
+                            session={session}
+                            button={button(session)}></PaymentCard>
+                    )
+                }) : null}
+            </VStack>
+
+            <Spacer/>
+
+            <Heading>PAID</Heading>
+            <Divider/>
+            <VStack>
+                {props.payments !== undefined ? props.payments.filter((session) => session.state === "PAID").map((session: PaymentSession) => {
+                    return (
+                        <PaymentCard
+                            key={session.sessionId}
+                            session={session}
+                            button={button(session)}></PaymentCard>
+                    )
+                }) : null}
+            </VStack>
+        </Container>
     )
 }
 
@@ -36,16 +57,16 @@ function PaymentCard(param: { session: PaymentSession, button?: ReactNode }) {
 
 
     return (
-        <VStack>
-            <VStack>
-                <Heading>{param.session.sessionId}</Heading>
-            </VStack>
+        <Card>
+            <CardHeader>{param.session.sessionId}</CardHeader>
 
-            <VStack>
-                {param.session.state}
-                <div className={"w-2"}></div>
-                {button}
-            </VStack>
-        </VStack>
+            <CardBody>
+                <VStack>
+                    {param.session.state}
+                    <div className={"w-2"}></div>
+                    {button}
+                </VStack>
+            </CardBody>
+        </Card>
     )
 }
