@@ -13,6 +13,7 @@ import {
     remainDataTypeNotKnownError,
     remainStatusConflictedError,
     remainStatusNegativeError,
+    transactionFailedError,
     updateRemainDataFailedError
 } from "./errors";
 import DocumentReference = firestore.DocumentReference;
@@ -79,65 +80,77 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
  * @param order
  */
 export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> {
-    return refs.db.runTransaction(async (transaction) => {
-        // check if all goods are available
-        const status = await checkOrderRemainStatus(refs, order, transaction)
-        if (!status.isSuccess) {
-            const err: Error = status
-            return err
-        }
-        const {isAllEnough, items} = status
-        if (!isAllEnough) {
-            // not enough goods
-            const err: Error = {
-                isSuccess: false,
-                ...injectError(itemGoneError(items.map(i => i.goodsId)))
+    try {
+        return await refs.db.runTransaction(async (transaction) => {
+            // check if all goods are available
+            const status = await checkOrderRemainStatus(refs, order, transaction)
+            if (!status.isSuccess) {
+                const err: Error = status
+                return err
             }
-            return err
-        }
-
-        // calculate goods remainData to update
-        const calculatedRemainData: (Error | Success & { calculated: GoodsRemainData })[] = order.map((item) => {
-            const itemStatus = status.items.find(i => i.goodsId === item.goodsId)
-            if (itemStatus === undefined) {
+            const {isAllEnough, items} = status
+            if (!isAllEnough) {
+                // not enough goods
                 const err: Error = {
                     isSuccess: false,
-                    ...injectError(remainStatusConflictedError)
+                    ...injectError(itemGoneError(items.map(i => i.goodsId)))
                 }
                 return err
             }
-            const calculated = calculateModifiedRemainData(itemStatus.remainData, item.count)
-            if (!calculated.isSuccess) {
-                const err: Error = calculated
+
+            // calculate goods remainData to update
+            const calculatedRemainData: (Error | Success & { calculated: GoodsRemainData })[] = order.map((item) => {
+                const itemStatus = status.items.find(i => i.goodsId === item.goodsId)
+                if (itemStatus === undefined) {
+                    const err: Error = {
+                        isSuccess: false,
+                        ...injectError(remainStatusConflictedError)
+                    }
+                    return err
+                }
+                const calculated = calculateModifiedRemainData(itemStatus.remainData, item.count)
+                if (!calculated.isSuccess) {
+                    const err: Error = calculated
+                    return err
+                }
+                const suc: (Success & { calculated: GoodsRemainData }) = calculated
+                return suc
+            })
+
+            if (calculatedRemainData.some(i => !i.isSuccess)) {
+                // some item cannot be calculated!
+                const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
                 return err
             }
-            const suc: (Success & { calculated: GoodsRemainData }) = calculated
+
+            const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
+            const updateResult = await Promise.all(toUpdate.map(async s => {
+                const {goodsId, ...rawRemainData} = s.calculated
+                return await updateDataStrict(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
+            }))
+
+            const updateFailure = updateResult.filterInstance(singleErrorSchema)
+            if (updateFailure.length > 0) {
+                // some item cannot be updated!
+                //
+                const err: Error = updateRemainDataFailedError(updateFailure)
+                return err
+            }
+
+            const suc: Success = {
+                isSuccess: true
+            }
             return suc
         })
-
-        if (calculatedRemainData.some(i => !i.isSuccess)) {
-            // some item cannot be calculated!
-            const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
-            return err
+    } catch (e) {
+        // failed
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(transactionFailedError),
+            rawError: e
         }
-
-        const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
-        const updateResult = await Promise.all(toUpdate.map(async s => {
-            return await updateDataStrict(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), s.calculated, transaction)
-        }))
-
-        const updateFailure = updateResult.filterInstance(singleErrorSchema)
-        if (updateFailure.length > 0) {
-            // TODO ロールバック
-            const err: Error = updateRemainDataFailedError(updateFailure)
-            return err
-        }
-
-        const suc: Success = {
-            isSuccess: true
-        }
-        return suc
-    })
+        return err
+    }
 }
 
 /**
