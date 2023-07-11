@@ -2,7 +2,15 @@
 import {useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {Container, FormControl, FormErrorMessage, FormLabel, Input} from "@chakra-ui/react";
+import {
+    Container,
+    FormControl,
+    FormErrorMessage,
+    FormLabel,
+    Input,
+    NumberInput,
+    NumberInputField
+} from "@chakra-ui/react";
 import {useRef, useState} from "react";
 import Btn from "@/components/btn";
 import {callEndpoint} from "@/lib/e-syoku-api/Axios";
@@ -41,7 +49,9 @@ export default function Page() {
                 <VStack>
                     <FormControl isRequired={true} isInvalid={isAmountError}>
                         <FormLabel>決済金額</FormLabel>
-                        <Input type={"number"} value={amount} onChange={(e) => setAmount(Number(e.target.value))}/>
+                        <NumberInput min={0} value={amount} onChange={(s,n) => setAmount(n)}>
+                            <NumberInputField/>
+                        </NumberInput>
                         {isAmountError ? (<FormErrorMessage>
                             金額を入力してください
                         </FormErrorMessage>) : null}
@@ -50,6 +60,7 @@ export default function Page() {
                         const f = async () => {
                             const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
                                 paidAmount: amount,
+                                // TODO paidMeansとremarkを簡単に入力できるように
                                 paidMeans: "テスト",
                                 userId: uid,
                                 paymentId: paymentId,
