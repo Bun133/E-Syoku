@@ -116,3 +116,5 @@ export const updateRemainDataFailedError = representativeError({
 })
 
 export const requestNotContainUserIdError = internalError("リクエストにUIDが含まれていない/指定されていません","REQUEST_NOT_CONTAIN_USER_ID")
+
+export const transactionFailedError = internalError("Transactionの処理に失敗しました","TRANSACTION_FAILED")
