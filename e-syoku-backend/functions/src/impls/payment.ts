@@ -2,7 +2,7 @@ import {DBRefs, newRandomRef, parseData} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
-import {getGoodsById} from "./goods";
+import {getGoodsById, reserveGoods} from "./goods";
 import {firestore} from "firebase-admin";
 import {Error, Success} from "../types/errors";
 import {
@@ -107,14 +107,15 @@ export async function getAllPayments(ref: DBRefs, userid: string) {
  * ***決済金額が決済セッションの合計金額と合致するか確認します***
  * ***決済セッションがすでにPAIDになっていないか確認します***
  * ***決済セッションが存在することを確認します***
+ * ***商品の在庫を減らします***
  * @param refs
  * @param uid
  * @param sessionId
  * @param paidDetail
  */
 export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail) {
-    const ref = refs.payments(uid).doc(sessionId)
-    const payment = await getPaymentSessionByRef(refs, ref)
+    const paymentRef = refs.payments(uid).doc(sessionId)
+    const payment = await getPaymentSessionByRef(refs, paymentRef)
 
     // Check payment exists
     if (!payment) {
@@ -139,7 +140,12 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
 
 
     // Check Remain
-    const {items, isAllEnough} = await checkOrderRemainStatus(refs, payment.orderContent)
+    const status = await checkOrderRemainStatus(refs, payment.orderContent)
+    if (!status.isSuccess) {
+        const err: Error = status
+        return err
+    }
+    const {isAllEnough, items} = status
     if (!isAllEnough) {
         const err: Error = {
             isSuccess: false,
@@ -157,10 +163,17 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
         return err
     }
 
-    // TODO 商品の在庫を確保する(在庫数を減らす)
     // TODO 食券を発行する
 
-    // change state
+    // 商品の在庫を確保(在庫状況をを減らして更新)
+    // TODO 二回商品の在庫情報を読み取っている
+    const reserveRes = await reserveGoods(refs, payment.orderContent)
+    if (!reserveRes.isSuccess) {
+        const err: Error = reserveRes
+        return err
+    }
+
+    // change state of paymentSession
     const updated: PaymentSession = {
         ...payment,
         state: "PAID",
@@ -168,7 +181,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     }
 
     // save to DB
-    await ref.set(updated)
+    await paymentRef.set(updated)
 
     const suc: Success = {
         isSuccess: true

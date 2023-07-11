@@ -2,16 +2,20 @@ import {firestore} from "firebase-admin";
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
+import {Error, Result, Success} from "../types/errors";
+import {injectError, updateDataFailedError} from "../impls/errors";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
 import CollectionReference = firestore.CollectionReference;
+import UpdateData = firestore.UpdateData;
 
 export type DynamicCollectionReference<T> = (t: T) => firestore.CollectionReference<firestore.DocumentData>
 // this type is actually string,but this type refers to the id of the user.
 export type UserIdDBKey = string
 
 export type DBRefs = {
+    db: Firestore,
     tickets: DynamicCollectionReference<UserIdDBKey>,
     shops: firestore.CollectionReference<firestore.DocumentData>,
     auths: firestore.CollectionReference<firestore.DocumentData>,
@@ -26,6 +30,7 @@ export type DBRefs = {
  */
 export function dbrefs(db: Firestore): DBRefs {
     return {
+        db: db,
         tickets: (uid) => db.collection("tickets").doc(uid).collection("tickets"),
         shops: db.collection("shops"),
         auths: db.collection("auths"),
@@ -40,33 +45,39 @@ export function dbrefs(db: Firestore): DBRefs {
  * @param type
  * @param ref
  * @param processing
+ * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
-export function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, processing?: (data: DocumentData) => R): Promise<T | undefined> {
-    return ref.get().then((doc) => {
-        if (doc.exists) {
-            let data = doc.data()!!;
-            let processed: R | DocumentData = data
-            if (processing) {
-                processed = processing(data)
-            }
+export async function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, processing?: (data: DocumentData) => R, transaction?: firestore.Transaction): Promise<T | undefined> {
+    let doc;
+    if (transaction) {
+        doc = await transaction.get(ref)
+    } else {
+        doc = await ref.get()
+    }
 
-            try {
-                const parsed = type.safeParse(processed);
-                if (parsed.success) {
-                    return parsed.data;
-                }else{
-                    error("in ParseData,zod parse failed", parsed.error)
-                    return undefined;
-                }
-            } catch (e) {
-                error("in ParseData,zod threw an error", e)
-            }
-
-            return undefined;
-        } else {
-            return undefined;
+    if (doc.exists) {
+        let data = doc.data()!!;
+        let processed: R | DocumentData = data
+        if (processing) {
+            processed = processing(data)
         }
-    });
+
+        try {
+            const parsed = type.safeParse(processed);
+            if (parsed.success) {
+                return parsed.data;
+            } else {
+                error("in ParseData,zod parse failed", parsed.error)
+                return undefined;
+            }
+        } catch (e) {
+            error("in ParseData,zod threw an error", e)
+        }
+
+        return undefined;
+    } else {
+        return undefined;
+    }
 }
 
 export async function updateData(ref: DocumentReference<firestore.DocumentData>, toUpdate: Partial<DocumentData>): Promise<boolean> {
@@ -74,6 +85,22 @@ export async function updateData(ref: DocumentReference<firestore.DocumentData>,
     if (!data.exists) return false;
     await ref.update(toUpdate);
     return true;
+}
+
+export async function updateDataStrict<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: UpdateData<T>, transaction?: firestore.Transaction): Promise<Result> {
+    try {
+        await ref.update(toUpdate, {exists: true});
+    } catch (e) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(updateDataFailedError)
+        }
+        return err
+    }
+    const suc: Success = {
+        isSuccess: true
+    }
+    return suc
 }
 
 /**

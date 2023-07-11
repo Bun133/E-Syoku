@@ -23,8 +23,8 @@ import {
     authFailedError,
     failedToUpdateTicket,
     injectError,
-    internalError,
     paymentNotFoundError,
+    requestNotContainUserIdError,
     ticketNotFoundError,
     ticketStatusInvalidError
 } from "./impls/errors";
@@ -311,7 +311,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
             if (!userId) {
                 // Failed to get User ID
                 error("in paymentStatus Endpoint,failed to get User Id")
-                const err: Error = {"isSuccess": false, ...injectError(internalError("Failed to get User Id"))}
+                const err: Error = {"isSuccess": false, ...injectError(requestNotContainUserIdError)}
                 return {
                     statusCode: 500,
                     result: err

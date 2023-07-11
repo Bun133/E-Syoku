@@ -1,5 +1,7 @@
 // TSの型チェックを使うためのファンクション
 
+import {MultipleError, SingleError} from "../types/errors";
+
 export function injectError(error: ErrorType) {
     return error
 }
@@ -7,6 +9,34 @@ export function injectError(error: ErrorType) {
 export type ErrorType = {
     error: string,
     errorCode: string
+}
+
+export type RepresentativeErrorType = (errors: SingleError[]) => MultipleError
+
+function representativeError(error: ErrorType): RepresentativeErrorType {
+    return (errors: SingleError[]) => {
+        const r: MultipleError = {
+            isSuccess: false,
+            error: {
+                isSuccess: false,
+                ...injectError(error)
+            },
+            errors: errors
+        }
+        return r
+    }
+}
+
+/**
+ * 起きてはならないエラー、起こしてはならないエラー、構造的にあり得ない条件などに出くわしたときに使用
+ * @param msg
+ * @param errorCode
+ */
+const internalError: (msg: string, errorCode: string) => ErrorType = (msg: string, errorCode: string) => {
+    return {
+        error: msg,
+        errorCode: `INTERNAL_${errorCode}`
+    }
 }
 
 export const authFailedError: ErrorType = {
@@ -22,13 +52,6 @@ export const ticketNotFoundError: ErrorType = {
 export const paymentNotFoundError: ErrorType = {
     error: "指定された決済セッションが見つかりません",
     errorCode: "PAYMENT_NOT_FOUND"
-}
-
-export const internalError: (msg: string) => ErrorType = (msg: string) => {
-    return {
-        error: msg,
-        errorCode: "INTERNAL_ERROR"
-    }
 }
 
 export const itemGoneError: (missedItemsId: string[]) => ErrorType = (ids: string[]) => {
@@ -67,3 +90,29 @@ export const alreadyPaidError: ErrorType = {
     error: "すでに決済が完了している決済セッションです",
     errorCode: "ALREADY_PAID"
 }
+
+export const failedToGetItemDataError: ErrorType = {
+    error: "商品データの取得に失敗しました",
+    errorCode: "FAILED_TO_GET_ITEM_DATA",
+}
+
+export const remainDataTypeNotKnownError: ErrorType = internalError("RemainDataの型が既知の物と合致しません", "REMAIN_DATA_TYPE_NOT_KNOWN")
+
+export const remainStatusConflictedError = internalError("見つかるはずのRemainDataが見つかりませんでした", "REMAIN_STATUS_CONFLICTED")
+
+export const remainDataCalculateFailedError = representativeError({
+    error: "いくつかの商品の在庫数を計算出来ませんでした",
+    errorCode: "REMAIN_DATA_CALCULATE_FAILED"
+})
+export const remainStatusNegativeError: ErrorType = internalError("RemainStatusのremainCountが負の値になりました", "REMAIN_STATUS_NEGATIVE")
+
+export const updateDataFailedError = internalError("Updateの際にエラーが発生したため、Update出来ませんでした", "UPDATE_DATA_FAILED")
+
+// export const updateStrictTypeNotMatchError = internalError("Updateの際に型が合っていないため、Update処理できない", "UPDATE_STRICT_TYPE_NOT_MATCH")
+
+export const updateRemainDataFailedError = representativeError({
+    error: "RemainDataの更新処理に失敗しました",
+    errorCode: "UPDATE_REMAIN_DATA_FAILED"
+})
+
+export const requestNotContainUserIdError = internalError("リクエストにUIDが含まれていない/指定されていません","REQUEST_NOT_CONTAIN_USER_ID")

@@ -4,21 +4,22 @@ import {getRemainDataOfGoods, remainDataIsEnough} from "./goods";
 import {GoodsRemainData} from "../types/goods";
 import {AuthInstance} from "../types/auth";
 import {internalCreatePaymentSession} from "./payment";
-import {injectError, itemGoneError} from "./errors";
+import {failedToGetItemDataError, injectError, itemGoneError} from "./errors";
 import {Error, Success} from "../types/errors";
+import {firestore} from "firebase-admin";
 
 /**
  * 与えられたOrder内の商品の在庫を確認する
  */
-export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order): Promise<{
+export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order, transaction?: firestore.Transaction): Promise<Success & {
     items: {
         goodsId: string,
         remainData: GoodsRemainData,
         isEnough: boolean
     }[], isAllEnough: boolean
-}> {
+} | Error> {
     const items = (await Promise.all(orderData.map(async (order) => {
-        const remain = await getRemainDataOfGoods(ref, order.goodsId)
+        const remain = await getRemainDataOfGoods(ref, order.goodsId, transaction)
         if (!remain) return undefined
         const isEnough = remainDataIsEnough(remain, order.count)
         if (isEnough == undefined) return undefined
@@ -27,11 +28,29 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order): Pro
             remainData: remain,
             isEnough: isEnough
         }
-    }))).filterNotNull({toLog: {message: "in checkOrderRemainStatus, Failed to retrieve remainData for some goods."}})
+    }))).filterNotNullStrict({toLog: {message: "in checkOrderRemainStatus, Failed to retrieve remainData for some goods."}})
 
+    if (items === undefined) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(failedToGetItemDataError)
+        }
+        return err
+    }
 
     const isAllEnough = items.every((item) => item.isEnough)
-    return {items, isAllEnough}
+    const suc: Success & {
+        items: {
+            goodsId: string,
+            remainData: GoodsRemainData,
+            isEnough: boolean
+        }[], isAllEnough: boolean
+    } = {
+        isSuccess: true,
+        items: items,
+        isAllEnough: isAllEnough
+    }
+    return suc
 }
 
 /**
@@ -39,11 +58,15 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order): Pro
  */
 export async function createPaymentSession(ref: DBRefs, customer: AuthInstance, orderData: Order) {
     // Check Items availability
-    const {items, isAllEnough} = await checkOrderRemainStatus(ref, orderData)
-    if (!isAllEnough) {
+    const status = await checkOrderRemainStatus(ref, orderData)
+    if (!status.isSuccess) {
+        const err: Error = status
+        return err
+    }
+    if (!(status.isAllEnough)) {
         const err: Error = {
             isSuccess: false,
-            ...injectError(itemGoneError(items.filter((item) => !item.isEnough).map((item) => item.goodsId)))
+            ...injectError(itemGoneError((status.items).filter((item) => !item.isEnough).map((item) => item.goodsId)))
         }
         return err
     }
