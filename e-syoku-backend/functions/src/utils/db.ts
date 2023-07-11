@@ -89,11 +89,18 @@ export async function updateData(ref: DocumentReference<firestore.DocumentData>,
 
 export async function updateDataStrict<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: UpdateData<T>, transaction?: firestore.Transaction): Promise<Result> {
     try {
-        await ref.update(toUpdate, {exists: true});
+        if (transaction) {
+            await transaction.update(ref, toUpdate);
+        } else {
+            await ref.update(toUpdate);
+        }
     } catch (e) {
         const err: Error = {
             isSuccess: false,
-            ...injectError(updateDataFailedError)
+            ...injectError(updateDataFailedError),
+            toUpdateRef: ref.path,
+            rawError: e,
+            toUpdate: toUpdate,
         }
         return err
     }
