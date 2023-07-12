@@ -1,10 +1,9 @@
 import {ZodType} from "zod";
-import {Request} from "firebase-functions/v2/https";
+import {onRequest, Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {safeAs} from "./safeAs";
 import {Error, Result} from "../types/errors";
-import {error, logTrace} from "./logger";
-import {onRequest} from "firebase-functions/v2/https";
+import {error, logTrace, writeLog} from "./logger";
 
 /**
  * Require a parameter from the request
@@ -73,11 +72,31 @@ async function handleRequest<R extends ResultOrPromise>(request: Request, respon
     const result = await body();
     if (result.statusCode === undefined) {
         if (result.result.isSuccess) {
+            writeLog({
+                severity: "INFO",
+                ...result.result
+            })
             response.status(200).send(result.result).end();
         } else {
+            writeLog({
+                severity: "ERROR",
+                ...result.result
+            })
             response.status(500).send(result.result).end();
         }
     } else {
+        const firstDigit = Number(result.statusCode.toString()[0])
+        if (firstDigit === 4 || firstDigit === 5) {
+            writeLog({
+                severity: "ERROR",
+                ...result.result
+            })
+        } else {
+            writeLog({
+                severity: "INFO",
+                ...result.result
+            })
+        }
         response.status(result.statusCode).send(result.result).end();
     }
 }
