@@ -14,6 +14,7 @@ import {
     paymentNotFoundError
 } from "./errors";
 import {checkOrderRemainStatus} from "./order";
+import {registerTicketsForPayment} from "./ticket";
 import DocumentReference = firestore.DocumentReference;
 
 /**
@@ -113,7 +114,9 @@ export async function getAllPayments(ref: DBRefs, userid: string) {
  * @param sessionId
  * @param paidDetail
  */
-export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail) {
+export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
+    ticketsId: string[]
+}> {
     const paymentRef = refs.payments(uid).doc(sessionId)
     const payment = await getPaymentSessionByRef(refs, paymentRef)
 
@@ -163,7 +166,6 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
         return err
     }
 
-    // TODO 食券を発行する
 
     // 商品の在庫を確保(在庫状況をを減らして更新)
     // TODO 二回商品の在庫情報を読み取っている
@@ -173,18 +175,25 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
         return err
     }
 
-    // change state of paymentSession
+    const ticketRes = await registerTicketsForPayment(refs, uid, payment)
+    if (!ticketRes.isSuccess) {
+        const err: Error = ticketRes
+        return err
+    }
+
+    // 決済セッションのステータスを支払い済みに変更
     const updated: PaymentSession = {
         ...payment,
         state: "PAID",
         paidDetail: paidDetail
     }
 
-    // save to DB
+    // 決済セッションを保存
     await paymentRef.set(updated)
 
-    const suc: Success = {
-        isSuccess: true
+    const suc: Success & { ticketsId: string[] } = {
+        isSuccess: true,
+        ticketsId: ticketRes.ticketsId
     }
 
     return suc
