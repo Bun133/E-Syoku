@@ -4,6 +4,8 @@ export const uniqueId = z.string()
 
 export const ticketStatus = z.enum(["PROCESSING", "CALLED", "INFORMED", "RESOLVED"])
 
+export type TicketStatus = z.infer<typeof ticketStatus>
+
 const timeStampSchema = z.object({
     _seconds: z.number(),
     _nanoseconds: z.number()

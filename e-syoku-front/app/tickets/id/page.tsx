@@ -10,6 +10,7 @@ import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {Loader} from "react-feather";
 import {Card, CardBody, CardHeader} from "@chakra-ui/card";
 import {Box, Text} from "@chakra-ui/react";
+import {orderDataTransform, ticketStatusTransform} from "@/lib/e-syoku-api/Transformers";
 
 export default function Page() {
     const params = useSearchParams()
@@ -55,14 +56,13 @@ export default function Page() {
 
                         <CardBody>
                             <VStack>
-                                <Text>Status : {ticket.status}</Text>
+                                <Text>Status : {ticketStatusTransform(ticket.status)}</Text>
                                 <Text>UniqueId : {ticket.uniqueId}</Text>
                                 <Text>ShopId : {ticket.shopId}</Text>
                                 <Text>PaymentSessionId :{ticket.paymentSessionId}</Text>
-                                <Text>OrderData
-                                    :{ticket.orderData.map((item) => `[${item.goodsId}=${item.count}]`).join(",")}</Text>
-                                // TODO 時刻表示
-                                <Text>IssueTime :{new Date(ticket.issueTime._seconds).toLocaleTimeString()}</Text>
+                                <Text>OrderData :{orderDataTransform(ticket.orderData)}</Text>
+                                {/**TODO 時刻表示**/}
+                                <Text>IssueTime :{ticket.issueTime._seconds}</Text>
                             </VStack>
                         </CardBody>
                     </Card>
