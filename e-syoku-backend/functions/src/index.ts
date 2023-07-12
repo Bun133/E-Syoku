@@ -42,7 +42,7 @@ const auth = admin.auth();
 
 export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType<ResultOrPromise>(["ADMIN", "SHOP","ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
             let ticket = await ticketById(refs, authInstance.uid, ticketId.param);
