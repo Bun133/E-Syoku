@@ -1,10 +1,14 @@
-import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
+import {Ticket, ticketSchema} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import {DBRefs, newRandomRef, parseData, updateData} from "../utils/db";
 import {UniqueId} from "../types/types";
-import {Order} from "../types/order";
+import {Error, Success} from "../types/errors";
+import {PaymentSession} from "../types/payment";
+import {getGoodsById} from "./goods";
+import {failedToGetItemDataError, injectError} from "./errors";
+import {Order, SingleOrder} from "../types/order";
 import DocumentReference = firestore.DocumentReference;
-import Timestamp = firestore.Timestamp;
+import {Timestamp} from "firebase-admin/firestore";
 
 /**
  * Should not be called directly.
@@ -65,38 +69,79 @@ export async function updateTicketByRef(ref: DBRefs, ticketRef: DocumentReferenc
 }
 
 /**
- * Register New Ticket.
- * This function should not be called directly.
- * @param ref
+ * 食券を発行する時に、食券の表示名を生成する関数
  * @param shopId
- * @param ticketNum
- * @param customerId
- * @param orderData
- * @param paymentSessionId
  */
-export async function registerNewTicket(ref: DBRefs,
-                                        shopId: UniqueId,
-                                        ticketNum: UniqueId,
-                                        customerId: UniqueId,
-                                        orderData: Order,
-                                        paymentSessionId: UniqueId): Promise<Ticket> {
-    let ticketRef = await newRandomRef(ref.tickets(customerId));
-    // TODO Check if shop exists with Authentication
-    let data = {
-        ticketNum: ticketNum,
-        shopId: shopId,
-        customerId: customerId,
-        issueTime: Timestamp.now(),
-        orderData: orderData,
-        paymentSessionId: paymentSessionId,
-        status: "PROCESSING" as TicketStatus
+async function generateTicketNum(shopId: UniqueId): Promise<string> {
+    return "T-1"
+}
+
+/**
+ * 決済セッションのデータから食券を発行します
+ * ***支払いが完了したかどうかは確認しません***
+ * ***店舗ごとに発行されます***
+ * @param ref
+ * @param uid
+ * @param payment
+ */
+export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession): Promise<Error | (Success & {
+    ticketsId: string[]
+})> {
+    // Get ItemData
+    const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
+        const itemData = await getGoodsById(ref, e.goodsId)
+        if (itemData === undefined) {
+            return undefined
+        }
+        return {
+            ...e,
+            itemData: itemData
+        }
+    }))).filterNotNullStrict()
+    if (orderWithShopData === undefined) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(failedToGetItemDataError)
+        }
+        return err
     }
 
-    await ticketRef.set(data);
-
-
-    return {
-        uniqueId: ticketRef.id,
-        ...data
+    // 店舗ごとに振り分け
+    const shopMap: Map<UniqueId, SingleOrder[]> = new Map()
+    for (const order of orderWithShopData) {
+        if (shopMap.has(order.itemData.shopId)) {
+            shopMap.get(order.itemData.shopId)!.push(order)
+        } else {
+            shopMap.set(order.itemData.shopId, [order])
+        }
     }
+
+    // 食券書き込み
+    const writtenTicketIds: string[] = []
+
+    let shopId: string
+    let order: Order
+    for ([shopId, order] of shopMap.toArray()) {
+        const toWriteRef = await newRandomRef(ref.tickets(uid))
+        const ticketData: Ticket = {
+            uniqueId: toWriteRef.id,
+            customerId: uid,
+            shopId: shopId,
+            orderData: order,
+            status: "PROCESSING",
+            issueTime: Timestamp.now(),
+            paymentSessionId: payment.sessionId,
+            ticketNum: await generateTicketNum(shopId)
+        }
+
+        await toWriteRef.set(ticketData)
+        writtenTicketIds.push(toWriteRef.id)
+    }
+
+    const suc: Success & { ticketsId: string[] } = {
+        isSuccess: true,
+        ticketsId: writtenTicketIds
+    }
+
+    return suc
 }
