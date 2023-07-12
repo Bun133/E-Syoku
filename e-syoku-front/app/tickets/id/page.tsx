@@ -6,7 +6,10 @@ import {useSearchParams} from "next/navigation";
 import React from "react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import Btn from "@/components/btn";
-import {Center, Heading} from "@chakra-ui/layout";
+import {Center, Heading, VStack} from "@chakra-ui/layout";
+import {Loader} from "react-feather";
+import {Card, CardBody, CardHeader} from "@chakra-ui/card";
+import {Box, Text} from "@chakra-ui/react";
 
 export default function Page() {
     const params = useSearchParams()
@@ -29,27 +32,45 @@ export default function Page() {
         return (
             <div>
                 <PageTitle title={"読み込み中"}></PageTitle>
-                <div className={"flex flex-col items-center justify-center"}>
-                    <div className={"font-bold text-xl"}>読み込み中</div>
-                </div>
+                <Center>
+                    <Loader/>
+                </Center>
             </div>
         )
     }
 
     if (ticket !== undefined) {
         return (
-            <div>
+            <>
                 <PageTitle title={"食券番号 " + ticket.ticketNum}></PageTitle>
-                <div>
-                    <div className={"flex flex-col items-center justify-center"}>{ticket.ticketNum}</div>
-                    <div>Status : {data?.data?.ticket?.status}</div>
-                    <div>UniqueId : {data?.data?.ticket?.uniqueId}</div>
-                    <div>ShopId : {data?.data?.ticket?.shopId}</div>
-                    <div className={"flex flex-col items-center justify-center mt-10"}>
+                <VStack>
+                    <Card>
+
+                        <Box backgroundColor={"gray.200"} borderRadius={10} mx={4} my={1}>
+                            <Center>
+                                <CardHeader><Heading>{ticket.ticketNum}</Heading></CardHeader>
+                            </Center>
+                        </Box>
+
+
+                        <CardBody>
+                            <VStack>
+                                <Text>Status : {ticket.status}</Text>
+                                <Text>UniqueId : {ticket.uniqueId}</Text>
+                                <Text>ShopId : {ticket.shopId}</Text>
+                                <Text>PaymentSessionId :{ticket.paymentSessionId}</Text>
+                                <Text>OrderData
+                                    :{ticket.orderData.map((item) => `[${item.goodsId}=${item.count}]`).join(",")}</Text>
+                                // TODO 時刻表示
+                                <Text>IssueTime :{new Date(ticket.issueTime._seconds).toLocaleTimeString()}</Text>
+                            </VStack>
+                        </CardBody>
+                    </Card>
+                    <Center>
                         <Btn onClick={() => reload()}>再読み込み</Btn>
-                    </div>
-                </div>
-            </div>
+                    </Center>
+                </VStack>
+            </>
         )
     } else {
         return (
