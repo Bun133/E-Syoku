@@ -1,35 +1,30 @@
 "use client"
 
 import PageTitle from "@/components/pageTitle";
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
 import {TicketSelection} from "@/components/form/TicketSelection";
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {VStack} from "@chakra-ui/layout";
+import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 
 export default function Page() {
-    const {response: tickets, isLoaded, fetch: reload} = useEndpoint(listTicketsEndPoint, {})
-
-    if (!isLoaded) {
-        return (
-            <PageTitle title={"読み込み中"}></PageTitle>
-        )
-    }
     return (
-        <div>
+        <>
             <PageTitle title="食券一覧"></PageTitle>
-            <VStack>
-                <TicketSelection tickets={tickets!!.data!!.tickets} onSelect={(ticket: Ticket) => {
-                    console.log("selected", ticket)
-                }}></TicketSelection>
+            <APIEndpoint endpoint={listTicketsEndPoint} query={{}} onEnd={(response, reload) => {
+                return (
+                    <VStack>
+                        <TicketSelection tickets={response.data.tickets} onSelect={(ticket: Ticket) => {
+                            console.log("selected", ticket)
+                        }}></TicketSelection>
 
-                <Btn onClick={() => {
-                    reload()
-                }}>
-                    再読み込み
-                </Btn>
-            </VStack>
-        </div>
+                        <Btn onClick={reload}>
+                            再読み込み
+                        </Btn>
+                    </VStack>
+                )
+            }}/>
+        </>
     )
 }

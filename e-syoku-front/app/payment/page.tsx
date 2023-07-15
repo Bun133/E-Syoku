@@ -1,38 +1,25 @@
 "use client"
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listPaymentsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import PageTitle from "@/components/pageTitle";
-import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {Loader} from "react-feather";
+import {VStack} from "@chakra-ui/layout";
 import {PaymentSelection} from "@/components/form/PaymentSelection";
+import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
+import {Spacer} from "@chakra-ui/react";
+import Btn from "@/components/btn";
 
 export default function Page() {
-    const {response: data} = useEndpoint(listPaymentsEndPoint, {})
-    if (data) {
-        if (data.data) {
-            return (
-                <>
-                    <PageTitle title={"決済一覧"}></PageTitle>
+    return (
+        <>
+            <PageTitle title={"決済一覧"}></PageTitle>
+            <APIEndpoint endpoint={listPaymentsEndPoint} query={{}} onEnd={(response, reload) => {
+                return (
                     <VStack>
-                        <PaymentSelection payments={data.data.payments} onSelect={console.log}></PaymentSelection>
+                        <PaymentSelection payments={response.data.payments} onSelect={console.log}></PaymentSelection>
+                        <Spacer/>
+                        <Btn onClick={reload}>再読み込み</Btn>
                     </VStack>
-                </>
-            )
-        }
-        return (
-            <>
-                <PageTitle title={"決済一覧"}></PageTitle>
-                <Heading>
-                    データの取得に失敗しました
-                </Heading>
-            </>
-        )
-    } else {
-        return (
-            <>
-                <PageTitle title={"決済一覧"}></PageTitle>
-                <Center><Loader></Loader></Center>
-            </>
-        )
-    }
+                )
+            }}/>
+        </>
+    )
 }
