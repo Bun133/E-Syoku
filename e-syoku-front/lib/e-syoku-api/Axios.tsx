@@ -16,8 +16,7 @@ export function endpoint<Q, R extends DefaultResponseFormat>(endpointPath: strin
     return {endpointPath: endpointPath, requestType: requestType, responseType: responseType}
 }
 
-export type EndPointResponse<R extends DefaultResponseFormat> = {
-    data: R | undefined,
+type EndPointBaseResponse<R extends DefaultResponseFormat> = {
     error: string | undefined,
     success: string | undefined,
     // defaultResponseFormatでもparse出来なかった
@@ -29,6 +28,15 @@ export type EndPointResponse<R extends DefaultResponseFormat> = {
     // defaultResponseFormatでparse出来てもfalse
     isSuccess: boolean,
 }
+
+export type EndPointSuccessResponse<R extends DefaultResponseFormat> = {
+    data: R,
+} & EndPointBaseResponse<R>
+export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
+    data: undefined,
+} & EndPointBaseResponse<R>
+
+export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessResponse<R> | EndPointErrorResponse<R>
 
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
 
@@ -211,36 +219,38 @@ export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: En
     const isRequestPending = useRef(false)
     const isFirstReqSent = useRef(false)
 
-    const call = (requestData: Q) => {
+    const call = async (requestData: Q) => {
         if (token.user == undefined) {
             // 見なかったことにする
             return
         }
         isRequestPending.current = true
-        callEndpoint(endPoint, token.user, requestData, abort.current).then(data => {
-            console.log("SET", data)
-            setResponse(data)
-            setLoaded(true)
-            isRequestPending.current = false
-        })
+        const data = await callEndpoint(endPoint, token.user, requestData, abort.current)
+        console.log("SET", data)
+        setResponse(data)
+        setLoaded(true)
+        isRequestPending.current = false
+        return data
     }
 
-    const fetch = (requestData: Q) => {
+    const fetch = async (requestData: Q) => {
         if (isRequestPending.current) {
             // abort previous request
             abort.current.abort()
             console.log("Aborting previous request")
         }
         setLoaded(false)
-        call(requestData)
+        return call(requestData)
     }
 
-    const firstCall = (requestData: Q) => {
+    const firstCall = async (requestData: Q) => {
         if (!isFirstReqSent.current) {
             // Send first request
-            fetch(requestData)
+            const data = await fetch(requestData)
             isFirstReqSent.current = true
+            return data
         }
+        return undefined
     }
 
     return {response, isLoaded, fetch: fetch, firstCall}
