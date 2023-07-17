@@ -1,5 +1,5 @@
 import {Goods, GoodsRemainData, goodsRemainDataSchema, goodsSchema} from "../types/goods";
-import {DBRefs, parseData, updateDataStrict} from "../utils/db";
+import {DBRefs, parseData, updateEntireData} from "../utils/db";
 import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
@@ -126,7 +126,7 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
             const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
             const updateResult = await Promise.all(toUpdate.map(async s => {
                 const {goodsId, ...rawRemainData} = s.calculated
-                return await updateDataStrict(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
+                return await updateEntireData(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
             }))
 
             const updateFailure = updateResult.filterInstance(singleErrorSchema)

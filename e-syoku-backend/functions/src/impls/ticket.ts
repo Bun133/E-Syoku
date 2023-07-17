@@ -7,8 +7,10 @@ import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
 import {failedToGetItemDataError, injectError} from "./errors";
 import {Order, SingleOrder} from "../types/order";
-import DocumentReference = firestore.DocumentReference;
 import {Timestamp} from "firebase-admin/firestore";
+import DocumentReference = firestore.DocumentReference;
+import {generateNextTicketNum, updateLastTicketNum} from "./ticketNumInfos";
+import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
 
 /**
  * Should not be called directly.
@@ -69,14 +71,6 @@ export async function updateTicketByRef(ref: DBRefs, ticketRef: DocumentReferenc
 }
 
 /**
- * 食券を発行する時に、食券の表示名を生成する関数
- * @param shopId
- */
-async function generateTicketNum(shopId: UniqueId): Promise<string> {
-    return "T-1"
-}
-
-/**
  * 決済セッションのデータから食券を発行します
  * ***支払いが完了したかどうかは確認しません***
  * ***店舗ごとに発行されます***
@@ -121,8 +115,11 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
 
     let shopId: string
     let order: Order
+    // 店舗ごとに分けたOrderから食券登録
     for ([shopId, order] of shopMap.toArray()) {
         const toWriteRef = await newRandomRef(ref.tickets(uid))
+        const nextTicketNum = await generateNextTicketNum(ref, shopId, uid)
+
         const ticketData: Ticket = {
             uniqueId: toWriteRef.id,
             customerId: uid,
@@ -131,11 +128,13 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
             status: "PROCESSING",
             issueTime: Timestamp.now(),
             paymentSessionId: payment.sessionId,
-            ticketNum: await generateTicketNum(shopId)
+            ticketNum: nextTicketNum.nextTicketNum
         }
 
         await toWriteRef.set(ticketData)
         writtenTicketIds.push(toWriteRef.id)
+        await updateLastTicketNum(ref, ticketData)
+        await updateTicketDisplayDataForTicket(ref, ticketData)
     }
 
     const suc: Success & { ticketsId: string[] } = {
