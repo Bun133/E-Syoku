@@ -107,6 +107,7 @@ export const remainDataCalculateFailedError = representativeError({
 export const remainStatusNegativeError: ErrorType = internalError("RemainStatusのremainCountが負の値になりました", "REMAIN_STATUS_NEGATIVE")
 
 export const updateDataFailedError = internalError("Updateの際にエラーが発生したため、Update出来ませんでした", "UPDATE_DATA_FAILED")
+export const setDataFailedError = internalError("SETの際にエラーが発生したため、Update出来ませんでした", "SET_DATA_FAILED")
 
 // export const updateStrictTypeNotMatchError = internalError("Updateの際に型が合っていないため、Update処理できない", "UPDATE_STRICT_TYPE_NOT_MATCH")
 

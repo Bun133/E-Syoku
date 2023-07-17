@@ -1,4 +1,4 @@
-import {DBRefs, parseData, parseDataAll, updateEntireData} from "../utils/db";
+import {DBRefs, parseData, parseDataAll, setData} from "../utils/db";
 import {ticketDisplaySchema} from "../types/ticketDisplays";
 import {Ticket} from "../types/ticket";
 
@@ -27,7 +27,7 @@ export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string) {
  * @param ticket
  */
 export async function updateTicketDisplayDataForTicket(ref: DBRefs, ticket: Ticket) {
-    return updateEntireData(ticketDisplaySchema, ref.ticketDisplays(ticket.shopId).doc(ticket.uniqueId), {
+    return setData(ticketDisplaySchema, ref.ticketDisplays(ticket.shopId).doc(ticket.uniqueId), {
         status: ticket.status,
         ticketId: ticket.uniqueId,
         ticketDataRef: ref.tickets(ticket.customerId).doc(ticket.uniqueId),

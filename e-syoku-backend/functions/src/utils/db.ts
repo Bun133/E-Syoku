@@ -3,7 +3,7 @@ import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
 import {Error, Result, Success} from "../types/errors";
-import {injectError, updateDataFailedError} from "../impls/errors";
+import {injectError, setDataFailedError, updateDataFailedError} from "../impls/errors";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
@@ -151,6 +151,28 @@ export async function updatePartialData<T extends DocumentData>(type: ZodType<T>
     return suc
 }
 
+export async function setData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toSet: T, transaction?: firestore.Transaction): Promise<Result> {
+    try {
+        if (transaction) {
+            await transaction.set(ref, toSet);
+        } else {
+            await ref.set(toSet);
+        }
+    } catch (e) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(setDataFailedError),
+            toSetRef: ref.path,
+            rawError: e,
+            toSet: toSet,
+        }
+        return err
+    }
+    const suc: Success = {
+        isSuccess: true
+    }
+    return suc
+}
 /**
  * return random ref in [parent] collection. With checking if the ref is not taken.
  * @param parent
