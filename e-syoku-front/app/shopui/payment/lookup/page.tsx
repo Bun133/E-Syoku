@@ -17,7 +17,6 @@ export default function Page() {
 
     return (
         <>
-            <PageTitle title={`決済セッション:${uid}:${paymentId}`}/>
             <APIEndpoint endpoint={paymentStatusEndPoint} query={{userId: uid, paymentId: paymentId}}
                          onEnd={(response, reload) => {
                              const payment = response.data.payment
