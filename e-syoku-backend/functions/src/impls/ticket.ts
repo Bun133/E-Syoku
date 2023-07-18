@@ -52,10 +52,6 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
             ...data
         }
     })
-
-    const ticketsCollectionRef = ref.tickets(uid)
-    const ticketsSnapshot = await ticketsCollectionRef.listDocuments();
-    return (await Promise.all(ticketsSnapshot.map(ticketRef => ticketByRef(ref, uid, ticketRef)))).filterNotNull();
 }
 
 /**
