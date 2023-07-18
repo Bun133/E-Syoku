@@ -45,7 +45,7 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
  * @param uid
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
-    return parseDataAll(ticketSchema,ref.tickets(uid), (doc, data) => {
+    return parseDataAll(ticketSchema, ref.tickets(uid), (doc, data) => {
         return {
             uniqueId: doc.id,
             customerId: uid,
@@ -73,7 +73,8 @@ export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: str
         }
         return err
     }
-    if (ticket.status === toStatus) {
+    if (ticket.status !== fromStatus) {
+        // チケットのステータスが変更前のステータスではない
         const err: Error = {
             "isSuccess": false,
             ...injectError(ticketStatusInvalidError(fromStatus, ticket.status))
@@ -81,24 +82,18 @@ export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: str
         return err
     }
 
+    // 変更後のチケットのデータ
     const toWriteTicket: Ticket = {
         ...ticket,
         status: toStatus
     }
 
-    let writeResult: Result = {
-        isSuccess: true
-    }
-
-    if (transaction) {
-        await transaction.update(ticketRef, {
-            status: toStatus
-        })
-    } else {
-        writeResult = await updateEntireData(ticketSchema, ticketRef, toWriteTicket)
-    }
+    // チケットのデータをもとに、DBを更新
+    let writeResult: Result = await updateEntireData(ticketSchema, ticketRef, toWriteTicket, transaction)
 
     if (writeResult.isSuccess) {
+        // チケットのDisplayDataも変更
+        // TODO エラーハンドリングをどうするのか
         await updateTicketDisplayDataForTicket(ref, toWriteTicket)
         const suc: Success = {
             isSuccess: true,
@@ -120,7 +115,7 @@ export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: str
 export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession): Promise<Error | (Success & {
     ticketsId: string[]
 })> {
-    // Get ItemData
+    // 商品データを取得
     const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
         const itemData = await getGoodsById(ref, e.goodsId)
         if (itemData === undefined) {
@@ -132,6 +127,7 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
         }
     }))).filterNotNullStrict()
     if (orderWithShopData === undefined) {
+        // 一つでも商品データを取得できなかった場合はエラーに
         const err: Error = {
             isSuccess: false,
             ...injectError(failedToGetItemDataError)
@@ -149,16 +145,19 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
         }
     }
 
-    // 食券書き込み
+    // 書き込み済のチケットのID
     const writtenTicketIds: string[] = []
 
     let shopId: string
     let order: Order
     // 店舗ごとに分けたOrderから食券登録
     for ([shopId, order] of shopMap.toArray()) {
+        // ランダムに新しいRefを取得してチケットを登録
         const toWriteRef = await newRandomRef(ref.tickets(uid))
+        // この食券のTicketNumを取得
         const nextTicketNum = await generateNextTicketNum(ref, shopId, uid)
 
+        // チケットデータを生成
         const ticketData: Ticket = {
             uniqueId: toWriteRef.id,
             customerId: uid,
@@ -170,9 +169,15 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
             ticketNum: nextTicketNum.nextTicketNum
         }
 
+        // チケットデータを書き込み
+        // TODO Transaction
         await toWriteRef.set(ticketData)
         writtenTicketIds.push(toWriteRef.id)
+        // LastTicketNumを更新
+        // TODO Transaction
         await updateLastTicketNum(ref, ticketData)
+        // TicketDisplayDataを更新
+        // TODO Transaction
         await updateTicketDisplayDataForTicket(ref, ticketData)
     }
 
