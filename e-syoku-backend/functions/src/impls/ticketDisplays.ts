@@ -12,10 +12,10 @@ export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, t
 }
 
 export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Promise<TicketDisplayData[]> {
-    return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId), (data) => {
+    return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId), (doc,data) => {
         return {
             ...data,
-            ticketId: data.id
+            ticketId: doc.id
         }
     })
 }

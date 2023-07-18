@@ -1,6 +1,6 @@
 import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
-import {DBRefs, newRandomRef, parseData, updateEntireData} from "../utils/db";
+import {DBRefs, newRandomRef, parseData, parseDataAll, updateEntireData} from "../utils/db";
 import {UniqueId} from "../types/types";
 import {Error, Result, Success} from "../types/errors";
 import {PaymentSession} from "../types/payment";
@@ -45,6 +45,14 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
  * @param uid
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
+    return parseDataAll(ticketSchema,ref.tickets(uid), (doc, data) => {
+        return {
+            uniqueId: doc.id,
+            customerId: uid,
+            ...data
+        }
+    })
+
     const ticketsCollectionRef = ref.tickets(uid)
     const ticketsSnapshot = await ticketsCollectionRef.listDocuments();
     return (await Promise.all(ticketsSnapshot.map(ticketRef => ticketByRef(ref, uid, ticketRef)))).filterNotNull();
