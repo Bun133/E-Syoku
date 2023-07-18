@@ -190,6 +190,9 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 export const ticketIdRequest = z.object({
     ticketId: uniqueId
 })
+export const ticketIdWithUserIdRequest = ticketIdRequest.and(z.object({
+    uid: uniqueId
+}))
 
 export const goodsWithRemainDataSchema = z.object({key: goodsSchema, value: goodsRemainDataSchema})
 

@@ -10,9 +10,9 @@ import {
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
-import {authed, authedWithType} from "./utils/auth";
+import {authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
-import {listTicketForUser, ticketById, updateTicketById} from "./impls/ticket";
+import {listTicketForUser, ticketById, updateTicketStatus} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
@@ -21,12 +21,10 @@ import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/
 import {error} from "./utils/logger";
 import {
     authFailedError,
-    failedToUpdateTicket,
     injectError,
     paymentNotFoundError,
     requestNotContainUserIdError,
-    ticketNotFoundError,
-    ticketStatusInvalidError
+    ticketNotFoundError
 } from "./impls/errors";
 import {Error, Success} from "./types/errors";
 import {shopByRef} from "./impls/shop";
@@ -42,7 +40,7 @@ const auth = admin.auth();
 
 export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ADMIN", "SHOP","ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType<ResultOrPromise>(["ADMIN", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
             let ticket = await ticketById(refs, authInstance.uid, ticketId.param);
@@ -156,11 +154,13 @@ export const resolveTicket =
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
-            return authed<ResultOrPromise>(auth, refs, request, response, async (authInstance: AuthInstance) => {
+            return authedWithType<ResultOrPromise>(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
+                let userId = requireParameter("uid", z.string(), request)
+                if (userId.param === undefined) return {result: userId.error}
                 let id = requireParameter("ticketId", z.string(), request)
                 if (id.param == undefined) return {result: id.error}
 
-                let ticket = await ticketById(refs, authInstance.uid, id.param)
+                let ticket = await ticketById(refs, userId.param, id.param)
                 if (!ticket) {
                     const err: Error = {
                         "isSuccess": false,
@@ -171,30 +171,17 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                         result: err
                     }
                 }
-                if (ticket.status !== fromStatus) {
-                    const err: Error = {
-                        "isSuccess": false,
-                        ...injectError(ticketStatusInvalidError(fromStatus, ticket.status))
-                    }
+                let called = await updateTicketStatus(refs, userId.param, id.param, fromStatus, toStatus)
+                if (!called.isSuccess) {
+                    const err: Error = called
                     return {
                         statusCode: 400,
                         result: err
                     }
                 }
 
-                let called = await updateTicketById(refs, authInstance.uid, id.param, {
-                    status: toStatus
-                })
-                if (called) {
-                    const suc: Success = {"isSuccess": true, "success": successMessage}
-                    return {result: suc}
-                } else {
-                    const err: Error = {"isSuccess": false, ...injectError(failedToUpdateTicket)}
-                    return {
-                        statusCode: 400,
-                        result: err
-                    }
-                }
+                const suc: Success = {"isSuccess": true, "success": successMessage}
+                return {result: suc}
             }, () => {
                 const err: Error = {
                     "isSuccess": false,

@@ -1,16 +1,17 @@
-import {Ticket, ticketSchema} from "../types/ticket";
+import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
-import {DBRefs, newRandomRef, parseData, updateData} from "../utils/db";
+import {DBRefs, newRandomRef, parseData, updateEntireData} from "../utils/db";
 import {UniqueId} from "../types/types";
-import {Error, Success} from "../types/errors";
+import {Error, Result, Success} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
-import {failedToGetItemDataError, injectError} from "./errors";
+import {failedToGetItemDataError, injectError, ticketNotFoundError, ticketStatusInvalidError} from "./errors";
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
-import DocumentReference = firestore.DocumentReference;
 import {generateNextTicketNum, updateLastTicketNum} from "./ticketNumInfos";
 import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
+import DocumentReference = firestore.DocumentReference;
+import Transaction = firestore.Transaction;
 
 /**
  * Should not be called directly.
@@ -50,24 +51,58 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
 }
 
 /**
- * This function should not be called directly.
+ * チケットのステータスを更新
  * @param ref
  * @param uid
  * @param ticketId
- * @param data
+ * @param fromStatus
+ * @param toStatus
+ * @param transaction
  */
-export async function updateTicketById(ref: DBRefs, uid: string, ticketId: string, data: Partial<Ticket>): Promise<boolean> {
-    return updateTicketByRef(ref, ref.tickets(uid).doc(ticketId), data);
-}
+export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+    const ticketRef = ref.tickets(uid).doc(ticketId)
+    const ticket = await ticketByRef(ref, uid, ticketRef)
+    if (!ticket) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(ticketNotFoundError)
+        }
+        return err
+    }
+    if (ticket.status === toStatus) {
+        const err: Error = {
+            "isSuccess": false,
+            ...injectError(ticketStatusInvalidError(fromStatus, ticket.status))
+        }
+        return err
+    }
 
-/**
- * This function should not be called directly.
- * @param ref
- * @param ticketRef
- * @param data
- */
-export async function updateTicketByRef(ref: DBRefs, ticketRef: DocumentReference<firestore.DocumentData>, data: Partial<Ticket>): Promise<boolean> {
-    return await updateData(ticketRef, data)
+    const toWriteTicket: Ticket = {
+        ...ticket,
+        status: toStatus
+    }
+
+    let writeResult: Result = {
+        isSuccess: true
+    }
+
+    if (transaction) {
+        await transaction.update(ticketRef, {
+            status: toStatus
+        })
+    } else {
+        writeResult = await updateEntireData(ticketSchema, ticketRef, toWriteTicket)
+    }
+
+    if (writeResult.isSuccess) {
+        await updateTicketDisplayDataForTicket(ref, toWriteTicket)
+        const suc: Success = {
+            isSuccess: true,
+        }
+        return suc
+    } else {
+        return writeResult
+    }
 }
 
 /**
