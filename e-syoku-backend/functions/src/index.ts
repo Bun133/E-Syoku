@@ -30,6 +30,7 @@ import {Error, Success} from "./types/errors";
 import {shopByRef} from "./impls/shop";
 import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
+import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 
 
 admin.initializeApp()
@@ -360,6 +361,47 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             const result = await markPaymentAsPaid(refs, userId.param, paymentId.param, paidDetail)
             return {
                 result: result
+            }
+        }, () => {
+            return {
+                result: {
+                    "isSuccess": false,
+                    ...injectError(authFailedError)
+                }
+            }
+        })
+    })
+})
+
+/**
+ * TicketDisplayのデータをすべて読み取って返却します
+ * TODO クライアントから直接FirestoreをListenするかどうか
+ */
+export const ticketDisplay = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authedWithType(["SHOP", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+            let shopId: string
+            if (authInstance.authType == "SHOP") {
+                shopId = authInstance.shopId
+            } else {
+                const param = requireParameter("shopId", z.string(), req)
+                if (param.param == undefined) return {result: param.error}
+                shopId = param.param
+            }
+            const data = (await ticketDisplayDataByShopId(refs, shopId)).map((data) => {
+                // Remove unnecessary DBRef field
+                return {
+                    status: data.status,
+                    ticketId: data.ticketId,
+                    ticketNum: data.ticketNum,
+                }
+            })
+            const suc: Success = {
+                isSuccess: true,
+                displays: data
+            }
+            return {
+                result: suc
             }
         }, () => {
             return {

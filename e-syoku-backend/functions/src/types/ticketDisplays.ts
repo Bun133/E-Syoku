@@ -8,3 +8,5 @@ export const ticketDisplaySchema = z.object({
     ticketDataRef: firestoreRefSchema,
     ticketId: uniqueId
 })
+
+export type TicketDisplayData = z.infer<typeof ticketDisplaySchema>

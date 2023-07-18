@@ -1,5 +1,5 @@
 import {DBRefs, parseData, parseDataAll, setData} from "../utils/db";
-import {ticketDisplaySchema} from "../types/ticketDisplays";
+import {TicketDisplayData, ticketDisplaySchema} from "../types/ticketDisplays";
 import {Ticket} from "../types/ticket";
 
 export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string) {
@@ -11,7 +11,7 @@ export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, t
     })
 }
 
-export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string) {
+export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Promise<TicketDisplayData[]> {
     return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId), (data) => {
         return {
             ...data,
