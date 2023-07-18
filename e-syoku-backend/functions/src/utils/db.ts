@@ -86,14 +86,18 @@ export async function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<f
     }
 }
 
-export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: CollectionReference, transform?: (data: DocumentData) => R, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
+export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: CollectionReference, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => R, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
     let docs = await collectionRef.listDocuments()
     if (filter) {
         docs = docs.filter(filter)
     }
 
     return (await Promise.all(docs.map(async (doc) => {
-        return await parseData(type, doc, transform, transaction)
+        const transformFunc = transform !== undefined ? (data: DocumentData) => {
+            return transform(doc, data)
+        } : undefined
+
+        return await parseData(type, doc, transformFunc, transaction)
     }))).filterNotNull()
 }
 
@@ -165,6 +169,7 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
     }
     return suc
 }
+
 /**
  * return random ref in [parent] collection. With checking if the ref is not taken.
  * @param parent
