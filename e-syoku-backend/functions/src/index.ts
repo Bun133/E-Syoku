@@ -4,7 +4,6 @@ import {
     onPost,
     requireOptionalParameter,
     requireParameter,
-    ResultOrPromise,
     standardFunction
 } from "./utils/endpointUtil";
 import {z} from "zod";
@@ -20,7 +19,6 @@ import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
 import {
-    authFailedError,
     injectError,
     paymentNotFoundError,
     requestNotContainUserIdError,
@@ -62,14 +60,6 @@ export const ticketStatus = standardFunction(async (request, response) => {
             return {
                 result: suc
             }
-        }, () => {
-            const err: Error = {
-                "isSuccess": false,
-                ...injectError(authFailedError)
-            }
-            return {
-                result: err
-            }
         })
     })
 })
@@ -88,15 +78,6 @@ export const listTickets = standardFunction(async (request, response) => {
                 }
                 return {
                     result: suc
-                }
-            },
-            () => {
-                const err: Error = {
-                    "isSuccess": false,
-                    ...injectError(authFailedError)
-                }
-                return {
-                    result: err
                 }
             })
     })
@@ -121,14 +102,6 @@ export const listShops = standardFunction(async (request, response) => {
             }
             return {
                 result: suc
-            }
-        }, () => {
-            const err: Error = {
-                "isSuccess": false,
-                ...injectError(authFailedError)
-            }
-            return {
-                result: err
             }
         })
     })
@@ -183,14 +156,6 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
                 const suc: Success = {"isSuccess": true, "success": successMessage}
                 return {result: suc}
-            }, () => {
-                const err: Error = {
-                    "isSuccess": false,
-                    ...injectError(authFailedError)
-                }
-                return {
-                    result: err
-                }
             })
         })
     })
@@ -209,14 +174,6 @@ export const listGoods = standardFunction(async (request, response) => {
             const suc: Success = {"isSuccess": true, "data": remainData.toJson()}
             return {
                 result: suc
-            }
-        }, () => {
-            const err: Error = {
-                "isSuccess": false,
-                ...injectError(authFailedError)
-            }
-            return {
-                result: err
             }
         })
     })
@@ -243,14 +200,6 @@ export const submitOrder = standardFunction(async (request, response) => {
                     result: suc
                 }
             }
-        }, () => {
-            const err: Error = {
-                "isSuccess": false,
-                ...injectError(authFailedError)
-            }
-            return {
-                result: err
-            }
         })
     })
 })
@@ -265,14 +214,6 @@ export const listPayments = standardFunction(async (request, response) => {
             const suc: Success = {"isSuccess": true, "payments": payments}
             return {
                 result: suc
-            }
-        }, () => {
-            const err: Error = {
-                "isSuccess": false,
-                ...injectError(authFailedError)
-            }
-            return {
-                result: err
             }
         })
     })
@@ -320,14 +261,6 @@ export const paymentStatus = standardFunction(async (request, response) => {
             return {
                 result: suc
             }
-        }, () => {
-            const err: Error = {
-                "isSuccess": false,
-                ...injectError(authFailedError)
-            }
-            return {
-                result: err
-            }
         })
     })
 })
@@ -361,13 +294,6 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             const result = await markPaymentAsPaid(refs, userId.param, paymentId.param, paidDetail)
             return {
                 result: result
-            }
-        }, () => {
-            return {
-                result: {
-                    "isSuccess": false,
-                    ...injectError(authFailedError)
-                }
             }
         })
     })
@@ -403,14 +329,6 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             return {
                 result: suc
             }
-        }, () => {
-            const r:ResultOrPromise = {
-                result: {
-                    "isSuccess": false,
-                    ...injectError(authFailedError)
-                }
-            }
-            return r
         })
     })
 })
