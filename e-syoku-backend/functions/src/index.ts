@@ -1,11 +1,6 @@
 import * as admin from "firebase-admin";
 import {dbrefs} from "./utils/db";
-import {
-    onPost,
-    requireOptionalParameter,
-    requireParameter,
-    standardFunction
-} from "./utils/endpointUtil";
+import {onPost, requireOptionalParameter, requireParameter, standardFunction} from "./utils/endpointUtil";
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
@@ -18,12 +13,7 @@ import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
-import {
-    injectError,
-    paymentNotFoundError,
-    requestNotContainUserIdError,
-    ticketNotFoundError
-} from "./impls/errors";
+import {injectError, paymentNotFoundError, requestNotContainUserIdError, ticketNotFoundError} from "./impls/errors";
 import {Error, Success} from "./types/errors";
 import {shopByRef} from "./impls/shop";
 import {PaidDetail} from "./types/payment";
@@ -37,11 +27,15 @@ const refs = dbrefs(db);
 // @ts-ignore
 const auth = admin.auth();
 
+/**
+ * 指定されたチケットのデータを取得して返却します
+ */
 export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ADMIN", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
+            // チケットデータ取得
             let ticket = await ticketById(refs, authInstance.uid, ticketId.param);
             if (ticket === undefined) {
                 const err: Error = {
@@ -65,21 +59,22 @@ export const ticketStatus = standardFunction(async (request, response) => {
 })
 
 /**
- * List all tickets existing in the database
+ * 要求されたユーザーのすべてのチケットを取得して返却します
  */
 export const listTickets = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
-                let allTickets = await listTicketForUser(refs, authInstance.uid);
+            // 要求ユーザーのすべてのチケットを取得します
+            let allTickets = await listTicketForUser(refs, authInstance.uid);
 
-                const suc: Success = {
-                    "isSuccess": true,
-                    "tickets": allTickets
-                }
-                return {
-                    result: suc
-                }
-            })
+            const suc: Success = {
+                "isSuccess": true,
+                "tickets": allTickets
+            }
+            return {
+                result: suc
+            }
+        })
     })
 });
 
@@ -125,15 +120,24 @@ export const cancelCalling =
 export const resolveTicket =
     ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved")
 
+/**
+ * [fromStatus]から[toStatus]へチケットのステータスを変更するようなエンドポイントを作成します
+ * @param fromStatus
+ * @param toStatus
+ * @param successMessage
+ */
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
+                // uid,ticketId
                 let userId = requireParameter("uid", z.string(), request)
                 if (userId.param === undefined) return {result: userId.error}
                 let id = requireParameter("ticketId", z.string(), request)
                 if (id.param == undefined) return {result: id.error}
 
+                // チケットデータを取得
+                // TODO updateTicketStatus内でチケットの存在を確認しているので不要
                 let ticket = await ticketById(refs, userId.param, id.param)
                 if (!ticket) {
                     const err: Error = {
@@ -145,6 +149,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                         result: err
                     }
                 }
+                // チケットのステータスを変更します
                 let called = await updateTicketStatus(refs, userId.param, id.param, fromStatus, toStatus)
                 if (!called.isSuccess) {
                     const err: Error = called
@@ -161,11 +166,15 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
     })
 }
 
-// 在庫がある商品リスト
+/**
+ * すべての商品のデータを取得して返却します
+ */
 export const listGoods = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            // すべてのGoodsのデータを取得
             const goods = await getAllGoods(refs)
+            // それぞれの在庫の状況を取得してMapにする
             const remainData = (await goods
                 .filterNotNull({toLog: {message: "Null entry in retrieved goods list"}})
                 .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
@@ -179,12 +188,16 @@ export const listGoods = standardFunction(async (request, response) => {
     })
 })
 
-// 注文内容データから新規決済セッション作成
+/**
+ * 受信した注文データから新規決済セッションを作成
+ */
 export const submitOrder = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const order = requireParameter("order", orderSchema, request)
             if (order.param == undefined) return {result: order.error};
+
+            // 新規決済セッションを作成
             const createPaymentResult = await createPaymentSession(refs, authInstance, order.param)
             if (!createPaymentResult.isSuccess) {
                 const err: Error = createPaymentResult
@@ -193,7 +206,6 @@ export const submitOrder = standardFunction(async (request, response) => {
                     result: err
                 }
             } else {
-                // Succeeded in creating Payment Session
                 const suc: Success = createPaymentResult
                 return {
                     statusCode: 200,
@@ -210,6 +222,7 @@ export const submitOrder = standardFunction(async (request, response) => {
 export const listPayments = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            // ユーザーに紐づいているすべての決済セッションのデータを取得します
             const payments = await getAllPayments(refs, authInstance.uid)
             const suc: Success = {"isSuccess": true, "payments": payments}
             return {
@@ -229,16 +242,18 @@ export const paymentStatus = standardFunction(async (request, response) => {
             if (id.param == undefined) return {result: id.error}
             let userId: string | undefined
             if (authInstance.authType == "ANONYMOUS") {
+                // 匿名アカウントの場合はそのアカウントのUID
                 userId = authInstance.uid
             } else if (authInstance.authType == "ADMIN" || authInstance.authType == "SHOP") {
+                // 管理者アカウントや店舗アカウントの場合は他人の決済セッションを参照できるように
                 userId = requireOptionalParameter("userId", z.string().optional(), request).param
                 if (!userId) {
-                    // 自分のpaymentを見たい可能性
+                    // userIdの指定がない場合は、自分のUIDに
                     userId = authInstance.uid
                 }
             }
             if (!userId) {
-                // Failed to get User ID
+                // UIDがなぜか指定されなかった
                 error("in paymentStatus Endpoint,failed to get User Id")
                 const err: Error = {"isSuccess": false, ...injectError(requestNotContainUserIdError)}
                 return {
@@ -247,6 +262,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
                 }
             }
 
+            // UserIdとPaymentIdから決済セッションデータを取得
             const payment = await getPaymentSessionById(refs, userId, id.param)
             if (!payment) {
                 const err: Error = {
@@ -267,6 +283,10 @@ export const paymentStatus = standardFunction(async (request, response) => {
 
 /**
  * 決済セッションのステータスをPAIDに変更します
+ * 同時に、
+ * ①在庫データの更新
+ * ②食券の発行
+ * を行います
  */
 export const markPaymentPaid = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
@@ -281,6 +301,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             if (paidMeans.param == undefined) return {result: paidMeans.error}
             let remark = requireOptionalParameter("remark", z.string().optional(), req)
 
+            // 要求データから生成された決済詳細データ
             const paidDetail: PaidDetail = {
                 paymentId: paymentId.param,
                 customerId: userId.param,
@@ -291,6 +312,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
                 remark: remark.param
             }
 
+            // 決済セッションのステータスをPAIDに変更
             const result = await markPaymentAsPaid(refs, userId.param, paymentId.param, paidDetail)
             return {
                 result: result
