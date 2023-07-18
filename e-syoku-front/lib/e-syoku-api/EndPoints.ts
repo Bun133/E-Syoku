@@ -2,18 +2,23 @@ import {endpoint} from "@/lib/e-syoku-api/Axios";
 import {z} from "zod";
 import {
     callTicketResponse,
-    cancelCallingResponse, defaultResponseFormat,
+    cancelCallingResponse,
+    defaultResponseFormat,
     listGoodsResponse,
     listPaymentResponse,
     listShopResponse,
-    listTicketResponse, markPaymentPaidRequest,
+    listTicketResponse,
+    markPaymentPaidRequest,
     orderSchema,
     paymentIdRequest,
     paymentStatusResponse,
     resolveTicketResponse,
     submitOrderResponse,
-    ticketIdRequest, ticketIdWithUserIdRequest,
-    ticketStatusResponse
+    ticketDisplayResponse,
+    ticketIdRequest,
+    ticketIdWithUserIdRequest,
+    ticketStatusResponse,
+    uniqueId
 } from "@/lib/e-syoku-api/Types";
 
 export const ticketStatusEndPoint = endpoint("ticketStatus", ticketIdRequest, ticketStatusResponse)
@@ -32,3 +37,5 @@ export const listPaymentsEndPoint = endpoint("listPayments", z.object({}), listP
 export const paymentStatusEndPoint = endpoint("paymentStatus", paymentIdRequest, paymentStatusResponse)
 
 export const markPaymentPaidEndpoint = endpoint("markPaymentPaid", markPaymentPaidRequest, defaultResponseFormat)
+
+export const ticketDisplayEndpoint = endpoint("ticketDisplay", z.object({shopId: uniqueId.optional()}), ticketDisplayResponse)
