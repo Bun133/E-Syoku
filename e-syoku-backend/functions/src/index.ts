@@ -41,7 +41,7 @@ const auth = admin.auth();
 
 export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ADMIN", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ADMIN", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
             let ticket = await ticketById(refs, authInstance.uid, ticketId.param);
@@ -79,7 +79,7 @@ export const ticketStatus = standardFunction(async (request, response) => {
  */
 export const listTickets = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
                 let allTickets = await listTicketForUser(refs, authInstance.uid);
 
                 const suc: Success = {
@@ -107,7 +107,7 @@ export const listTickets = standardFunction(async (request, response) => {
  */
 export const listShops = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return await authedWithType<ResultOrPromise>(["ADMIN", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return await authedWithType(["ADMIN", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let docs = await refs.shops.listDocuments();
             let shops = await Promise.all(docs.map(async (doc) => {
                 return await shopByRef(refs, doc);
@@ -155,7 +155,7 @@ export const resolveTicket =
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
-            return authedWithType<ResultOrPromise>(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
+            return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
                 let userId = requireParameter("uid", z.string(), request)
                 if (userId.param === undefined) return {result: userId.error}
                 let id = requireParameter("ticketId", z.string(), request)
@@ -199,7 +199,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 // 在庫がある商品リスト
 export const listGoods = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const goods = await getAllGoods(refs)
             const remainData = (await goods
                 .filterNotNull({toLog: {message: "Null entry in retrieved goods list"}})
@@ -225,7 +225,7 @@ export const listGoods = standardFunction(async (request, response) => {
 // 注文内容データから新規決済セッション作成
 export const submitOrder = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const order = requireParameter("order", orderSchema, request)
             if (order.param == undefined) return {result: order.error};
             const createPaymentResult = await createPaymentSession(refs, authInstance, order.param)
@@ -260,7 +260,7 @@ export const submitOrder = standardFunction(async (request, response) => {
  */
 export const listPayments = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const payments = await getAllPayments(refs, authInstance.uid)
             const suc: Success = {"isSuccess": true, "payments": payments}
             return {
@@ -283,7 +283,7 @@ export const listPayments = standardFunction(async (request, response) => {
  */
 export const paymentStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType<ResultOrPromise>(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const id = requireParameter("paymentId", z.string(), request)
             if (id.param == undefined) return {result: id.error}
             let userId: string | undefined
@@ -404,12 +404,13 @@ export const ticketDisplay = standardFunction(async (req, res) => {
                 result: suc
             }
         }, () => {
-            return {
+            const r:ResultOrPromise = {
                 result: {
                     "isSuccess": false,
                     ...injectError(authFailedError)
                 }
             }
+            return r
         })
     })
 })

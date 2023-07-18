@@ -4,6 +4,9 @@ import {Response} from "firebase-functions";
 import {DBRefs} from "./db";
 import {AuthInstance, AuthType} from "../types/auth";
 import {getAuthData} from "../impls/auth";
+import {Error} from "../types/errors";
+import {authFailedError, injectError, internalAuthFailedError} from "../impls/errors";
+import {ResultOrPromise} from "./endpointUtil";
 import Auth = auth.Auth;
 
 /**
@@ -68,20 +71,39 @@ export async function authed<R>(auth: Auth, refs: DBRefs, req: Request, res: Res
     }
 }
 
-export async function authedWithType<R>(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => R | Promise<R>, failure: () => R | Promise<R>): Promise<R> {
-    return authed(auth, refs, req, res, async (user: AuthInstance) => {
+export async function authedWithType(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => ResultOrPromise, failure?: () => ResultOrPromise): Promise<ResultOrPromise> {
+    const failedFunction: () => ResultOrPromise = failure != undefined ? failure : () => {
+        const err: Error = {
+            "isSuccess": false,
+            ...injectError(authFailedError)
+        }
+        const r: ResultOrPromise = {
+            result: err
+        }
+        return r
+    }
+
+    return authed<ResultOrPromise>(auth, refs, req, res, async (user: AuthInstance) => {
         if (Array.isArray(authType)) {
             if (authType.includes(user.authType)) {
                 return success(user);
             } else {
-                return failure();
+                return failedFunction();
             }
         } else {
             if (user.authType === authType) {
                 return success(user);
             } else {
-                return failure();
+                return failedFunction();
             }
         }
-    }, failure);
+    }, () => {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(internalAuthFailedError)
+        }
+        return {
+            result: err
+        }
+    });
 }

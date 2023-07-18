@@ -44,6 +44,8 @@ export const authFailedError: ErrorType = {
     errorCode: "AUTH_FAILED"
 }
 
+export const internalAuthFailedError: ErrorType = internalError("認証に失敗しました", "AUTH_FAILED")
+
 export const permissionDeniedError: ErrorType = internalError("権限不足のため実行できませんでした", "PERMISSION_DENIED")
 
 export const ticketNotFoundError: ErrorType = {
