@@ -97,14 +97,6 @@ export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: Collec
     }))).filterNotNull()
 }
 
-// TODO Deprecate
-export async function updateData(ref: DocumentReference<firestore.DocumentData>, toUpdate: Partial<DocumentData>): Promise<boolean> {
-    const data = await ref.get();
-    if (!data.exists) return false;
-    await ref.update(toUpdate);
-    return true;
-}
-
 export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
