@@ -26,6 +26,9 @@ export default function Home() {
                     <Btn href="/shopui/payment/scan">
                         決済処理取り扱い(店舗側)
                     </Btn>
+                    <Btn href="/account/grant">
+                        権限付与
+                    </Btn>
                 </VStack>
             </Center>
         </Box>

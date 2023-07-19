@@ -6,6 +6,7 @@ import {Divider, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {authStateEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import QRCode from "react-qr-code";
+import Btn from "@/components/btn";
 
 export default function Page() {
     const auth = useFirebaseAuth()
@@ -20,7 +21,10 @@ export default function Page() {
                     <Divider/>
                     <APIEndpoint endpoint={authStateEndpoint} query={{}} onEnd={(data, reload) => {
                         return (
-                            <Text>AuthType:{data.data.authType}</Text>
+                            <>
+                                <Text>AuthType:{data.data.authType}</Text>
+                                <Btn onClick={reload}>再読み込み</Btn>
+                            </>
                         )
                     }}/>
                 </VStack>
