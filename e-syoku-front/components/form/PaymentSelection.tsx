@@ -17,7 +17,7 @@ export function PaymentSelection(props: {
 
     return (
         <Container>
-            <Heading>UNPAID</Heading>
+            <Heading>未決済</Heading>
             <Divider/>
             <VStack>
                 {props.payments !== undefined ? props.payments.filter((session) => session.state === "UNPAID").map((session: PaymentSession) => {
@@ -32,7 +32,7 @@ export function PaymentSelection(props: {
 
             <Spacer/>
 
-            <Heading>PAID</Heading>
+            <Heading>決済済</Heading>
             <Divider/>
             <VStack>
                 {props.payments !== undefined ? props.payments.filter((session) => session.state === "PAID").map((session: PaymentSession) => {
