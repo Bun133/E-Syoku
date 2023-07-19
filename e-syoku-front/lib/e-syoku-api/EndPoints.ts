@@ -38,4 +38,4 @@ export const paymentStatusEndPoint = endpoint("paymentStatus", paymentIdRequest,
 
 export const markPaymentPaidEndpoint = endpoint("markPaymentPaid", markPaymentPaidRequest, defaultResponseFormat)
 
-export const ticketDisplayEndpoint = endpoint("ticketDisplay", z.object({shopId: uniqueId.optional()}), ticketDisplayResponse)
+export const ticketDisplayEndpoint = endpoint("ticketDisplay", z.object({shopId: uniqueId}), ticketDisplayResponse)
