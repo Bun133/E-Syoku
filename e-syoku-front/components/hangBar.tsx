@@ -10,12 +10,13 @@ import {Spacer} from "@chakra-ui/react";
 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
+    const router = useRouter()
 
     return (
         <Flex backgroundColor={"blue.300"} w={"full"} py={2} mb={1}>
             <HStack>
                 {auth.user !== undefined ? <UserCheck onClick={() => {
-                    logAuthData(auth)
+                    router.push("/account")
                 }}></UserCheck> : <UserX></UserX>}
                 <Btn onClick={() => {
                     logOut(auth)
@@ -33,12 +34,6 @@ export function HangBar() {
             </HStack>
         </Flex>
     )
-}
-
-function logAuthData(auth: FirebaseAuthContextType) {
-    console.log("Auth", auth.auth)
-    console.log("isAuthenticated", auth.isAuthenticated)
-    console.log("user", auth.user)
 }
 
 async function logOut(auth: FirebaseAuthContextType) {
