@@ -21,7 +21,7 @@ export default function Page() {
                                 return (
                                     <Btn onClick={() => {
                                         router.push(`/shopui/tickets/display/id?shopId=${shop.shopId}`)
-                                    }}>{shop.name}</Btn>
+                                    }} key={shop.shopId}>{shop.name}</Btn>
                                 )
                             })}
                         </VStack>
