@@ -3,21 +3,11 @@ import {TicketDisplayData, ticketDisplaySchema} from "../types/ticketDisplays";
 import {Ticket} from "../types/ticket";
 
 export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string) {
-    return parseData(ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId), (data) => {
-        return {
-            ...data,
-            ticketId: ticketId
-        }
-    })
+    return parseData(ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
 }
 
 export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Promise<TicketDisplayData[]> {
-    return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId), (doc,data) => {
-        return {
-            ...data,
-            ticketId: doc.id
-        }
-    })
+    return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId))
 }
 
 // TODO make this transactional
