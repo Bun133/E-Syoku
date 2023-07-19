@@ -189,6 +189,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     }
 
     // 決済セッションを保存
+    // TODO Transaction
     await paymentRef.set(updated)
 
     const suc: Success & { ticketsId: string[] } = {
