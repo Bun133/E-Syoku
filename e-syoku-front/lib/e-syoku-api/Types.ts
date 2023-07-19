@@ -247,7 +247,7 @@ export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
 export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS"])
 
 export const authStateResponse = defaultResponseFormat.and(z.object({
-    authState: authType.optional()
+    authType: authType.optional()
 }))
 
 export const grantPermissionRequest = z.object({
