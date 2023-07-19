@@ -46,8 +46,6 @@ export const authFailedError: ErrorType = {
 
 export const internalAuthFailedError: ErrorType = internalError("認証に失敗しました", "AUTH_FAILED")
 
-export const permissionDeniedError: ErrorType = internalError("権限不足のため実行できませんでした", "PERMISSION_DENIED")
-
 export const ticketNotFoundError: ErrorType = {
     error: "指定されたチケットが見つかりません",
     errorCode: "TICKET_NOT_FOUND"
@@ -127,3 +125,5 @@ export const transactionFailedError = internalError("Transactionの処理に失�
 export const ticketNumInfoNotFound = internalError("TicketNumInfoの取得に失敗しました", "TICKETNUM_INFO_NOT_FOUND")
 
 export const ticketNumGenerateFailedError = internalError("次のTicketNumの生成に失敗しました", "TICKETNUM_GENERATE_FAILED")
+
+export const permissionDataMissing = internalError("権限データの一部がかけています", "PERMISSION_DATA_MISSING")

@@ -1,7 +1,7 @@
-import {AuthEntry, authEntrySchema, AuthInstance} from "../types/auth";
-import {DBRefs, parseData, updateEntireData} from "../utils/db";
+import {AuthEntry, authEntrySchema, AuthType} from "../types/auth";
+import {DBRefs, parseData, setData} from "../utils/db";
 import {Error, Result} from "../types/errors";
-import {injectError, permissionDeniedError} from "./errors";
+import {injectError, permissionDataMissing} from "./errors";
 
 export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry | undefined> {
     return await parseData(authEntrySchema, refs.auths.doc(uid), (data) => {
@@ -13,19 +13,46 @@ export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry 
 }
 
 /**
- * Update Auth Data with allowance of [opAuthedBy]
+ * 権限データを更新します
  * @param refs
- * @param opAuthedBy
  * @param targetUid
  * @param data
  */
-export async function updateAuthData(refs: DBRefs, opAuthedBy: AuthInstance, targetUid: string, data: AuthEntry): Promise<Result> {
-    if (opAuthedBy.authType != "ADMIN") {
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(permissionDeniedError)
-        }
-        return err
+export async function updateAuthData(refs: DBRefs, targetUid: string, data: AuthEntry): Promise<Result> {
+    return await setData<AuthEntry>(authEntrySchema, refs.auths.doc(targetUid), data)
+}
+
+/**
+ * 指定されたユーザーに指定された権限データを設定します
+ * @param refs
+ * @param targetUserId
+ * @param authType
+ * @param shopId
+ */
+export async function grantPermissionToUser(refs: DBRefs, targetUserId: string, authType: AuthType, shopId?: string): Promise<Result> {
+    switch (authType) {
+        case "ADMIN":
+            return await updateAuthData(refs, targetUserId, {
+                authType: "ADMIN",
+                uid: targetUserId
+            })
+        case "SHOP":
+            if (!shopId) {
+                const err: Error = {
+                    isSuccess: false,
+                    ...injectError(permissionDataMissing)
+                }
+                return err
+            }
+            return await updateAuthData(refs, targetUserId, {
+                authType: "SHOP",
+                uid: targetUserId,
+                shopId: shopId
+            })
+        case "ANONYMOUS":
+            return await updateAuthData(refs, targetUserId, {
+                authType: "ANONYMOUS",
+                uid: targetUserId
+            })
     }
-    return await updateEntireData<AuthEntry>(authEntrySchema, refs.auths.doc(targetUid), data)
 }

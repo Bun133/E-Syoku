@@ -5,7 +5,7 @@ import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
-import {AuthInstance} from "./types/auth";
+import {AuthInstance, AuthTypeSchema} from "./types/auth";
 import {listTicketForUser, ticketById, updateTicketStatus} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
@@ -19,6 +19,7 @@ import {shopByRef} from "./impls/shop";
 import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
+import {grantPermissionToUser} from "./impls/auth";
 
 
 admin.initializeApp()
@@ -372,6 +373,24 @@ export const authState = standardFunction(async (req, res) => {
             return {
                 result: suc,
                 statusCode: 200
+            }
+        })
+    })
+})
+
+export const grantPermission = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authedWithType(["ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+            const uid = requireParameter("uid", z.string(), req)
+            if (uid.param == undefined) return {result: uid.error}
+            const authType = requireParameter("authType", AuthTypeSchema, req)
+            if (authType.param == undefined) return {result: authType.error}
+            const shopId = requireOptionalParameter("shopId", z.string().optional(), req).param
+
+
+            const result = await grantPermissionToUser(refs, uid.param, authType.param,shopId)
+            return {
+                result: result
             }
         })
     })

@@ -6,8 +6,8 @@ import {uniqueId} from "./types";
 const AdminAuth = z.literal("ADMIN")
 const ShopAuth = z.literal("SHOP")
 const AnonymousAuth = z.literal("ANONYMOUS")
-const AuthType = z.union([AdminAuth, ShopAuth, AnonymousAuth])
-export type AuthType = z.infer<typeof AuthType>
+export const AuthTypeSchema = z.union([AdminAuth, ShopAuth, AnonymousAuth])
+export type AuthType = z.infer<typeof AuthTypeSchema>
 
 const AdminAuthEntry = z.object({
     authType: AdminAuth,
