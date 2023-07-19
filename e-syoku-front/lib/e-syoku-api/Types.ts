@@ -249,3 +249,12 @@ export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS"])
 export const authStateResponse = defaultResponseFormat.and(z.object({
     authState: authType.optional()
 }))
+
+export const grantPermissionRequest = z.object({
+    authType: z.enum(["ADMIN", "ANONYMOUS"]),
+    uid: uniqueId,
+}).or(z.object({
+    authType: z.enum(["SHOP"]),
+    shopId: uniqueId,
+    uid: uniqueId,
+}))

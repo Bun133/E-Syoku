@@ -4,7 +4,7 @@ import {
     authStateResponse,
     callTicketResponse,
     cancelCallingResponse,
-    defaultResponseFormat,
+    defaultResponseFormat, grantPermissionRequest,
     listGoodsResponse,
     listPaymentResponse,
     listShopResponse,
@@ -42,4 +42,6 @@ export const markPaymentPaidEndpoint = endpoint("markPaymentPaid", markPaymentPa
 export const ticketDisplayEndpoint = endpoint("ticketDisplay", z.object({shopId: uniqueId}), ticketDisplayResponse)
 
 export const authStateEndpoint = endpoint("authState", z.object({}), authStateResponse)
+
+export const grantPermissionEndpoint = endpoint("grantPermission",grantPermissionRequest, defaultResponseFormat)
 
