@@ -4,7 +4,7 @@ import {onPost, requireOptionalParameter, requireParameter, standardFunction} fr
 import {z} from "zod";
 import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
-import {authedWithType} from "./utils/auth";
+import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {listTicketForUser, ticketById, updateTicketStatus} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
@@ -345,6 +345,33 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             }
             return {
                 result: suc
+            }
+        })
+    })
+})
+
+/**
+ * リクエストを送信したユーザーの認証情報をもとに権限データを返却します
+ */
+export const authState = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authed(auth, refs, req, res, (authInstance) => {
+            const suc: Success = {
+                isSuccess: true,
+                authType: authInstance.authType
+            }
+            return {
+                result: suc,
+                statusCode: 200
+            }
+        }, () => {
+            const suc: Success = {
+                isSuccess: true,
+                authType: undefined
+            }
+            return {
+                result: suc,
+                statusCode: 200
             }
         })
     })

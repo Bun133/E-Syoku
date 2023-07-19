@@ -243,3 +243,9 @@ export const ticketDisplayData = z.object({
 export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
     displays: z.array(ticketDisplayData)
 }))
+
+export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS"])
+
+export const authStateResponse = defaultResponseFormat.and(z.object({
+    authState: authType.optional()
+}))
