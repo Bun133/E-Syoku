@@ -12,12 +12,14 @@ import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {MessageModal} from "@/components/modal/MessageModal";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
+import {useRouter} from "next/navigation";
 
 export default function Page() {
     const [order, setOrder] = useState<Order>()
     const auth = useFirebaseAuth()
     const {isOpen, onOpen, onClose} = useDisclosure()
     const message = useRef([""])
+    const router = useRouter()
 
     return (
         <>
@@ -41,10 +43,13 @@ export default function Page() {
 
                                 <Center>
                                     <Btn onClick={async () => {
-                                        return callEndpoint(submitOrderEndPoint, auth.user, {order: order}).then((d) => {
-                                            message.current = ["Response:", JSON.stringify(d)]
+                                        const r = await callEndpoint(submitOrderEndPoint, auth.user, {order: order})
+                                        if (r.isSuccess) {
+                                            router.push("/payment/")
+                                        } else {
+                                            message.current = ["注文処理に失敗しました", `エラーコード:${r.errorCode}`, `エラー内容:${r.error}`]
                                             onOpen()
-                                        })
+                                        }
                                     }}>注文を確定</Btn>
                                     <MessageModal message={message.current} isOpen={isOpen}
                                                   onClose={onClose}></MessageModal>
