@@ -17,23 +17,28 @@ export function endpoint<Q, R extends DefaultResponseFormat>(endpointPath: strin
 }
 
 type EndPointBaseResponse<R extends DefaultResponseFormat> = {
-    error: string | undefined,
-    success: string | undefined,
     // defaultResponseFormatでもparse出来なかった
     parseFailed: boolean,
     // fetch中にerrorがthrowされた
     fetchFailed: boolean,
-    // 正常にparseできたときのAPIResponseのisSuccess
-    // 正常にparse出来なかったときはfalse
-    // defaultResponseFormatでparse出来てもfalse
-    isSuccess: boolean,
 }
 
 export type EndPointSuccessResponse<R extends DefaultResponseFormat> = {
     data: R,
+    success: string | undefined
+    // 正常にparseできたときのAPIResponseのisSuccess
+    // 正常にparse出来なかったときはfalse
+    // defaultResponseFormatでparse出来てもfalse
+    isSuccess: true,
 } & EndPointBaseResponse<R>
 export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
     data: undefined,
+    error: string,
+    errorCode: string,
+    // 正常にparseできたときのAPIResponseのisSuccess
+    // 正常にparse出来なかったときはfalse
+    // defaultResponseFormatでparse出来てもfalse
+    isSuccess: false
 } & EndPointBaseResponse<R>
 
 export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessResponse<R> | EndPointErrorResponse<R>
@@ -54,7 +59,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
         return {
             data: undefined,
             error: "No user instance",
-            success: undefined,
+            errorCode: "[Client]NO_USER_INSTANCE",
             parseFailed: false,
             fetchFailed: false,
             isSuccess: false,
@@ -79,7 +84,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
         return {
             data: undefined,
             error: e.message ?? "Unknown Error",
-            success: undefined,
+            errorCode: "[Client]FETCH_FAILED",
             parseFailed: false,
             fetchFailed: true,
             isSuccess: false,
@@ -92,24 +97,25 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
         // Success parsing
         if (parsed.data.isSuccess) {
             // Success Response
-            return {
+            const r: EndPointSuccessResponse<R> = {
                 data: parsed.data,
-                error: undefined,
                 success: parsed.data.success,
                 parseFailed: false,
                 fetchFailed: false,
                 isSuccess: parsed.data.isSuccess
             }
+            return r
         } else {
             // Failed Response
-            return {
-                data: parsed.data,
+            const r: EndPointErrorResponse<R> = {
+                data: undefined,
                 error: parsed.data.error,
-                success: undefined,
+                errorCode: parsed.data.errorCode,
                 parseFailed: false,
                 fetchFailed: false,
                 isSuccess: parsed.data.isSuccess,
             }
+            return r
         }
     } else {
         // Failed to parse,but still be able to parse as DefaultResponseFormat
@@ -120,20 +126,21 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             console.log("Success Fallback Parsing")
             if (defaultParsed.data.isSuccess) {
                 // TODO このパターンが謎
-                return {
+                const r: EndPointErrorResponse<R> = {
                     data: undefined,
-                    success: defaultParsed.data.success,
-                    error: undefined,
+                    error: "正常にレスポンスを得られませんでした",
+                    errorCode: "[Client]SUCCESS_FALLBACK_PARSING",
                     parseFailed: false,
                     fetchFailed: false,
                     isSuccess: false
                 }
+                return r
             } else {
-                const r = {
+                const r:EndPointErrorResponse<R> = {
                     data: undefined,
-                    success: undefined,
                     parseFailed: false,
-                    error: `CODE:[${defaultParsed.data.errorCode}] ${defaultParsed.data.error}`,
+                    errorCode:defaultParsed.data.errorCode,
+                    error: defaultParsed.data.error,
                     fetchFailed: false,
                     isSuccess: false
                 }
@@ -142,14 +149,15 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
         } else {
             // failed fallback parsing as DefaultResponseFormat
             console.log("Endpoint Fallback Parsing Failed")
-            return {
+            const r:EndPointErrorResponse<R> = {
                 data: undefined,
-                error: parsed.error.message,
-                success: undefined,
+                error: "正常にレスポンスを得られませんでした",
+                errorCode: "[Client]ENDPOINT_FALLBACK_PARSING_FAILED",
                 parseFailed: true,
                 fetchFailed: false,
                 isSuccess: false,
             }
+            return r
         }
     }
 }
