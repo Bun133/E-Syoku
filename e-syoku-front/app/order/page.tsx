@@ -40,8 +40,8 @@ export default function Page() {
                                 })}
 
                                 <Center>
-                                    <Btn onClick={() => {
-                                        callEndpoint(submitOrderEndPoint, auth.user, {order: order}).then((d) => {
+                                    <Btn onClick={async () => {
+                                        return callEndpoint(submitOrderEndPoint, auth.user, {order: order}).then((d) => {
                                             message.current = ["Response:", JSON.stringify(d)]
                                             onOpen()
                                         })
