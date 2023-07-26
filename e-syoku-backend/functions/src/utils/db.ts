@@ -55,7 +55,7 @@ export function dbrefs(db: Firestore): DBRefs {
  * @param transform
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
-export async function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => R, transaction?: firestore.Transaction): Promise<T | undefined> {
+export async function parseData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<T | undefined> {
     let doc;
     if (transaction) {
         doc = await transaction.get(ref)
@@ -65,7 +65,7 @@ export async function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<f
 
     if (doc.exists) {
         let data = doc.data()!!;
-        let processed: R | DocumentData = data
+        let processed: DocumentData = data
         if (transform) {
             processed = transform(data)
         }
@@ -96,7 +96,7 @@ export async function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<f
  * @param transaction
  * @param filter
  */
-export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: CollectionReference, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => R, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
+export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: CollectionReference, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
     let docs = await collectionRef.listDocuments()
     if (filter) {
         docs = docs.filter(filter)

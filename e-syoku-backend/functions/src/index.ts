@@ -29,7 +29,15 @@ const refs = dbrefs(db);
 const auth = admin.auth();
 
 /**
- * 指定されたチケットのデータを取得して返却します
+ * リクエストユーザーの[ticketId]に該当するチケットデータを返却します
+ * Param:
+ *  - ticketId: string
+ * Response:
+ *  - ticket: Ticket[]
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {

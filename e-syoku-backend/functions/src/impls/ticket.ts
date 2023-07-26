@@ -14,7 +14,7 @@ import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
 /**
- * Should not be called directly.
+ * チケットデータを[uid]と[ticketId]から取得します
  * @param ref
  * @param uid
  * @param ticketId
@@ -24,7 +24,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string): Pr
 }
 
 /**
- * Should not be called directly.
+ * チケットデータをFirestoreのDocumentReferenceから取得します
  * @param ref
  * @param uid
  * @param ticketRef
@@ -33,8 +33,13 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
     return await parseData(ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
+            ticketNum: data.ticketNum,
+            shopId: data.shopId,
             customerId: uid,
-            ...data
+            issueTime: data.issueTime,
+            status: data.status,
+            paymentSessionId: data.paymentSessionId,
+            orderData: data.orderData
         }
     });
 }
