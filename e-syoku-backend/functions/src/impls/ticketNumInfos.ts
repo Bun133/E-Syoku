@@ -1,4 +1,4 @@
-import {DBRefs, parseData, updatePartialData} from "../utils/db";
+import {DBRefs, parseData, updateEntireData} from "../utils/db";
 import {Ticket} from "../types/ticket";
 import {Error, Success} from "../types/errors";
 import {injectError, ticketNumGenerateFailedError} from "./errors";
@@ -11,7 +11,7 @@ export async function ticketNumInfoById(ref: DBRefs, shopId: string) {
 }
 
 export async function updateLastTicketNum(ref: DBRefs, ticket: Ticket) {
-    return updatePartialData(ticketNumInfoSchema, ref.ticketNumInfo(ticket.shopId), {lastTicketNum: ticket.ticketNum})
+    return updateEntireData(ticketNumInfoSchema.omit({ticketNumConfig:true}), ref.ticketNumInfo(ticket.shopId), {lastTicketNum: ticket.ticketNum})
 }
 
 export async function generateNextTicketNum(ref: DBRefs, shopId: string, uid: string): Promise<Success & {
