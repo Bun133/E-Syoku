@@ -19,7 +19,7 @@ import {
 
 export async function getGoodsById(ref: DBRefs, goodsId: UniqueId): Promise<Goods | undefined> {
     const directRef = ref.goods.doc(goodsId)
-    return await parseData(goodsSchema, directRef, (data) => {
+    return await parseData<Goods>(goodsSchema, directRef, (data) => {
         return {
             goodsId: directRef.id,
             description: data.description,
@@ -31,8 +31,8 @@ export async function getGoodsById(ref: DBRefs, goodsId: UniqueId): Promise<Good
     })
 }
 
-export async function getAllGoods(refs: DBRefs) {
-    return await parseDataAll(goodsSchema, refs.goods, (doc, data) => {
+export async function getAllGoods(refs: DBRefs):Promise<Goods[]> {
+    return await parseDataAll<Goods>(goodsSchema, refs.goods, (doc, data) => {
         return {
             goodsId: doc.id,
             description: data.description,

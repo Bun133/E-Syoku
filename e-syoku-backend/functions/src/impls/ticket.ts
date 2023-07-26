@@ -30,7 +30,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string): Pr
  * @param ticketRef
  */
 export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>): Promise<Ticket | undefined> {
-    return await parseData(ticketSchema, ticketRef, (data) => {
+    return await parseData<Ticket>(ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
             ticketNum: data.ticketNum,
@@ -50,7 +50,7 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
  * @param uid
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
-    return parseDataAll(ticketSchema, ref.tickets(uid), (doc, data) => {
+    return parseDataAll<Ticket>(ticketSchema, ref.tickets(uid), (doc, data) => {
         return {
             uniqueId: doc.id,
             ticketNum: data.ticketNum,
