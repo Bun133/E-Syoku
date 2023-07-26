@@ -328,9 +328,6 @@ export const paymentStatus = standardFunction(async (request, response) => {
  * ①在庫データの更新
  * ②食券の発行
  * を行います
- */
-/**
- * 指定された決済セッションのデータを返却します
  * Param:
  *  - userId:string
  *  - paymentId:string
