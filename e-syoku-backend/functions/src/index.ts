@@ -265,10 +265,20 @@ export const listPayments = standardFunction(async (request, response) => {
 
 /**
  * 指定された決済セッションのデータを返却します
+ * Param:
+ *  - paymentId:string
+ *  - userId:string(optional)
+ * Response:
+ *  - payment:PaymentSession
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const paymentStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+            // id
             const id = requireParameter("paymentId", z.string(), request)
             if (id.param == undefined) return {result: id.error}
             let userId: string | undefined
