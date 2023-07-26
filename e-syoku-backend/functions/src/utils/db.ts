@@ -8,7 +8,6 @@ import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
 import CollectionReference = firestore.CollectionReference;
-import UpdateData = firestore.UpdateData;
 
 export type DynamicCollectionReference<T> = (t: T) => firestore.CollectionReference<firestore.DocumentData>
 export type DynamicDocumentReference<T> = (t: T) => DocumentReference<firestore.DocumentData>
@@ -121,37 +120,6 @@ export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: Collec
  * @param transaction
  */
 export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<Result> {
-    try {
-        if (transaction) {
-            await transaction.update(ref, toUpdate);
-        } else {
-            await ref.update(toUpdate);
-        }
-    } catch (e) {
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(updateDataFailedError),
-            toUpdateRef: ref.path,
-            rawError: e,
-            toUpdate: toUpdate,
-        }
-        return err
-    }
-    const suc: Success = {
-        isSuccess: true
-    }
-    return suc
-}
-
-/**
- * [type]の一部分のデータを使ってUpdate処理を行います
- * @param type
- * @param ref
- * @param toUpdate
- * @param transaction
- * @Deprecated use updateEntireData with zodType.omit(Mask) instead.
- */
-export async function updatePartialData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: UpdateData<T>, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
             await transaction.update(ref, toUpdate);
