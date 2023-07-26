@@ -412,6 +412,13 @@ export const ticketDisplay = standardFunction(async (req, res) => {
 
 /**
  * リクエストを送信したユーザーの認証情報をもとに権限データを返却します
+ * Param:
+ * Response:
+ *  - authType:AuthType
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const authState = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
