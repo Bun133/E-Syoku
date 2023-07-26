@@ -1,4 +1,4 @@
-import {DBRefs, newRandomRef, parseData} from "../utils/db";
+import {createData, DBRefs, newRandomRef, parseData} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
@@ -25,14 +25,17 @@ import DocumentReference = firestore.DocumentReference;
  * @param order
  */
 export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthInstance, order: Order) {
+    // 実際に決済セッションを作成するRef
     const paymentSessionRef = await newRandomRef(ref.payments(customer.uid))
 
+    // 合計金額を計算
     const totalAmount = await calculateTotalAmount(ref, order)
     if (!totalAmount.isSuccess) {
         const err: Error = totalAmount
         return err
     }
 
+    // 決済セッションのデータ
     const paymentSession: PaymentSession = {
         customerId: customer.uid,
         orderContent: order,
@@ -41,13 +44,19 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         totalAmount: totalAmount.totalAmount!
     }
 
-    // save payment session to DB,except for sessionId
-    await paymentSessionRef.set({
+    // DBに決済セッションのデータを保存
+    const setRes = await createData(paymentSessionSchema.omit({sessionId: true}), paymentSessionRef, {
         customerId: paymentSession.customerId,
         orderContent: paymentSession.orderContent,
         state: paymentSession.state,
         totalAmount: paymentSession.totalAmount
     })
+    if (!setRes.isSuccess) {
+        // 決済セッションのデータを保存できなかった
+        // 実害がないのでロールバックしない
+        const err: Error = setRes
+        return err
+    }
 
     const suc: Success & { paymentSessionId: string } = {
         isSuccess: true,
@@ -57,17 +66,23 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
     return suc
 }
 
+/**
+ * [order]の合計金額を計算します
+ * @param ref
+ * @param order
+ */
 async function calculateTotalAmount(ref: DBRefs, order: Order) {
     const amounts = (await Promise.all(
             order.map(async (o) => {
+                // 商品データを取得
                 const data = await getGoodsById(ref, o.goodsId)
                 if (!data) return undefined
                 return data.price * o.count
             }))
     ).filterNotNullStrict({toLog: {message: "in calculateTotalAmount,Failed to get goods data.Operation Terminated"}})
 
+    // 一部の商品の商品データを取得出来なかった
     if (!amounts) {
-        // since the amounts is undefined, the operation is terminated
         const err: Error = {
             isSuccess: false,
             ...injectError(calculateTotalAmountFailed)
@@ -75,6 +90,7 @@ async function calculateTotalAmount(ref: DBRefs, order: Order) {
         return err
     }
 
+    // 全部足して合計金額を求める
     const totalAmount = amounts.reduce((a, b) => a + b, 0)
 
     const suc: Success & { totalAmount: number } = {
@@ -89,10 +105,13 @@ export async function getPaymentSessionById(ref: DBRefs, userid: string, payment
 }
 
 export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentReference) {
-    return parseData(paymentSessionSchema, paymentRef, (data) => {
+    return parseData<PaymentSession>(paymentSessionSchema, paymentRef, (data) => {
         return {
             sessionId: paymentRef.id,
-            ...data
+            customerId: data.customerId,
+            orderContent: data.orderContent,
+            state: data.state,
+            totalAmount: data.totalAmount
         }
     })
 }

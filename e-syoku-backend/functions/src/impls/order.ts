@@ -18,18 +18,20 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order, tran
         isEnough: boolean
     }[], isAllEnough: boolean
 } | Error> {
+    // 商品の在庫データを取得する
     const items = (await Promise.all(orderData.map(async (order) => {
         const remain = await getRemainDataOfGoods(ref, order.goodsId, transaction)
         if (!remain) return undefined
         const isEnough = remainDataIsEnough(remain, order.count)
-        if (isEnough == undefined) return undefined
+        if (!isEnough.isSuccess) return undefined
         return {
             goodsId: order.goodsId,
             remainData: remain,
-            isEnough: isEnough
+            isEnough: isEnough.isEnough
         }
     }))).filterNotNullStrict({toLog: {message: "in checkOrderRemainStatus, Failed to retrieve remainData for some goods."}})
 
+    // 一部の商品の在庫データを取得できなかった
     if (items === undefined) {
         const err: Error = {
             isSuccess: false,
@@ -38,6 +40,7 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order, tran
         return err
     }
 
+    // すべての商品の在庫があるかどうか
     const isAllEnough = items.every((item) => item.isEnough)
     const suc: Success & {
         items: {
@@ -56,14 +59,17 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order, tran
 /**
  * 注文内容から新規決済セッション作成
  */
-export async function createPaymentSession(ref: DBRefs, customer: AuthInstance, orderData: Order) {
-    // Check Items availability
+export async function createPaymentSession(ref: DBRefs, customer: AuthInstance, orderData: Order): Promise<Error | Success & {
+    paymentSessionId: string
+}> {
+    // 商品の在庫があることを確認
     const status = await checkOrderRemainStatus(ref, orderData)
     if (!status.isSuccess) {
         const err: Error = status
         return err
     }
     if (!(status.isAllEnough)) {
+        // 商品の一部が欠品
         const err: Error = {
             isSuccess: false,
             ...injectError(itemGoneError((status.items).filter((item) => !item.isEnough).map((item) => item.goodsId)))
@@ -71,7 +77,7 @@ export async function createPaymentSession(ref: DBRefs, customer: AuthInstance, 
         return err
     }
 
-    // Create Payment Session
+    // 新規決済セッションを作成
     const paymentSession = await internalCreatePaymentSession(ref, customer, orderData)
     if (!paymentSession.isSuccess) {
         // Failed to create Payment Session

@@ -206,6 +206,14 @@ export const listGoods = standardFunction(async (request, response) => {
 
 /**
  * 受信した注文データから新規決済セッションを作成
+ * Param:
+ * - order: Order
+ * Response:
+ *  - paymentSessionId:string
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const submitOrder = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
