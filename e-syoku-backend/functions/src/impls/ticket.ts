@@ -1,6 +1,6 @@
 import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
-import {DBRefs, mergeData, newRandomRef, parseData, parseDataAll} from "../utils/db";
+import {createData, DBRefs, mergeData, newRandomRef, parseData, parseDataAll} from "../utils/db";
 import {UniqueId} from "../types/types";
 import {Error, Result, Success} from "../types/errors";
 import {PaymentSession} from "../types/payment";
@@ -192,7 +192,7 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
 
         // チケットデータを書き込み
         // TODO Transaction
-        await toWriteRef.set(ticketData)
+        await createData(ticketSchema,toWriteRef,ticketData)
         writtenTicketIds.push(toWriteRef.id)
         // LastTicketNumを更新
         // TODO Transaction

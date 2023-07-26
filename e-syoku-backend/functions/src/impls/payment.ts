@@ -1,4 +1,4 @@
-import {createData, DBRefs, newRandomRef, parseData, parseDataAll} from "../utils/db";
+import {createData, DBRefs, newRandomRef, parseData, parseDataAll, updateEntireData} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
@@ -9,11 +9,9 @@ import {
     alreadyPaidError,
     calculateTotalAmountFailed,
     injectError,
-    itemGoneError,
     paidWrongAmountError,
     paymentNotFoundError
 } from "./errors";
-import {checkOrderRemainStatus} from "./order";
 import {registerTicketsForPayment} from "./ticket";
 import DocumentReference = firestore.DocumentReference;
 
@@ -116,8 +114,8 @@ export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentRe
     })
 }
 
-export async function getAllPayments(ref: DBRefs, userid: string):Promise<PaymentSession[]> {
-    return await parseDataAll<PaymentSession>(paymentSessionSchema,ref.payments(userid), (doc, data) => {
+export async function getAllPayments(ref: DBRefs, userid: string): Promise<PaymentSession[]> {
+    return await parseDataAll<PaymentSession>(paymentSessionSchema, ref.payments(userid), (doc, data) => {
         return {
             sessionId: doc.id,
             customerId: data.customerId,
@@ -143,13 +141,12 @@ export async function getAllPayments(ref: DBRefs, userid: string):Promise<Paymen
 export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
+    // 決済セッションのRef・データ
     const paymentRef = refs.payments(uid).doc(sessionId)
     const payment = await getPaymentSessionByRef(refs, paymentRef)
 
-    // Check payment exists
     if (!payment) {
-        // not found in db
-        // Requested for not existing payment
+        // 決済セッションのデータが見つからなかった
         const err: Error = {
             isSuccess: false,
             ...injectError(paymentNotFoundError)
@@ -157,9 +154,8 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
         return err
     }
 
-    // check state
+    // 決済セッションのデータのステータスが"PAID"になっている
     if (payment.state === "PAID") {
-        // already paid
         const err: Error = {
             isSuccess: false,
             ...injectError(alreadyPaidError)
@@ -167,23 +163,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
         return err
     }
 
-
-    // Check Remain
-    const status = await checkOrderRemainStatus(refs, payment.orderContent)
-    if (!status.isSuccess) {
-        const err: Error = status
-        return err
-    }
-    const {isAllEnough, items} = status
-    if (!isAllEnough) {
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(itemGoneError(items.map(i => i.goodsId)))
-        }
-        return err
-    }
-
-    // Check paid amount
+    // 決済済みの金額が決済セッションの合計金額と合致することを確認
     if (payment.totalAmount !== paidDetail.paidAmount) {
         const err: Error = {
             isSuccess: false,
@@ -194,13 +174,13 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
 
 
     // 商品の在庫を確保(在庫状況をを減らして更新)
-    // TODO 二回商品の在庫情報を読み取っている
     const reserveRes = await reserveGoods(refs, payment.orderContent)
     if (!reserveRes.isSuccess) {
         const err: Error = reserveRes
         return err
     }
 
+    // 決済セッションのデータからチケットを登録
     const ticketRes = await registerTicketsForPayment(refs, uid, payment)
     if (!ticketRes.isSuccess) {
         const err: Error = ticketRes
@@ -208,15 +188,17 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     }
 
     // 決済セッションのステータスを支払い済みに変更
-    const updated: PaymentSession = {
-        ...payment,
-        state: "PAID",
-        paidDetail: paidDetail
-    }
-
     // 決済セッションを保存
     // TODO Transaction
-    await paymentRef.set(updated)
+    await updateEntireData(paymentSessionSchema.omit({
+        sessionId: true,
+        customerId: true,
+        orderContent: true,
+        totalAmount: true,
+    }), paymentRef, {
+        state: "PAID",
+        paidDetail: paidDetail
+    })
 
     const suc: Success & { ticketsId: string[] } = {
         isSuccess: true,

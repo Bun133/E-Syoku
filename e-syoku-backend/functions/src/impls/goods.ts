@@ -1,5 +1,5 @@
 import {Goods, GoodsRemainData, goodsRemainDataSchema, goodsSchema} from "../types/goods";
-import {DBRefs, parseData, parseDataAll, updateEntireData} from "../utils/db";
+import {DBRefs, mergeData, parseData, parseDataAll} from "../utils/db";
 import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
@@ -11,7 +11,7 @@ import {
     itemGoneError,
     remainDataCalculateFailedError,
     remainDataTypeNotKnownError,
-    remainStatusConflictedError,
+    remainStatusNotFoundError,
     remainStatusNegativeError,
     transactionFailedError,
     updateRemainDataFailedError
@@ -107,7 +107,7 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
 export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> {
     try {
         return await refs.db.runTransaction(async (transaction) => {
-            // check if all goods are available
+            // 商品がすべてそろっていることを確認
             const status = await checkOrderRemainStatus(refs, order, transaction)
             if (!status.isSuccess) {
                 const err: Error = status
@@ -115,7 +115,7 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
             }
             const {isAllEnough, items} = status
             if (!isAllEnough) {
-                // not enough goods
+                // 一部の商品の在庫がなくなっている場合
                 const err: Error = {
                     isSuccess: false,
                     ...injectError(itemGoneError(items.map(i => i.goodsId)))
@@ -123,13 +123,13 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
                 return err
             }
 
-            // calculate goods remainData to update
+            // 更新後の在庫情報を計算
             const calculatedRemainData: (Error | Success & { calculated: GoodsRemainData })[] = order.map((item) => {
                 const itemStatus = status.items.find(i => i.goodsId === item.goodsId)
                 if (itemStatus === undefined) {
                     const err: Error = {
                         isSuccess: false,
-                        ...injectError(remainStatusConflictedError)
+                        ...injectError(remainStatusNotFoundError)
                     }
                     return err
                 }
@@ -143,7 +143,7 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
             })
 
             if (calculatedRemainData.some(i => !i.isSuccess)) {
-                // some item cannot be calculated!
+                // 更新後の在庫情報が計算できないものが合った場合
                 const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
                 return err
             }
@@ -151,13 +151,13 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
             const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
             const updateResult = await Promise.all(toUpdate.map(async s => {
                 const {goodsId, ...rawRemainData} = s.calculated
-                return await updateEntireData(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
+                return await mergeData(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
             }))
 
             const updateFailure = updateResult.filterInstance(singleErrorSchema)
             if (updateFailure.length > 0) {
-                // some item cannot be updated!
-                //
+                // 一部の商品の在庫情報の更新に失敗した
+                // TODO ロールバックが必要
                 const err: Error = updateRemainDataFailedError(updateFailure)
                 return err
             }

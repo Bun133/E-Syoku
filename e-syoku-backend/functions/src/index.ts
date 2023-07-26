@@ -329,6 +329,20 @@ export const paymentStatus = standardFunction(async (request, response) => {
  * ②食券の発行
  * を行います
  */
+/**
+ * 指定された決済セッションのデータを返却します
+ * Param:
+ *  - userId:string
+ *  - paymentId:string
+ *  - paidAmount:number
+ *  - paidMeans:string
+ *  - remark:string(optional)
+ * Response:
+ *  - ticketsId:string[]
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ */
 export const markPaymentPaid = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
         return authedWithType(["SHOP", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {

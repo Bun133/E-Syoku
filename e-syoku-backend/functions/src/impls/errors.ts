@@ -100,7 +100,7 @@ export const failedToGetItemDataError: ErrorType = {
 
 export const remainDataTypeNotKnownError: ErrorType = internalError("RemainDataの型が既知の物と合致しません", "REMAIN_DATA_TYPE_NOT_KNOWN")
 
-export const remainStatusConflictedError = internalError("見つかるはずのRemainDataが見つかりませんでした", "REMAIN_STATUS_CONFLICTED")
+export const remainStatusNotFoundError = internalError("見つかるはずのRemainDataが見つかりませんでした", "REMAIN_STATUS_NOT_FOUND")
 
 export const remainDataCalculateFailedError = representativeError({
     error: "いくつかの商品の在庫数を計算出来ませんでした",
