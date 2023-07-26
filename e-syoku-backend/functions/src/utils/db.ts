@@ -15,6 +15,7 @@ export type DynamicDocumentReference<T> = (t: T) => DocumentReference<firestore.
 // this type is actually string,but this type refers to the id of the user.
 export type UserIdDBKey = string
 export type ShopIdDBKey = string
+export type BarcodeKey = number
 
 export type DBRefs = {
     db: Firestore,
@@ -25,7 +26,8 @@ export type DBRefs = {
     remains: firestore.CollectionReference<firestore.DocumentData>,
     payments: DynamicCollectionReference<UserIdDBKey>,
     ticketDisplays: DynamicCollectionReference<ShopIdDBKey>,
-    ticketNumInfo: DynamicDocumentReference<ShopIdDBKey>
+    ticketNumInfo: DynamicDocumentReference<ShopIdDBKey>,
+    binds: DynamicDocumentReference<BarcodeKey>
 }
 
 /**
@@ -42,7 +44,8 @@ export function dbrefs(db: Firestore): DBRefs {
         remains: db.collection("remains"),
         payments: (uid) => db.collection("payments").doc(uid).collection("payments"),
         ticketDisplays: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketDisplays"),
-        ticketNumInfo: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketNumInfos").doc("ticketNumInfo")
+        ticketNumInfo: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketNumInfos").doc("ticketNumInfo"),
+        binds: (barcode) => db.collection("barcodeBind").doc(Number(barcode).toString())
     };
 }
 
