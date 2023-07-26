@@ -1,6 +1,6 @@
 import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
-import {DBRefs, newRandomRef, parseData, parseDataAll, updateEntireData} from "../utils/db";
+import {DBRefs, mergeData, newRandomRef, parseData, parseDataAll} from "../utils/db";
 import {UniqueId} from "../types/types";
 import {Error, Result, Success} from "../types/errors";
 import {PaymentSession} from "../types/payment";
@@ -65,7 +65,7 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
 }
 
 /**
- * チケットのステータスを更新
+ * チケットのステータスを[fromStatus]から[toStatus]に変更します
  * @param ref
  * @param uid
  * @param ticketId
@@ -74,6 +74,8 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
  * @param transaction
  */
 export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+
+    // チケットの存在を確認する
     const ticketRef = ref.tickets(uid).doc(ticketId)
     const ticket = await ticketByRef(ref, uid, ticketRef)
     if (!ticket) {
@@ -83,8 +85,9 @@ export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: str
         }
         return err
     }
+
     if (ticket.status !== fromStatus) {
-        // チケットのステータスが変更前のステータスではない
+        // チケットのステータスが変更前のステータスではないのでエラー
         const err: Error = {
             "isSuccess": false,
             ...injectError(ticketStatusInvalidError(fromStatus, ticket.status))
@@ -99,7 +102,15 @@ export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: str
     }
 
     // チケットのデータをもとに、DBを更新
-    let writeResult: Result = await updateEntireData(ticketSchema, ticketRef, toWriteTicket, transaction)
+    let writeResult: Result = await mergeData(ticketSchema.omit({
+        ticketNum: true,
+        customerId: true,
+        issueTime: true,
+        orderData: true,
+        paymentSessionId: true,
+        shopId: true,
+        uniqueId: true
+    }), ticketRef, {status:toStatus}, transaction)
 
     if (writeResult.isSuccess) {
         // チケットのDisplayDataも変更

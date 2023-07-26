@@ -140,9 +140,13 @@ export const resolveTicket =
 
 /**
  * [fromStatus]から[toStatus]へチケットのステータスを変更するようなエンドポイントを作成します
- * @param fromStatus
- * @param toStatus
- * @param successMessage
+ * Param:
+ *  - uid: string
+ *  - ticketId: string
+ * Response:
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
  */
 function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
     return standardFunction(async (request, response) => {
@@ -154,19 +158,6 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                 let id = requireParameter("ticketId", z.string(), request)
                 if (id.param == undefined) return {result: id.error}
 
-                // チケットデータを取得
-                // TODO updateTicketStatus内でチケットの存在を確認しているので不要
-                let ticket = await ticketById(refs, userId.param, id.param)
-                if (!ticket) {
-                    const err: Error = {
-                        "isSuccess": false,
-                        ...injectError(ticketNotFoundError)
-                    }
-                    return {
-                        statusCode: 400,
-                        result: err
-                    }
-                }
                 // チケットのステータスを変更します
                 let called = await updateTicketStatus(refs, userId.param, id.param, fromStatus, toStatus)
                 if (!called.isSuccess) {
