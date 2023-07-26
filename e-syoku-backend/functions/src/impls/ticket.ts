@@ -191,14 +191,12 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
         }
 
         // チケットデータを書き込み
-        // TODO Transaction
         await createData(ticketSchema,toWriteRef,ticketData)
         writtenTicketIds.push(toWriteRef.id)
         // LastTicketNumを更新
         // TODO Transaction
         await updateLastTicketNum(ref, ticketData)
         // TicketDisplayDataを更新
-        // TODO Transaction
         await updateTicketDisplayDataForTicket(ref, ticketData)
     }
 

@@ -138,6 +138,7 @@ export async function getAllPayments(ref: DBRefs, userid: string): Promise<Payme
  * @param sessionId
  * @param paidDetail
  */
+// TODO Transactionを張る
 export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
@@ -190,6 +191,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     // 決済セッションのステータスを支払い済みに変更
     // 決済セッションを保存
     // TODO Transaction
+    // さすがに決済セッションのデータが変更されながら決済するタイミングはないのでTransactionしなくても・・・?
     await updateEntireData(paymentSessionSchema.omit({
         sessionId: true,
         customerId: true,
