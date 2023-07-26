@@ -53,8 +53,13 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
     return parseDataAll(ticketSchema, ref.tickets(uid), (doc, data) => {
         return {
             uniqueId: doc.id,
+            ticketNum: data.ticketNum,
+            shopId: data.shopId,
             customerId: uid,
-            ...data
+            issueTime: data.issueTime,
+            status: data.status,
+            paymentSessionId: data.paymentSessionId,
+            orderData: data.orderData
         }
     })
 }

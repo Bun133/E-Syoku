@@ -33,7 +33,7 @@ const auth = admin.auth();
  * Param:
  *  - ticketId: string
  * Response:
- *  - ticket: Ticket[]
+ *  - ticket: Ticket
  * Permission:
  *  - ADMIN
  *  - SHOP
@@ -68,7 +68,14 @@ export const ticketStatus = standardFunction(async (request, response) => {
 })
 
 /**
- * 要求されたユーザーのすべてのチケットを取得して返却します
+ * リクエストユーザーのすべてのチケットデータを返却します
+ * Param:
+ * Response:
+ *  - tickets: Ticket[]
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const listTickets = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
