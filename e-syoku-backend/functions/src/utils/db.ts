@@ -3,7 +3,7 @@ import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
 import {Error, Result, Success} from "../types/errors";
-import {injectError, setDataFailedError, updateDataFailedError} from "../impls/errors";
+import {injectError, mergeDataFailedError, setDataFailedError, updateDataFailedError} from "../impls/errors";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
@@ -176,6 +176,7 @@ export async function updatePartialData<T extends DocumentData>(type: ZodType<T>
 
 /**
  * [type]に合うデータを使ってSet処理を行います
+ * {merge:false}です!
  * @param type
  * @param ref
  * @param toSet
@@ -184,9 +185,9 @@ export async function updatePartialData<T extends DocumentData>(type: ZodType<T>
 export async function setData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toSet: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
-            await transaction.set(ref, toSet);
+            await transaction.set(ref, toSet, {merge: false});
         } else {
-            await ref.set(toSet);
+            await ref.set(toSet, {merge: false});
         }
     } catch (e) {
         const err: Error = {
@@ -195,6 +196,37 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
             toSetRef: ref.path,
             rawError: e,
             toSet: toSet,
+        }
+        return err
+    }
+    const suc: Success = {
+        isSuccess: true
+    }
+    return suc
+}
+
+/**
+ * [type]に合うデータを使用してMerge処理を行います
+ * {merge:true}のSet処理を行います
+ * @param type
+ * @param ref
+ * @param toMerge
+ * @param transaction
+ */
+export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toMerge: T, transaction?: firestore.Transaction): Promise<Result> {
+    try {
+        if (transaction) {
+            await transaction.set(ref, toMerge, {merge: true});
+        } else {
+            await ref.set(toMerge, {merge: true});
+        }
+    } catch (e) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(mergeDataFailedError),
+            toMergeRef: ref.path,
+            rawError: e,
+            toMerge: toMerge,
         }
         return err
     }
