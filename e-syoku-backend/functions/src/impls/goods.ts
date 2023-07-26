@@ -52,7 +52,7 @@ export async function getAllGoods(refs: DBRefs) {
  */
 export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, transaction?: firestore.Transaction) {
     const ref = refs.remains.doc(goodsId)
-    return await parseData(goodsRemainDataSchema, ref, (data) => {
+    return await parseData<GoodsRemainData>(goodsRemainDataSchema, ref, (data) => {
         return {
             goodsId: ref.id,
             remainCount: data.remainCount,
@@ -66,19 +66,36 @@ export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, tran
  * @param remainData
  * @param quantity
  */
-// TODO Rewrite with Result Type
-export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number): undefined | boolean {
+export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number): Error | Success & {
+    isEnough: boolean
+} {
     // @ts-ignore
     if (remainData.remain != undefined && typeof remainData.remain == "boolean") {
         // @ts-ignore
-        return remainData.remain as boolean
+        const remain = remainData.remain as boolean
+
+        const r: Success & { isEnough: boolean } = {
+            isSuccess: true,
+            isEnough: remain
+        }
+        return r
         // @ts-ignore
     } else if (remainData.remainCount != undefined && typeof remainData.remainCount == "number") {
         // @ts-ignore
-        return remainData.remainCount >= quantity
+        const remainCount = remainData.remainCount as number
+
+        const r: Success & { isEnough: boolean } = {
+            isSuccess: true,
+            isEnough: remainCount >= quantity
+        }
+        return r
     }
     error("in remainDataIsEnough cannot decide what type the data is.Data:", remainData)
-    return undefined
+    const r: Error = {
+        isSuccess: false,
+        ...injectError(remainDataTypeNotKnownError)
+    }
+    return r
 }
 
 /**
