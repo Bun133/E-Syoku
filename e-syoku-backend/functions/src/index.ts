@@ -376,6 +376,13 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
 /**
  * TicketDisplayのデータをすべて読み取って返却します
  * TODO クライアントから直接FirestoreをListenするかどうか
+ * Param:
+ *  - shipId:string
+ * Response:
+ *  - displays:TicketDisplayData[]
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
  */
 export const ticketDisplay = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
@@ -383,6 +390,7 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             const param = requireParameter("shopId", z.string(), req)
             if (param.param == undefined) return {result: param.error}
             const shopId = param.param
+
             const data = (await ticketDisplayDataByShopId(refs, shopId)).map((data) => {
                 // Remove unnecessary DBRef field
                 return {
