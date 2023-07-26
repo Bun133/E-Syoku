@@ -1,5 +1,5 @@
 import {Goods, GoodsRemainData, goodsRemainDataSchema, goodsSchema} from "../types/goods";
-import {DBRefs, parseData, updateEntireData} from "../utils/db";
+import {DBRefs, parseData, parseDataAll, updateEntireData} from "../utils/db";
 import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
@@ -16,25 +16,32 @@ import {
     transactionFailedError,
     updateRemainDataFailedError
 } from "./errors";
-import DocumentReference = firestore.DocumentReference;
 
 export async function getGoodsById(ref: DBRefs, goodsId: UniqueId): Promise<Goods | undefined> {
     const directRef = ref.goods.doc(goodsId)
-    return await getGoodsFromRef(directRef)
-}
-
-export async function getGoodsFromRef(ref: DocumentReference): Promise<Goods | undefined> {
-    return await parseData(goodsSchema, ref, (data) => {
+    return await parseData(goodsSchema, directRef, (data) => {
         return {
-            goodsId: ref.id,
-            ...data
+            goodsId: directRef.id,
+            description: data.description,
+            shopId: data.shopId,
+            name: data.name,
+            imageUrl: data.imageUrl,
+            price: data.price,
         }
     })
 }
 
 export async function getAllGoods(refs: DBRefs) {
-    const all = await refs.goods.listDocuments()
-    return await Promise.all(all.map(getGoodsFromRef));
+    return await parseDataAll(goodsSchema, refs.goods, (doc, data) => {
+        return {
+            goodsId: doc.id,
+            description: data.description,
+            shopId: data.shopId,
+            name: data.name,
+            imageUrl: data.imageUrl,
+            price: data.price,
+        }
+    })
 }
 
 /**
@@ -48,7 +55,8 @@ export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, tran
     return await parseData(goodsRemainDataSchema, ref, (data) => {
         return {
             goodsId: ref.id,
-            ...data
+            remainCount: data.remainCount,
+            remain: data.remain
         }
     }, transaction)
 }

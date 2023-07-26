@@ -177,6 +177,13 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
 /**
  * すべての商品のデータを取得して返却します
+ * Param:
+ * Response:
+ * - data: Map<string, Goods>
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const listGoods = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
@@ -184,8 +191,8 @@ export const listGoods = standardFunction(async (request, response) => {
             // すべてのGoodsのデータを取得
             const goods = await getAllGoods(refs)
             // それぞれの在庫の状況を取得してMapにする
+            // TODO 気持ち悪い書き方やめる
             const remainData = (await goods
-                .filterNotNull({toLog: {message: "Null entry in retrieved goods list"}})
                 .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
                 .filterValueNotNull({toLog: {message: "Failed to get remain data for some goods"}})
 
