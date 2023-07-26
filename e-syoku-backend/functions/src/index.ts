@@ -15,7 +15,7 @@ import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/
 import {error} from "./utils/logger";
 import {injectError, paymentNotFoundError, requestNotContainUserIdError, ticketNotFoundError} from "./impls/errors";
 import {Error, Success} from "./types/errors";
-import {shopByRef} from "./impls/shop";
+import {listAllShop} from "./impls/shop";
 import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
@@ -95,21 +95,23 @@ export const listTickets = standardFunction(async (request, response) => {
 });
 
 /**
- * List all shops existing in the database
+ * すべての店舗の情報を返却します
+ * Param:
+ * Response:
+ *  - shops: Shop[]
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const listShops = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return await authedWithType(["ADMIN", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
-            let docs = await refs.shops.listDocuments();
-            let shops = await Promise.all(docs.map(async (doc) => {
-                return await shopByRef(refs, doc);
-            }))
+            let shops = await listAllShop(refs);
 
             const suc: Success = {
                 "isSuccess": true,
-                "shops": shops.filter((it) => {
-                    return it !== undefined
-                })
+                "shops": shops
             }
             return {
                 result: suc
@@ -403,7 +405,7 @@ export const grantPermission = standardFunction(async (req, res) => {
             const shopId = requireOptionalParameter("shopId", z.string().optional(), req).param
 
 
-            const result = await grantPermissionToUser(refs, uid.param, authType.param,shopId)
+            const result = await grantPermissionToUser(refs, uid.param, authType.param, shopId)
             return {
                 result: result
             }

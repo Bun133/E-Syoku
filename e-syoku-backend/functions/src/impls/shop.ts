@@ -1,17 +1,11 @@
 import {Shop, shopSchema} from "../types/shop";
-import {firestore} from "firebase-admin";
-import {DBRefs, parseData} from "../utils/db";
-import DocumentReference = firestore.DocumentReference;
+import {DBRefs, parseDataAll} from "../utils/db";
 
-export async function shopById(ref: DBRefs, id: string): Promise<Shop | undefined> {
-    return shopByRef(ref, ref.shops.doc(id));
-}
-
-export async function shopByRef(ref: DBRefs, shopRef: DocumentReference<firestore.DocumentData>): Promise<Shop | undefined> {
-    return await parseData(shopSchema, shopRef, (data) => {
+export async function listAllShop(ref: DBRefs):Promise<Shop[]> {
+    return parseDataAll(shopSchema,ref.shops,(doc, data)=>{
         return {
-            shopId: shopRef.id,
-            ...data
+            name: data.name,
+            shopId: doc.id
         }
     })
 }
