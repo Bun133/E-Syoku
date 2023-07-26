@@ -1,4 +1,4 @@
-import {createData, DBRefs, newRandomRef, parseData} from "../utils/db";
+import {createData, DBRefs, newRandomRef, parseData, parseDataAll} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
@@ -116,9 +116,16 @@ export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentRe
     })
 }
 
-export async function getAllPayments(ref: DBRefs, userid: string) {
-    const docs = await ref.payments(userid).listDocuments()
-    return (await Promise.all(docs.map(doc => getPaymentSessionByRef(ref, doc)))).filterNotNullStrict({toLog: {message: "in getAllPayments,Failed to get some payment data."}})
+export async function getAllPayments(ref: DBRefs, userid: string):Promise<PaymentSession[]> {
+    return await parseDataAll<PaymentSession>(paymentSessionSchema,ref.payments(userid), (doc, data) => {
+        return {
+            sessionId: doc.id,
+            customerId: data.customerId,
+            orderContent: data.orderContent,
+            state: data.state,
+            totalAmount: data.totalAmount
+        }
+    })
 }
 
 /**

@@ -242,6 +242,13 @@ export const submitOrder = standardFunction(async (request, response) => {
 
 /**
  * ユーザーに紐づいている決済セッションのデータをすべて送信します
+ * Param:
+ * Response:
+ *  - payments:PaymentSession[]
+ * Permission:
+ *  - ADMIN
+ *  - SHOP
+ *  - ANONYMOUS
  */
 export const listPayments = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
