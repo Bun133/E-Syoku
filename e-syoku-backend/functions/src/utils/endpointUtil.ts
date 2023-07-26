@@ -28,6 +28,7 @@ export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request
             param: undefined,
             error: {
                 isSuccess: false,
+                // TODO ${type}が[Object object]してる
                 error: `Missing parameter ${paramName} with Type ${type}`,
                 errorCode: "MISSING_PARAMETER"
             }
