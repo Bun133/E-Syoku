@@ -3,7 +3,13 @@ import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
 import {Error, Result, Success} from "../types/errors";
-import {injectError, mergeDataFailedError, setDataFailedError, updateDataFailedError} from "../impls/errors";
+import {
+    createDataFailedError,
+    injectError,
+    mergeDataFailedError,
+    setDataFailedError,
+    updateDataFailedError
+} from "../impls/errors";
 import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
@@ -195,6 +201,36 @@ export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: D
             toMergeRef: ref.path,
             rawError: e,
             toMerge: toMerge,
+        }
+        return err
+    }
+    const suc: Success = {
+        isSuccess: true
+    }
+    return suc
+}
+
+/**
+ * [type]に合うデータを使用してCreate処理を行います
+ * @param type
+ * @param ref
+ * @param toCreate
+ * @param transaction
+ */
+export async function createData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toCreate: T, transaction?: firestore.Transaction): Promise<Result> {
+    try {
+        if (transaction) {
+            await transaction.create(ref, toCreate);
+        } else {
+            await ref.create(toCreate);
+        }
+    } catch (e) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(createDataFailedError),
+            toCreateRef: ref.path,
+            rawError: e,
+            toCreate: toCreate,
         }
         return err
     }
