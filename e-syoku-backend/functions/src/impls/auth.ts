@@ -4,10 +4,11 @@ import {Error, Result} from "../types/errors";
 import {injectError, permissionDataMissing} from "./errors";
 
 export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry | undefined> {
-    return await parseData(authEntrySchema, refs.auths.doc(uid), (data) => {
+    return await parseData<AuthEntry>(authEntrySchema, refs.auths.doc(uid), (data) => {
         return {
             uid: uid,
-            ...data
+            authType: data.authType,
+            shopId: data.shopId
         }
     });
 }

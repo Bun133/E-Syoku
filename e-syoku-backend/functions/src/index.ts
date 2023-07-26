@@ -444,6 +444,16 @@ export const authState = standardFunction(async (req, res) => {
     })
 })
 
+/**
+ * 指定されたユーザーに権限を付与します
+ * Param:
+ *  - uid:string
+ *  - authType:AuthType
+ *  - shopId:string(optional)
+ * Response:
+ * Permission:
+ *  - ADMIN
+ */
 export const grantPermission = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
         return authedWithType(["ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
