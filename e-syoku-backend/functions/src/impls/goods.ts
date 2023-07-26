@@ -7,12 +7,13 @@ import {Order} from "../types/order";
 import {Error, Result, singleErrorSchema, Success} from "../types/errors";
 import {checkOrderRemainStatus} from "./order";
 import {
+    ErrorThrower,
     injectError,
     itemGoneError,
     remainDataCalculateFailedError,
     remainDataTypeNotKnownError,
-    remainStatusNotFoundError,
     remainStatusNegativeError,
+    remainStatusNotFoundError,
     transactionFailedError,
     updateRemainDataFailedError
 } from "./errors";
@@ -31,7 +32,7 @@ export async function getGoodsById(ref: DBRefs, goodsId: UniqueId): Promise<Good
     })
 }
 
-export async function getAllGoods(refs: DBRefs):Promise<Goods[]> {
+export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
     return await parseDataAll<Goods>(goodsSchema, refs.goods, (doc, data) => {
         return {
             goodsId: doc.id,
@@ -111,7 +112,7 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
             const status = await checkOrderRemainStatus(refs, order, transaction)
             if (!status.isSuccess) {
                 const err: Error = status
-                return err
+                throw new ErrorThrower(err)
             }
             const {isAllEnough, items} = status
             if (!isAllEnough) {
@@ -120,7 +121,7 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
                     isSuccess: false,
                     ...injectError(itemGoneError(items.map(i => i.goodsId)))
                 }
-                return err
+                throw new ErrorThrower(err)
             }
 
             // 更新後の在庫情報を計算
@@ -131,21 +132,21 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
                         isSuccess: false,
                         ...injectError(remainStatusNotFoundError)
                     }
-                    return err
+                    throw new ErrorThrower(err)
                 }
                 const calculated = calculateModifiedRemainData(itemStatus.remainData, item.count)
                 if (!calculated.isSuccess) {
                     const err: Error = calculated
-                    return err
+                    throw new ErrorThrower(err)
                 }
                 const suc: (Success & { calculated: GoodsRemainData }) = calculated
                 return suc
             })
 
             if (calculatedRemainData.some(i => !i.isSuccess)) {
-                // 更新後の在庫情報が計算できないものが合った場合
+                // 更新後の在庫情報が計算できないものが合った場合エラー
                 const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
-                return err
+                throw new ErrorThrower(err)
             }
 
             const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
@@ -156,10 +157,9 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
 
             const updateFailure = updateResult.filterInstance(singleErrorSchema)
             if (updateFailure.length > 0) {
-                // 一部の商品の在庫情報の更新に失敗した
-                // TODO ロールバックが必要
+                // 一部の商品の在庫情報の更新に失敗したのでロールバック
                 const err: Error = updateRemainDataFailedError(updateFailure)
-                return err
+                throw new ErrorThrower(err)
             }
 
             const suc: Success = {
@@ -168,6 +168,12 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> 
             return suc
         })
     } catch (e) {
+        if(e instanceof ErrorThrower) {
+            // Transactionの内側のエラーをcatch
+            const err: Error = e.error
+            return err
+        }
+
         // failed
         const err: Error = {
             isSuccess: false,
