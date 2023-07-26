@@ -89,6 +89,14 @@ export async function parseData<T, R>(type: ZodType<T>, ref: DocumentReference<f
     }
 }
 
+/**
+ * Collection内のDocumentすべてに対して[parseData]を行います
+ * @param type
+ * @param collectionRef
+ * @param transform
+ * @param transaction
+ * @param filter
+ */
 export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: CollectionReference, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => R, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
     let docs = await collectionRef.listDocuments()
     if (filter) {
@@ -104,6 +112,13 @@ export async function parseDataAll<T, R>(type: ZodType<T>, collectionRef: Collec
     }))).filterNotNull()
 }
 
+/**
+ * [type]全体に合うデータを使ってUpdate処理を行います
+ * @param type
+ * @param ref
+ * @param toUpdate
+ * @param transaction
+ */
 export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
@@ -127,6 +142,14 @@ export async function updateEntireData<T extends DocumentData>(type: ZodType<T>,
     return suc
 }
 
+/**
+ * [type]の一部分のデータを使ってUpdate処理を行います
+ * @param type
+ * @param ref
+ * @param toUpdate
+ * @param transaction
+ * @Deprecated use updateEntireData with zodType.omit(Mask) instead.
+ */
 export async function updatePartialData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: UpdateData<T>, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
@@ -150,6 +173,13 @@ export async function updatePartialData<T extends DocumentData>(type: ZodType<T>
     return suc
 }
 
+/**
+ * [type]に合うデータを使ってSet処理を行います
+ * @param type
+ * @param ref
+ * @param toSet
+ * @param transaction
+ */
 export async function setData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toSet: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
