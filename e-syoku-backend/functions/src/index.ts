@@ -37,12 +37,13 @@ const auth = admin.auth();
  *  - ticket: Ticket
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const ticketStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType(["ADMIN", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ADMIN", "CASHIER", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
             // チケットデータ取得
@@ -75,12 +76,13 @@ export const ticketStatus = standardFunction(async (request, response) => {
  *  - tickets: Ticket[]
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const listTickets = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType(["ANONYMOUS", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "CASHIER", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // 要求ユーザーのすべてのチケットを取得します
             let allTickets = await listTicketForUser(refs, authInstance.uid);
 
@@ -102,12 +104,13 @@ export const listTickets = standardFunction(async (request, response) => {
  *  - shops: Shop[]
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const listShops = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return await authedWithType(["ADMIN", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return await authedWithType(["ADMIN", "CASHIER", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let shops = await listAllShop(refs);
 
             const suc: Success = {
@@ -183,12 +186,13 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
  * - data: Map<string, Goods>
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const listGoods = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // すべてのGoodsのデータを取得
             const goods = await getAllGoods(refs)
             // それぞれの在庫の状況を取得してMapにする
@@ -213,12 +217,13 @@ export const listGoods = standardFunction(async (request, response) => {
  *  - paymentSessionId:string
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const submitOrder = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const order = requireParameter("order", orderSchema, request)
             if (order.param == undefined) return {result: order.error};
 
@@ -248,12 +253,13 @@ export const submitOrder = standardFunction(async (request, response) => {
  *  - payments:PaymentSession[]
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const listPayments = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // ユーザーに紐づいているすべての決済セッションのデータを取得します
             const payments = await getAllPayments(refs, authInstance.uid)
             const suc: Success = {"isSuccess": true, "payments": payments}
@@ -273,12 +279,13 @@ export const listPayments = standardFunction(async (request, response) => {
  *  - payment:PaymentSession
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  *  - ANONYMOUS
  */
 export const paymentStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
-        return authedWithType(["ANONYMOUS", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
+        return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // id
             const id = requireParameter("paymentId", z.string(), request)
             if (id.param == undefined) return {result: id.error}
@@ -339,11 +346,11 @@ export const paymentStatus = standardFunction(async (request, response) => {
  *  - ticketsId:string[]
  * Permission:
  *  - ADMIN
- *  - SHOP
+ *  - CASHIER
  */
 export const markPaymentPaid = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
-        return authedWithType(["SHOP", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+        return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             let userId = requireParameter("userId", z.string(), req)
             if (userId.param == undefined) return {result: userId.error}
             let paymentId = requireParameter("paymentId", z.string(), req)
@@ -383,11 +390,12 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
  *  - displays:TicketDisplayData[]
  * Permission:
  *  - ADMIN
+ *  - CASHIER
  *  - SHOP
  */
 export const ticketDisplay = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
-        return authedWithType(["SHOP", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+        return authedWithType(["SHOP", "CASHIER", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const param = requireParameter("shopId", z.string(), req)
             if (param.param == undefined) return {result: param.error}
             const shopId = param.param
@@ -417,9 +425,7 @@ export const ticketDisplay = standardFunction(async (req, res) => {
  * Response:
  *  - authType:AuthType
  * Permission:
- *  - ADMIN
- *  - SHOP
- *  - ANONYMOUS
+ *  All
  */
 export const authState = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
@@ -482,11 +488,11 @@ export const grantPermission = standardFunction(async (req, res) => {
  * Response:
  * Permission:
  *  - ADMIN
- *  // TODO ADD "CASHIER"
+ *  - CASHIER
  */
 export const bindBarcode = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
-        return authedWithType(["ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+        return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const uid = requireParameter("uid", z.string(), req)
             if (uid.param == undefined) return {result: uid.error}
             const ticketId = requireParameter("ticketId", z.string(), req)
@@ -494,7 +500,7 @@ export const bindBarcode = standardFunction(async (req, res) => {
             const barcode = requireParameter("barcode", z.string(), req)
             if (barcode.param == undefined) return {result: barcode.error}
 
-            const result = await setBarcodeBindData(refs,barcode.param, ticketId.param,uid.param)
+            const result = await setBarcodeBindData(refs, barcode.param, ticketId.param, uid.param)
             return {
                 result: result
             }
