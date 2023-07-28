@@ -45,7 +45,7 @@ export default function Page() {
                                     <Btn onClick={async () => {
                                         const r = await callEndpoint(submitOrderEndPoint, auth.user, {order: order})
                                         if (r.isSuccess) {
-                                            router.push("/payment/")
+                                            router.push(`/payment/id?id=${r.data.paymentSessionId}`)
                                         } else {
                                             message.current = ["注文処理に失敗しました", `エラーコード:${r.errorCode}`, `エラー内容:${r.error}`]
                                             onOpen()
