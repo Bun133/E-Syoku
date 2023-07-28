@@ -4,7 +4,8 @@ import {
     authStateResponse,
     callTicketResponse,
     cancelCallingResponse,
-    defaultResponseFormat, grantPermissionRequest,
+    defaultResponseFormat,
+    grantPermissionRequest,
     listGoodsResponse,
     listPaymentResponse,
     listShopResponse,
@@ -43,5 +44,10 @@ export const ticketDisplayEndpoint = endpoint("ticketDisplay", z.object({shopId:
 
 export const authStateEndpoint = endpoint("authState", z.object({}), authStateResponse)
 
-export const grantPermissionEndpoint = endpoint("grantPermission",grantPermissionRequest, defaultResponseFormat)
+export const grantPermissionEndpoint = endpoint("grantPermission", grantPermissionRequest, defaultResponseFormat)
 
+export const bindBarcodeEndpoint = endpoint("bindBarcode", z.object({
+    ticketId: uniqueId,
+    uid: uniqueId,
+    barcode: z.string()
+}), defaultResponseFormat)
