@@ -137,3 +137,5 @@ export const ticketNumInfoNotFound = internalError("TicketNumInfoの取得に失
 export const ticketNumGenerateFailedError = internalError("次のTicketNumの生成に失敗しました", "TICKETNUM_GENERATE_FAILED")
 
 export const permissionDataMissing = internalError("権限データの一部がかけています", "PERMISSION_DATA_MISSING")
+
+export const authTypeInvalidError = internalError("AuthTypeが適切ではありません", "AUTH_TYPE_INVALID")

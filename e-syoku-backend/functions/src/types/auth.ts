@@ -2,11 +2,11 @@ import { UserRecord } from "firebase-admin/auth";
 import {z} from "zod";
 import {uniqueId} from "./types";
 
-// TODO ADD "Cashier" AuthType
 const AdminAuth = z.literal("ADMIN")
 const ShopAuth = z.literal("SHOP")
 const AnonymousAuth = z.literal("ANONYMOUS")
-export const AuthTypeSchema = z.union([AdminAuth, ShopAuth, AnonymousAuth])
+const CashierAuth = z.literal("CASHIER")
+export const AuthTypeSchema = z.union([AdminAuth, ShopAuth, AnonymousAuth,CashierAuth])
 export type AuthType = z.infer<typeof AuthTypeSchema>
 
 const AdminAuthEntry = z.object({
@@ -31,7 +31,14 @@ const AnonymousAuthEntry = z.object({
 
 export type AnonymousAuthEntry = z.infer<typeof AnonymousAuthEntry>
 
-export const authEntrySchema = AdminAuthEntry.or(ShopAuthEntry).or(AnonymousAuthEntry)
+const CashierAuthEntry = z.object({
+    authType: CashierAuth,
+    uid: uniqueId
+})
+
+export type CashierAuthEntry = z.infer<typeof CashierAuthEntry>
+
+export const authEntrySchema = z.union([AdminAuthEntry, ShopAuthEntry, AnonymousAuthEntry,CashierAuthEntry])
 
 /**
  * AuthEntry is the data stored in db.

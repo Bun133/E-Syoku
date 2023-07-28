@@ -1,7 +1,7 @@
 import {AuthEntry, authEntrySchema, AuthType} from "../types/auth";
 import {DBRefs, parseData, setData} from "../utils/db";
 import {Error, Result} from "../types/errors";
-import {injectError, permissionDataMissing} from "./errors";
+import {authTypeInvalidError, injectError, permissionDataMissing} from "./errors";
 
 export async function getAuthData(refs: DBRefs, uid: string): Promise<AuthEntry | undefined> {
     return await parseData<AuthEntry>(authEntrySchema, refs.auths.doc(uid), (data) => {
@@ -55,5 +55,15 @@ export async function grantPermissionToUser(refs: DBRefs, targetUserId: string, 
                 authType: "ANONYMOUS",
                 uid: targetUserId
             })
+        case "CASHIER":
+            return await updateAuthData(refs, targetUserId, {
+                authType: "CASHIER",
+                uid: targetUserId
+            })
+        default:
+            return {
+                isSuccess: false,
+                ...injectError(authTypeInvalidError)
+            }
     }
 }
