@@ -136,10 +136,10 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
                 }
                 return r
             } else {
-                const r:EndPointErrorResponse<R> = {
+                const r: EndPointErrorResponse<R> = {
                     data: undefined,
                     parseFailed: false,
-                    errorCode:defaultParsed.data.errorCode,
+                    errorCode: defaultParsed.data.errorCode,
                     error: defaultParsed.data.error,
                     fetchFailed: false,
                     isSuccess: false
@@ -149,7 +149,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
         } else {
             // failed fallback parsing as DefaultResponseFormat
             console.log("Endpoint Fallback Parsing Failed")
-            const r:EndPointErrorResponse<R> = {
+            const r: EndPointErrorResponse<R> = {
                 data: undefined,
                 error: "正常にレスポンスを得られませんでした",
                 errorCode: "[Client]ENDPOINT_FALLBACK_PARSING_FAILED",
@@ -227,21 +227,37 @@ export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: En
     const isRequestPending = useRef(false)
     const isFirstReqSent = useRef(false)
 
-    const call = async (requestData: Q) => {
+    const call: ((q: Q) => Promise<EndPointResponse<R> | undefined>) = async (requestData: Q) => {
         if (token.user == undefined) {
             // 見なかったことにする
-            return
+            return undefined
         }
         isRequestPending.current = true
-        const data = await callEndpoint(endPoint, token.user, requestData, abort.current)
-        console.log("SET", data)
-        setResponse(data)
-        setLoaded(true)
-        isRequestPending.current = false
-        return data
+        try {
+            const data = await callEndpoint(endPoint, token.user, requestData, abort.current)
+            console.log("SET", data)
+            setResponse(data)
+            setLoaded(true)
+            isRequestPending.current = false
+            return data
+        } catch (e: unknown) {
+            console.log("ERROR", e)
+            isRequestPending.current = false
+            const err: EndPointErrorResponse<R> = {
+                data: undefined,
+                error: "接続が中断されました",
+                errorCode: "[Client]CONNECTION_LOST",
+                fetchFailed: true,
+                isSuccess: false,
+                parseFailed: false,
+                // @ts-ignore
+                rawError: e
+            }
+            return err
+        }
     }
 
-    const fetch = async (requestData: Q) => {
+    const fetch: ((q: Q) => Promise<EndPointResponse<R> | undefined>) = async (requestData: Q) => {
         if (isRequestPending.current) {
             // abort previous request
             abort.current.abort()
@@ -251,7 +267,7 @@ export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: En
         return call(requestData)
     }
 
-    const firstCall = async (requestData: Q) => {
+    const firstCall: ((q: Q) => Promise<EndPointResponse<R> | undefined>)  = async (requestData: Q) => {
         if (!isFirstReqSent.current) {
             // Send first request
             const data = await fetch(requestData)
