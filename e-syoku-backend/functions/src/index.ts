@@ -6,14 +6,20 @@ import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance, AuthTypeSchema} from "./types/auth";
-import {listTicketForUser, ticketById, updateTicketStatusByBarcode} from "./impls/ticket";
+import {listTicketForUser, ticketById, updateTicketStatusByBarcode, updateTicketStatusByIds} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
-import {injectError, paymentNotFoundError, requestNotContainUserIdError, ticketNotFoundError} from "./impls/errors";
+import {
+    injectError,
+    paymentNotFoundError,
+    requestNotContainUserIdError,
+    ticketNotFoundError,
+    ticketNotSpecifiedError
+} from "./impls/errors";
 import {Error, Success} from "./types/errors";
 import {listAllShop} from "./impls/shop";
 import {PaidDetail} from "./types/payment";
@@ -146,6 +152,9 @@ export const resolveTicket =
  * [fromStatus]から[toStatus]へチケットのステータスを変更するようなエンドポイントを作成します
  * Param:
  *  - barcode:string
+ *  or
+ *  - uid:string
+ *  - ticketId:string
  * Response:
  * Permission:
  *  - ADMIN
@@ -155,21 +164,45 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
-                let barcode = requireParameter("barcode", z.string(), request);
-                if (barcode.param === undefined) return {result: barcode.error}
+                let barcode = requireOptionalParameter("barcode", z.string(), request);
+                let uid = requireOptionalParameter("uid", z.string(), request);
+                let ticketId = requireOptionalParameter("ticketId", z.string(), request);
 
-                // チケットのステータスを変更します
-                let called = await updateTicketStatusByBarcode(refs, barcode.param, fromStatus, toStatus)
-                if (!called.isSuccess) {
-                    const err: Error = called
-                    return {
-                        statusCode: 400,
-                        result: err
+                if (barcode.param) {
+                    // チケットのステータスを変更します
+                    let called = await updateTicketStatusByBarcode(refs, barcode.param, fromStatus, toStatus)
+                    if (!called.isSuccess) {
+                        const err: Error = called
+                        return {
+                            statusCode: 400,
+                            result: err
+                        }
                     }
+
+                    const suc: Success = {"isSuccess": true, "success": successMessage}
+                    return {result: suc}
+                } else if (uid.param && ticketId.param) {
+                    // チケットのステータスを変更します
+                    let called = await updateTicketStatusByIds(refs, uid.param,ticketId.param, fromStatus, toStatus)
+                    if (!called.isSuccess) {
+                        const err: Error = called
+                        return {
+                            statusCode: 400,
+                            result: err
+                        }
+                    }
+
+                    const suc: Success = {"isSuccess": true, "success": successMessage}
+                    return {result: suc}
                 }
 
-                const suc: Success = {"isSuccess": true, "success": successMessage}
-                return {result: suc}
+                const err: Error = {
+                    "isSuccess": false,
+                    ...injectError(ticketNotSpecifiedError)
+                }
+                return {
+                    result: err
+                }
             })
         })
     })
