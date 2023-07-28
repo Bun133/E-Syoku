@@ -139,3 +139,7 @@ export const ticketNumGenerateFailedError = internalError("次のTicketNumの生
 export const permissionDataMissing = internalError("権限データの一部がかけています", "PERMISSION_DATA_MISSING")
 
 export const authTypeInvalidError = internalError("AuthTypeが適切ではありません", "AUTH_TYPE_INVALID")
+export const barcodeInvalidError:ErrorType = {
+    error: "バーコードが不正です",
+    errorCode: "BARCODE_INVALID"
+}

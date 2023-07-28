@@ -6,7 +6,7 @@ import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance, AuthTypeSchema} from "./types/auth";
-import {listTicketForUser, ticketById, updateTicketStatus} from "./impls/ticket";
+import {listTicketForUser, ticketById, updateTicketStatusByBarcode} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
@@ -145,8 +145,7 @@ export const resolveTicket =
 /**
  * [fromStatus]から[toStatus]へチケットのステータスを変更するようなエンドポイントを作成します
  * Param:
- *  - uid: string
- *  - ticketId: string
+ *  - barcode:string
  * Response:
  * Permission:
  *  - ADMIN
@@ -156,14 +155,11 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
-                // uid,ticketId
-                let userId = requireParameter("uid", z.string(), request)
-                if (userId.param === undefined) return {result: userId.error}
-                let id = requireParameter("ticketId", z.string(), request)
-                if (id.param == undefined) return {result: id.error}
+                let barcode = requireParameter("barcode", z.string(), request);
+                if (barcode.param === undefined) return {result: barcode.error}
 
                 // チケットのステータスを変更します
-                let called = await updateTicketStatus(refs, userId.param, id.param, fromStatus, toStatus)
+                let called = await updateTicketStatusByBarcode(refs, barcode.param, fromStatus, toStatus)
                 if (!called.isSuccess) {
                     const err: Error = called
                     return {

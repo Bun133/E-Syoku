@@ -5,11 +5,18 @@ import {UniqueId} from "../types/types";
 import {Error, Result, Success} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
-import {failedToGetItemDataError, injectError, ticketNotFoundError, ticketStatusInvalidError} from "./errors";
+import {
+    barcodeInvalidError,
+    failedToGetItemDataError,
+    injectError,
+    ticketNotFoundError,
+    ticketStatusInvalidError
+} from "./errors";
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {generateNextTicketNum, updateLastTicketNum} from "./ticketNumInfos";
 import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
+import {getBarcodeBindData} from "./barcode";
 import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
@@ -65,18 +72,42 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
 }
 
 /**
- * チケットのステータスを[fromStatus]から[toStatus]に変更します
+ * チケットのステータスをバーコードの情報から食券データを特定し更新します
  * @param ref
- * @param uid
- * @param ticketId
+ * @param barcode
  * @param fromStatus
  * @param toStatus
  * @param transaction
  */
-export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+export async function updateTicketStatusByBarcode(ref: DBRefs, barcode: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+    const barcodeData = await getBarcodeBindData(ref, barcode)
+    if (!barcodeData) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(barcodeInvalidError)
+        }
+        return err
+    }
+
+    return await updateTicketStatusByIds(ref, barcodeData.uid, barcodeData.ticketId, fromStatus, toStatus, transaction)
+}
+
+export async function updateTicketStatusByIds(ref: DBRefs, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+    return await internalUpdateTicketStatus(ref, uid, ref.tickets(uid).doc(ticketId), fromStatus, toStatus, transaction)
+}
+
+/**
+ * チケットのステータスを[fromStatus]から[toStatus]に変更します
+ * @param ref
+ * @param uid
+ * @param ticketRef
+ * @param fromStatus
+ * @param toStatus
+ * @param transaction
+ */
+export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
 
     // チケットの存在を確認する
-    const ticketRef = ref.tickets(uid).doc(ticketId)
     const ticket = await ticketByRef(ref, uid, ticketRef)
     if (!ticket) {
         const err: Error = {
@@ -110,7 +141,7 @@ export async function updateTicketStatus(ref: DBRefs, uid: string, ticketId: str
         paymentSessionId: true,
         shopId: true,
         uniqueId: true
-    }), ticketRef, {status:toStatus}, transaction)
+    }), ticketRef, {status: toStatus}, transaction)
 
     if (writeResult.isSuccess) {
         // チケットのDisplayDataも変更
@@ -191,7 +222,7 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
         }
 
         // チケットデータを書き込み
-        await createData(ticketSchema,toWriteRef,ticketData)
+        await createData(ticketSchema, toWriteRef, ticketData)
         writtenTicketIds.push(toWriteRef.id)
         // LastTicketNumを更新
         // TODO Transaction
