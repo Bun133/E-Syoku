@@ -243,7 +243,9 @@ export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
     displays: z.array(ticketDisplayData)
 }))
 
-export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS"])
+export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS","CASHIER"])
+
+export type AuthType = z.infer<typeof authType>
 
 export const authStateResponse = defaultResponseFormat.and(z.object({
     authType: authType.optional()

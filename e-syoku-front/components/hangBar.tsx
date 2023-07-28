@@ -6,7 +6,8 @@ import {signOut} from "@firebase/auth";
 import {useRouter} from "next/navigation";
 import Btn from "@/components/btn";
 import {Flex, HStack} from "@chakra-ui/layout";
-import {Spacer} from "@chakra-ui/react";
+import {Spacer, Text} from "@chakra-ui/react";
+import {AuthState} from "@/lib/e-syoku-api/AuthTypeProvider";
 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
@@ -18,6 +19,13 @@ export function HangBar() {
                 {auth.user !== undefined ? <UserCheck onClick={() => {
                     router.push("/account")
                 }}></UserCheck> : <UserX></UserX>}
+                <AuthState child={(info) => {
+                    if (info !== undefined && info.authType !== undefined) {
+                        return (<Text>AuthType:{info.authType}</Text>)
+                    } else {
+                        return null
+                    }
+                }}/>
                 <Btn onClick={() => {
                     logOut(auth)
                 }}>ログアウト</Btn>
