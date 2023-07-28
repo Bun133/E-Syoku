@@ -208,10 +208,7 @@ export const listGoodsResponse = defaultResponseFormat.and(z.object({
 // TODO Error Message Handling
 export const submitOrderResponse = defaultResponseFormat.and(z.object({
     paymentSessionId: z.string()
-}).or(z.object({
-    error: z.literal("一部の商品の在庫がなくなりました"),
-    missedItems: z.array(z.string())
-})))
+}))
 
 export const listPaymentResponse = defaultResponseFormat.and(z.object({
     payments: z.array(paymentSessionSchema)
