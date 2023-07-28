@@ -2,7 +2,8 @@ import {z} from 'zod';
 import {uniqueId} from "./types";
 
 export const barcodeBindDataSchema = z.object({
-    barcode: z.number(),
+    barcode: z.string(),
+    uid: uniqueId,
     ticketId: uniqueId
 })
 

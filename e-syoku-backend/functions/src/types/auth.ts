@@ -2,7 +2,7 @@ import { UserRecord } from "firebase-admin/auth";
 import {z} from "zod";
 import {uniqueId} from "./types";
 
-// TODO ADD "Casher" AuthType
+// TODO ADD "Cashier" AuthType
 const AdminAuth = z.literal("ADMIN")
 const ShopAuth = z.literal("SHOP")
 const AnonymousAuth = z.literal("ANONYMOUS")

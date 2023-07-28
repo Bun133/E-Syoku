@@ -20,7 +20,7 @@ export type DynamicDocumentReference<T> = (t: T) => DocumentReference<firestore.
 // this type is actually string,but this type refers to the id of the user.
 export type UserIdDBKey = string
 export type ShopIdDBKey = string
-export type BarcodeKey = number
+export type BarcodeKey = string
 
 export type DBRefs = {
     db: Firestore,
