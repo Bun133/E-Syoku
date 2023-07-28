@@ -20,6 +20,7 @@ import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
+import {setBarcodeBindData} from "./impls/barcode";
 
 
 admin.initializeApp()
@@ -465,6 +466,35 @@ export const grantPermission = standardFunction(async (req, res) => {
 
 
             const result = await grantPermissionToUser(refs, uid.param, authType.param, shopId)
+            return {
+                result: result
+            }
+        })
+    })
+})
+
+/**
+ * バーコードと食券データを紐づけます
+ * Param:
+ *  - uid:string
+ *  - ticketId:string
+ *  - barcode:string
+ * Response:
+ * Permission:
+ *  - ADMIN
+ *  // TODO ADD "CASHIER"
+ */
+export const bindBarcode = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authedWithType(["ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+            const uid = requireParameter("uid", z.string(), req)
+            if (uid.param == undefined) return {result: uid.error}
+            const ticketId = requireParameter("ticketId", z.string(), req)
+            if (ticketId.param == undefined) return {result: ticketId.error}
+            const barcode = requireParameter("barcode", z.string(), req)
+            if (barcode.param == undefined) return {result: barcode.error}
+
+            const result = await setBarcodeBindData(refs,barcode.param, ticketId.param,uid.param)
             return {
                 result: result
             }
