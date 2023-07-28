@@ -57,20 +57,20 @@ export function Authed(params: {
     )
 }
 
-export function AdminOnly(params: { child: React.JSX.Element | null }) {
+export function AdminOnly(params: { child: React.JSX.Element | null,fail?: (type: AuthType | undefined) => React.JSX.Element | null }) {
     return (
-        <Authed types={["ADMIN"]} success={() => params.child}/>
+        <Authed types={["ADMIN"]} success={() => params.child} fail={params.fail}/>
     )
 }
 
-export function ShopOnly(params: { child: React.JSX.Element | null }) {
+export function ShopOnly(params: { child: React.JSX.Element | null,fail?: (type: AuthType | undefined) => React.JSX.Element | null }) {
     return (
-        <Authed types={["SHOP"]} success={() => params.child}/>
+        <Authed types={["SHOP"]} success={() => params.child} fail={params.fail}/>
     )
 }
 
-export function CashierOnly(params: { child: React.JSX.Element | null }) {
+export function CashierOnly(params: { child: React.JSX.Element | null,fail?: (type: AuthType | undefined) => React.JSX.Element | null }) {
     return (
-        <Authed types={["CASHIER"]} success={() => params.child}/>
+        <Authed types={["CASHIER"]} success={() => params.child} fail={params.fail}/>
     )
 }
