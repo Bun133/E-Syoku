@@ -175,7 +175,6 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     const token = useFirebaseAuth()
 
     const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
-    const abort = useRef(new AbortController())
     const isRequestPending = useRef(false)
     const [isLoaded, setLoaded] = useState(false)
     const isHandledFirstReq = useRef(false)
@@ -186,7 +185,7 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
             return
         }
         isRequestPending.current = true
-        callEndpoint(endPoint, token.user, requestData, abort.current).then(data => {
+        callEndpoint(endPoint, token.user, requestData).then(data => {
             console.log("SET", data)
             setResponse(data)
             setLoaded(true)
@@ -196,9 +195,8 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
 
     const fetch = () => {
         if (isRequestPending.current) {
-            // abort previous request
-            abort.current.abort()
-            console.log("Aborting previous request")
+            // ignore new request
+            console.log("Ignore new request")
         }
         setLoaded(false)
         call()
