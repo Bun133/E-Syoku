@@ -39,6 +39,7 @@ const auth = admin.auth();
  * リクエストユーザーの[ticketId]に該当するチケットデータを返却します
  * Param:
  *  - ticketId: string
+ *  - uid:string(optional)
  * Response:
  *  - ticket: Ticket
  * Permission:
@@ -52,8 +53,10 @@ export const ticketStatus = standardFunction(async (request, response) => {
         return authedWithType(["ADMIN", "CASHIER", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
+            let uid = requireOptionalParameter("uid", z.string().optional(), request).param ?? authInstance.uid
+
             // チケットデータ取得
-            let ticket = await ticketById(refs, authInstance.uid, ticketId.param);
+            let ticket = await ticketById(refs, uid, ticketId.param);
             if (ticket === undefined) {
                 const err: Error = {
                     "isSuccess": false,
@@ -183,7 +186,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                     return {result: suc}
                 } else if (uid.param && ticketId.param) {
                     // チケットのステータスを変更します
-                    let called = await updateTicketStatusByIds(refs, uid.param,ticketId.param, fromStatus, toStatus)
+                    let called = await updateTicketStatusByIds(refs, uid.param, ticketId.param, fromStatus, toStatus)
                     if (!called.isSuccess) {
                         const err: Error = called
                         return {
