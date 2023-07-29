@@ -145,3 +145,5 @@ export const barcodeInvalidError:ErrorType = {
 }
 
 export const ticketNotSpecifiedError = internalError("このデータではチケットを特定できません","TICKET_NOT_SPECIFIED")
+
+export const internalErrorThrownError = internalError("内部でエラーが発生しました","INTERNAL_ERROR_THROWN")
