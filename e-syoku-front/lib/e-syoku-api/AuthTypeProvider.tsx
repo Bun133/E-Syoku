@@ -30,19 +30,23 @@ export function useAuthState() {
     return React.useContext(authTypeContext);
 }
 
-export function AuthState(params: { child: (info: AuthTypeInfo | undefined) => React.JSX.Element | null }) {
+export function AuthState(params: { children: (info: AuthTypeInfo | undefined) => React.JSX.Element |React.JSX.Element[] | null }) {
     const info = useAuthState()
-    return params.child(info ?? undefined)
+    return (
+        <>
+            {params.children(info ?? undefined)}
+        </>
+    )
 }
 
 export function Authed(params: {
     types: AuthType[],
-    success: (type: AuthType) => React.JSX.Element | null,
-    fail?: (type: AuthType | undefined) => React.JSX.Element | null
+    success: (type: AuthType) => React.JSX.Element |React.JSX.Element[] | null,
+    fail?: (type: AuthType | undefined) => React.JSX.Element |React.JSX.Element[] | null
 }) {
     const failComp = params.fail ?? ((type: AuthType | undefined) => null)
     return (
-        <AuthState child={(info) => {
+        <AuthState children={(info) => {
             if (info === undefined || info.authType === undefined) {
                 return failComp(undefined)
             } else {
@@ -57,20 +61,20 @@ export function Authed(params: {
     )
 }
 
-export function AdminOnly(params: { child: React.JSX.Element | null,fail?: (type: AuthType | undefined) => React.JSX.Element | null }) {
+export function AdminOnly(params: { children: React.JSX.Element |React.JSX.Element[] | null, fail?: (type: AuthType | undefined) => React.JSX.Element |React.JSX.Element[] | null }) {
     return (
-        <Authed types={["ADMIN"]} success={() => params.child} fail={params.fail}/>
+        <Authed types={["ADMIN"]} success={() => params.children} fail={params.fail}/>
     )
 }
 
-export function ShopOnly(params: { child: React.JSX.Element | null,fail?: (type: AuthType | undefined) => React.JSX.Element | null }) {
+export function ShopOnly(params: { children: React.JSX.Element |React.JSX.Element[] | null, fail?: (type: AuthType | undefined) => React.JSX.Element |React.JSX.Element[] | null }) {
     return (
-        <Authed types={["SHOP"]} success={() => params.child} fail={params.fail}/>
+        <Authed types={["SHOP"]} success={() => params.children} fail={params.fail}/>
     )
 }
 
-export function CashierOnly(params: { child: React.JSX.Element | null,fail?: (type: AuthType | undefined) => React.JSX.Element | null }) {
+export function CashierOnly(params: { children: React.JSX.Element |React.JSX.Element[] | null, fail?: (type: AuthType | undefined) => React.JSX.Element |React.JSX.Element[] | null }) {
     return (
-        <Authed types={["CASHIER"]} success={() => params.child} fail={params.fail}/>
+        <Authed types={["CASHIER"]} success={() => params.children} fail={params.fail}/>
     )
 }
