@@ -190,10 +190,14 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
     // 店舗ごとに振り分け
     const shopMap: Map<UniqueId, SingleOrder[]> = new Map()
     for (const order of orderWithShopData) {
+        const rawOrder:SingleOrder = {
+            goodsId: order.goodsId,
+            count: order.count
+        }
         if (shopMap.has(order.itemData.shopId)) {
-            shopMap.get(order.itemData.shopId)!.push(order)
+            shopMap.get(order.itemData.shopId)!.push(rawOrder)
         } else {
-            shopMap.set(order.itemData.shopId, [order])
+            shopMap.set(order.itemData.shopId, [rawOrder])
         }
     }
 

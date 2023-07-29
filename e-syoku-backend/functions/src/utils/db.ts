@@ -220,7 +220,7 @@ export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: D
 export async function createData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toCreate: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
-            await transaction.create(ref, toCreate);
+            transaction.create(ref, toCreate);
         } else {
             await ref.create(toCreate);
         }
