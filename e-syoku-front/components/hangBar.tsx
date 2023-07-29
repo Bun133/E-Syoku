@@ -18,16 +18,21 @@ import {
 } from "@chakra-ui/react";
 import {AdminOnly, AuthState} from "@/lib/e-syoku-api/AuthTypeProvider";
 import {useDisclosure} from "@chakra-ui/hooks";
+import Link from "next/link";
 
 
 function HangEntity(params: { text: string, onClick?: () => void, href?: string }) {
-    const router = useRouter()
-    const click = params.href !== undefined ? () => {
-        params.onClick?.()
-        router.push(params.href!!)
-    } : params.onClick
+    if (params.href) {
+        return (
+            <Link href={params.href}>
+                <div onClick={params.onClick}>
+                    {params.text}
+                </div>
+            </Link>
+        )
+    }
     return (
-        <div onClick={click}>
+        <div onClick={params.onClick}>
             {params.text}
         </div>
     )
@@ -52,6 +57,17 @@ export function HangBar() {
                         <DrawerCloseButton/>
                     </DrawerHeader>
                     <DrawerBody>
+                        <VStack my={1}>
+                            <Text>メニュー</Text>
+                            <Divider/>
+                        </VStack>
+                        <VStack>
+                            <HangEntity text={"ホーム"} href="/" onClick={onClose}/>
+                            <HangEntity text={"新規注文"} href="/order" onClick={onClose}/>
+                            <HangEntity text={"食券一覧"} href="/tickets" onClick={onClose}/>
+                            <HangEntity text={"決済一覧"} href="/payment" onClick={onClose}/>
+                        </VStack>
+
                         <VStack my={1}>
                             <Text>アカウントメニュー</Text>
                             <Divider/>
