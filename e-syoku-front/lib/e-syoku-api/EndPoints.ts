@@ -11,7 +11,7 @@ import {
     listShopResponse,
     listTicketResponse,
     markPaymentPaidRequest,
-    orderSchema,
+    orderSchema, paidResponse,
     paymentIdRequest,
     paymentStatusResponse,
     resolveTicketResponse,
@@ -38,7 +38,7 @@ export const listPaymentsEndPoint = endpoint("listPayments", z.object({}), listP
 
 export const paymentStatusEndPoint = endpoint("paymentStatus", paymentIdRequest, paymentStatusResponse)
 
-export const markPaymentPaidEndpoint = endpoint("markPaymentPaid", markPaymentPaidRequest, defaultResponseFormat)
+export const markPaymentPaidEndpoint = endpoint("markPaymentPaid", markPaymentPaidRequest, paidResponse)
 
 export const ticketDisplayEndpoint = endpoint("ticketDisplay", z.object({shopId: uniqueId}), ticketDisplayResponse)
 

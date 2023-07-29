@@ -188,7 +188,8 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 /// Request
 
 export const ticketIdRequest = z.object({
-    ticketId: uniqueId
+    ticketId: uniqueId,
+    uid: uniqueId.optional()
 })
 export const ticketSpecifyRequest = z.object({
     barcode: z.string()
@@ -243,7 +244,7 @@ export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
     displays: z.array(ticketDisplayData)
 }))
 
-export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS","CASHIER"])
+export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS", "CASHIER"])
 
 export type AuthType = z.infer<typeof authType>
 
@@ -258,4 +259,8 @@ export const grantPermissionRequest = z.object({
     authType: z.enum(["SHOP"]),
     shopId: uniqueId,
     uid: uniqueId,
+}))
+
+export const paidResponse = defaultResponseFormat.and(z.object({
+    ticketsId: z.string().array()
 }))
