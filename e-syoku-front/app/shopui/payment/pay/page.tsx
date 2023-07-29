@@ -1,16 +1,8 @@
 "use client"
-import {useSearchParams} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {
-    Container,
-    FormControl,
-    FormErrorMessage,
-    FormLabel,
-    Input,
-    NumberInput,
-    NumberInputField
-} from "@chakra-ui/react";
+import {Container, FormControl, FormErrorMessage, FormLabel, NumberInput, NumberInputField} from "@chakra-ui/react";
 import {useRef, useState} from "react";
 import Btn from "@/components/btn";
 import {callEndpoint} from "@/lib/e-syoku-api/Axios";
@@ -31,6 +23,8 @@ export default function Page() {
     const message = useRef([""])
     const auth = useFirebaseAuth()
 
+    const router = useRouter()
+
     if (!uid || !paymentId) {
         return (
             <>
@@ -49,7 +43,7 @@ export default function Page() {
                 <VStack>
                     <FormControl isRequired={true} isInvalid={isAmountError}>
                         <FormLabel>決済金額</FormLabel>
-                        <NumberInput min={0} value={amount} onChange={(s,n) => setAmount(n)}>
+                        <NumberInput min={0} value={amount} onChange={(s, n) => setAmount(n)}>
                             <NumberInputField/>
                         </NumberInput>
                         {isAmountError ? (<FormErrorMessage>
@@ -66,8 +60,20 @@ export default function Page() {
                                 paymentId: paymentId,
                                 remark: "テストです！"
                             })
-                            message.current = ["Response:", JSON.stringify(res)]
-                            onOpen()
+
+                            if (res.isSuccess) {
+                                const param = new URLSearchParams()
+                                param.set("uid", uid)
+                                res.data.ticketsId.forEach((ticketId) => {
+                                    param.append("ticketId", ticketId)
+                                })
+
+
+                                router.push(`/shopui/payment/barcode?${param.toString()}`)
+                            } else {
+                                message.current = ["Response:", JSON.stringify(res)]
+                                onOpen()
+                            }
                         }
                         f()
                     }} disabled={isAmountError}>決済処理</Btn>
