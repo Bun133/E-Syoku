@@ -1,10 +1,9 @@
 "use client"
 import {Menu, UserCheck, UserX} from "react-feather";
-import {useContext} from "react";
+import React, {useContext} from "react";
 import {firebaseAuthContext, FirebaseAuthContextType} from "@/lib/firebase/authentication";
 import {signOut} from "@firebase/auth";
 import {useRouter} from "next/navigation";
-import Btn from "@/components/btn";
 import {Divider, Flex, HStack, VStack} from "@chakra-ui/layout";
 import {
     Box,
@@ -19,6 +18,20 @@ import {
 } from "@chakra-ui/react";
 import {AdminOnly, AuthState} from "@/lib/e-syoku-api/AuthTypeProvider";
 import {useDisclosure} from "@chakra-ui/hooks";
+
+
+function HangEntity(params: { text: string, onClick?: () => void, href?: string }) {
+    const router = useRouter()
+    const click = params.href !== undefined ? () => {
+        params.onClick?.()
+        router.push(params.href!!)
+    } : params.onClick
+    return (
+        <div onClick={click}>
+            {params.text}
+        </div>
+    )
+}
 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
@@ -56,16 +69,12 @@ export function HangBar() {
                             }}/>
                         </HStack>
                         <VStack>
-                            <Btn onClick={() => {
+                            <HangEntity text={"ログアウト"} onClick={() => {
                                 logOut(auth)
                                 onClose()
-                            }}>ログアウト</Btn>
-                            <Btn href="/auth/register" onClick={onClose}>
-                                本登録
-                            </Btn>
-                            <Btn href="/auth/login" onClick={onClose}>
-                                ログイン
-                            </Btn>
+                            }}/>
+                            <HangEntity text={"本登録"} href="/auth/register" onClick={onClose}/>
+                            <HangEntity text={"ログイン"} href="/auth/login" onClick={onClose}/>
                         </VStack>
 
                         <AdminOnly>
@@ -74,9 +83,7 @@ export function HangBar() {
                                 <Divider/>
                             </VStack>
                             <VStack>
-                                <Btn href="/cms" onClick={onClose}>
-                                    CMS
-                                </Btn>
+                                <HangEntity text={"CMS"} href="/cms" onClick={onClose}/>
                             </VStack>
                         </AdminOnly>
                     </DrawerBody>
