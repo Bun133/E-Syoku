@@ -2,8 +2,9 @@ import {ZodType} from "zod";
 import {onRequest, Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {safeAs} from "./safeAs";
-import {Error, Result} from "../types/errors";
+import {Error as EError, Result} from "../types/errors";
 import {error, logTrace, writeLog} from "./logger";
+import {injectError, internalErrorThrownError} from "../impls/errors";
 
 /**
  * Require a parameter from the request
@@ -16,7 +17,7 @@ export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request
     param: Z
 } | {
     param: undefined,
-    error: Error
+    error: EError
 } {
     if (typeof request.body === "string") {
         request.body = JSON.parse(request.body)
@@ -70,35 +71,49 @@ async function handleRequest<R extends ResultOrPromise>(request: Request, respon
         logTrace()
         return
     }
-    const result = await body();
-    if (result.statusCode === undefined) {
-        if (result.result.isSuccess) {
-            writeLog({
-                severity: "INFO",
-                ...result.result
-            })
-            response.status(200).send(result.result).end();
+    try {
+        const result = await body();
+        if (result.statusCode === undefined) {
+            if (result.result.isSuccess) {
+                writeLog({
+                    severity: "INFO",
+                    ...result.result
+                })
+                response.status(200).send(result.result).end();
+            } else {
+                writeLog({
+                    severity: "ERROR",
+                    ...result.result
+                })
+                response.status(500).send(result.result).end();
+            }
         } else {
-            writeLog({
-                severity: "ERROR",
-                ...result.result
-            })
-            response.status(500).send(result.result).end();
+            const firstDigit = Number(result.statusCode.toString()[0])
+            if (firstDigit === 4 || firstDigit === 5) {
+                writeLog({
+                    severity: "ERROR",
+                    ...result.result
+                })
+            } else {
+                writeLog({
+                    severity: "INFO",
+                    ...result.result
+                })
+            }
+            response.status(result.statusCode).send(result.result).end();
         }
-    } else {
-        const firstDigit = Number(result.statusCode.toString()[0])
-        if (firstDigit === 4 || firstDigit === 5) {
-            writeLog({
-                severity: "ERROR",
-                ...result.result
-            })
-        } else {
-            writeLog({
-                severity: "INFO",
-                ...result.result
-            })
+    } catch (e) {
+        const rawErrorMessage = e instanceof Error ? e.message : "Not ES6 Error"
+        const err: EError = {
+            isSuccess: false,
+            ...injectError(internalErrorThrownError),
+            rawError: rawErrorMessage
         }
-        response.status(result.statusCode).send(result.result).end();
+        writeLog({
+            severity: "ERROR",
+            ...err
+        })
+        response.status(500).send(err).end();
     }
 }
 
