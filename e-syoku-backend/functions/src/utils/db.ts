@@ -14,6 +14,7 @@ import Firestore = firestore.Firestore;
 import DocumentReference = firestore.DocumentReference;
 import DocumentData = firestore.DocumentData;
 import CollectionReference = firestore.CollectionReference;
+import Transaction = firestore.Transaction;
 
 export type DynamicCollectionReference<T> = (t: T) => firestore.CollectionReference<firestore.DocumentData>
 export type DynamicDocumentReference<T> = (t: T) => DocumentReference<firestore.DocumentData>
@@ -243,11 +244,17 @@ export async function createData<T extends DocumentData>(type: ZodType<T>, ref: 
 /**
  * return random ref in [parent] collection. With checking if the ref is not taken.
  * @param parent
+ * @param transaction
  */
-export async function newRandomRef(parent: CollectionReference): Promise<DocumentReference> {
+export async function newRandomRef(parent: CollectionReference,transaction?:Transaction): Promise<DocumentReference> {
     let uuid = uuidv4();
     let ref = parent.doc(uuid);
-    let data = await ref.get();
+    let data;
+    if(transaction){
+        data = await transaction.get(ref);
+    }else{
+        data = await ref.get();
+    }
     if (data.exists) {
         warn("UUID Collided!")
         return newRandomRef(parent);

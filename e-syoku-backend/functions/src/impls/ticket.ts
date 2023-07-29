@@ -25,9 +25,10 @@ import Transaction = firestore.Transaction;
  * @param ref
  * @param uid
  * @param ticketId
+ * @param transaction
  */
-export async function ticketById(ref: DBRefs, uid: string, ticketId: string): Promise<Ticket | undefined> {
-    return ticketByRef(ref, uid, ref.tickets(uid).doc(ticketId));
+export async function ticketById(ref: DBRefs, uid: string, ticketId: string,transaction?:Transaction): Promise<Ticket | undefined> {
+    return ticketByRef(ref, uid, ref.tickets(uid).doc(ticketId),transaction);
 }
 
 /**
@@ -36,7 +37,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string): Pr
  * @param uid
  * @param ticketRef
  */
-export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>): Promise<Ticket | undefined> {
+export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>,transaction?:Transaction): Promise<Ticket | undefined> {
     return await parseData<Ticket>(ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
@@ -48,7 +49,7 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
             paymentSessionId: data.paymentSessionId,
             orderData: data.orderData
         }
-    });
+    },transaction);
 }
 
 /**
@@ -163,13 +164,14 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
  * @param ref
  * @param uid
  * @param payment
+ * @param transaction
  */
-export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession): Promise<Error | (Success & {
+export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession,transaction?:Transaction): Promise<Error | (Success & {
     ticketsId: string[]
 })> {
     // 商品データを取得
     const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
-        const itemData = await getGoodsById(ref, e.goodsId)
+        const itemData = await getGoodsById(ref, e.goodsId,transaction)
         if (itemData === undefined) {
             return undefined
         }
@@ -209,9 +211,9 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
     // 店舗ごとに分けたOrderから食券登録
     for ([shopId, order] of shopMap.toArray()) {
         // ランダムに新しいRefを取得してチケットを登録
-        const toWriteRef = await newRandomRef(ref.tickets(uid))
+        const toWriteRef = await newRandomRef(ref.tickets(uid),transaction)
         // この食券のTicketNumを取得
-        const nextTicketNum = await generateNextTicketNum(ref, shopId, uid)
+        const nextTicketNum = await generateNextTicketNum(ref, shopId, uid,transaction)
 
         // チケットデータを生成
         const ticketData: Ticket = {
@@ -226,13 +228,12 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
         }
 
         // チケットデータを書き込み
-        await createData(ticketSchema, toWriteRef, ticketData)
+        await createData(ticketSchema, toWriteRef, ticketData,transaction)
         writtenTicketIds.push(toWriteRef.id)
         // LastTicketNumを更新
-        // TODO Transaction
-        await updateLastTicketNum(ref, ticketData)
+        await updateLastTicketNum(ref, ticketData,transaction)
         // TicketDisplayDataを更新
-        await updateTicketDisplayDataForTicket(ref, ticketData)
+        await updateTicketDisplayDataForTicket(ref, ticketData,transaction)
     }
 
     const suc: Success & { ticketsId: string[] } = {

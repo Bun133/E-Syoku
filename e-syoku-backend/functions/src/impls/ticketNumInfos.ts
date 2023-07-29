@@ -5,20 +5,22 @@ import {injectError, ticketNumGenerateFailedError} from "./errors";
 import {error} from "../utils/logger";
 import {ticketById} from "./ticket";
 import {TicketNumInfo, ticketNumInfoSchema} from "../types/ticketNumInfos";
+import {firestore} from "firebase-admin";
+import Transaction = firestore.Transaction;
 
-export async function ticketNumInfoById(ref: DBRefs, shopId: string) {
-    return parseData(ticketNumInfoSchema, ref.ticketNumInfo(shopId))
+export async function ticketNumInfoById(ref: DBRefs, shopId: string, transaction?: Transaction) {
+    return parseData(ticketNumInfoSchema, ref.ticketNumInfo(shopId), undefined, transaction)
 }
 
-export async function updateLastTicketNum(ref: DBRefs, ticket: Ticket) {
-    return updateEntireData(ticketNumInfoSchema.omit({ticketNumConfig:true}), ref.ticketNumInfo(ticket.shopId), {lastTicketNum: ticket.ticketNum})
+export async function updateLastTicketNum(ref: DBRefs, ticket: Ticket,transaction?:Transaction) {
+    return updateEntireData(ticketNumInfoSchema.omit({ticketNumConfig: true}), ref.ticketNumInfo(ticket.shopId), {lastTicketNum: ticket.ticketNum},transaction)
 }
 
-export async function generateNextTicketNum(ref: DBRefs, shopId: string, uid: string): Promise<Success & {
+export async function generateNextTicketNum(ref: DBRefs, shopId: string, uid: string, transaction?: Transaction): Promise<Success & {
     nextTicketNum: string
 }> {
     let suggested: string | undefined = undefined
-    const info = await ticketNumInfoById(ref, shopId)
+    const info = await ticketNumInfoById(ref, shopId, transaction)
     if (info) {
         const next = nextTicketNum(info)
         if (next.isSuccess) {
@@ -30,7 +32,7 @@ export async function generateNextTicketNum(ref: DBRefs, shopId: string, uid: st
     }
 
     async function loop(suggestedNextTicket: string): Promise<string> {
-        const ticket = await ticketById(ref, uid, suggestedNextTicket)
+        const ticket = await ticketById(ref, uid, suggestedNextTicket, transaction)
         if (ticket) {
             return loop(fallBackTicketNumGenerate(ref, uid).suggestingNextTicketNum)
         }

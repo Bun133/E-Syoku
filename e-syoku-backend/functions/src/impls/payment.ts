@@ -14,6 +14,7 @@ import {
 } from "./errors";
 import {registerTicketsForPayment} from "./ticket";
 import DocumentReference = firestore.DocumentReference;
+import Transaction = firestore.Transaction;
 
 /**
  * 実際に決済セッションを作成し、DBに登録
@@ -138,10 +139,75 @@ export async function getAllPayments(ref: DBRefs, userid: string): Promise<Payme
  * @param sessionId
  * @param paidDetail
  */
-// TODO Transactionを張る
 export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
+    return await refs.db.runTransaction<Error | Success & {
+        ticketsId: string[]
+    }>(async (transaction) => {
+        const r = await internalMarkPaymentAsPaid(refs, uid, sessionId, paidDetail, transaction)
+        if (!r.isSuccess) {
+            // rejectすることでTransactionがもう一度走る
+            return Promise.reject(r)
+        } else {
+            return Promise.resolve(r)
+        }
+    })
+}
+
+async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail, transaction: Transaction): Promise<Error | Success & {
+    ticketsId: string[]
+}> {
+    const assert = await assertPaymentStatus(refs, uid, sessionId, paidDetail)
+    if (!assert.isSuccess) {
+        // 前庭条件を満たしていない
+        const err: Error = assert
+        return err
+    }
+
+    const {payment, paymentRef} = assert
+
+
+    // 商品の在庫を確保(在庫状況をを減らして更新)
+    const reserveRes = await reserveGoods(refs, payment.orderContent, transaction)
+    if (!reserveRes.isSuccess) {
+        const err: Error = reserveRes
+        return err
+    }
+
+    // 決済セッションのデータからチケットを登録
+    const ticketRes = await registerTicketsForPayment(refs, uid, payment, transaction)
+    if (!ticketRes.isSuccess) {
+        const err: Error = ticketRes
+        return err
+    }
+
+    // 決済セッションのステータスを支払い済みに変更
+    // 決済セッションを保存
+    // TODO Transaction
+    // さすがに決済セッションのデータが変更されながら決済するタイミングはないのでTransactionしなくても・・・?
+    await updateEntireData(paymentSessionSchema.omit({
+        sessionId: true,
+        customerId: true,
+        orderContent: true,
+        totalAmount: true,
+    }), paymentRef, {
+        state: "PAID",
+        paidDetail: paidDetail
+    }, transaction)
+
+    const suc: Success & { ticketsId: string[] } = {
+        isSuccess: true,
+        ticketsId: ticketRes.ticketsId
+    }
+
+    return suc
+}
+
+/**
+ * 決済取扱いにおいて、満たしていなければいけない前庭条件をassertします
+ */
+async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & { payment: PaymentSession, paymentRef: DocumentReference }> {
     // 決済セッションのRef・データ
     const paymentRef = refs.payments(uid).doc(sessionId)
     const payment = await getPaymentSessionByRef(refs, paymentRef)
@@ -173,38 +239,10 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
         return err
     }
 
-
-    // 商品の在庫を確保(在庫状況をを減らして更新)
-    const reserveRes = await reserveGoods(refs, payment.orderContent)
-    if (!reserveRes.isSuccess) {
-        const err: Error = reserveRes
-        return err
-    }
-
-    // 決済セッションのデータからチケットを登録
-    const ticketRes = await registerTicketsForPayment(refs, uid, payment)
-    if (!ticketRes.isSuccess) {
-        const err: Error = ticketRes
-        return err
-    }
-
-    // 決済セッションのステータスを支払い済みに変更
-    // 決済セッションを保存
-    // TODO Transaction
-    // さすがに決済セッションのデータが変更されながら決済するタイミングはないのでTransactionしなくても・・・?
-    await updateEntireData(paymentSessionSchema.omit({
-        sessionId: true,
-        customerId: true,
-        orderContent: true,
-        totalAmount: true,
-    }), paymentRef, {
-        state: "PAID",
-        paidDetail: paidDetail
-    })
-
-    const suc: Success & { ticketsId: string[] } = {
+    const suc: Success & { payment: PaymentSession, paymentRef: DocumentReference } = {
         isSuccess: true,
-        ticketsId: ticketRes.ticketsId
+        payment,
+        paymentRef
     }
 
     return suc

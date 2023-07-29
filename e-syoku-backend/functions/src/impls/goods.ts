@@ -14,11 +14,11 @@ import {
     remainDataTypeNotKnownError,
     remainStatusNegativeError,
     remainStatusNotFoundError,
-    transactionFailedError,
     updateRemainDataFailedError
 } from "./errors";
+import Transaction = firestore.Transaction;
 
-export async function getGoodsById(ref: DBRefs, goodsId: UniqueId): Promise<Goods | undefined> {
+export async function getGoodsById(ref: DBRefs, goodsId: UniqueId,transaction?:Transaction): Promise<Goods | undefined> {
     const directRef = ref.goods.doc(goodsId)
     return await parseData<Goods>(goodsSchema, directRef, (data) => {
         return {
@@ -29,7 +29,7 @@ export async function getGoodsById(ref: DBRefs, goodsId: UniqueId): Promise<Good
             imageUrl: data.imageUrl,
             price: data.price,
         }
-    })
+    },transaction)
 }
 
 export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
@@ -104,84 +104,67 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
  * 一部でも在庫が足りなかった場合はすべてロールバックします
  * @param refs
  * @param order
+ * @param transaction
  */
-export async function reserveGoods(refs: DBRefs, order: Order): Promise<Result> {
-    try {
-        return await refs.db.runTransaction(async (transaction) => {
-            // 商品がすべてそろっていることを確認
-            const status = await checkOrderRemainStatus(refs, order, transaction)
-            if (!status.isSuccess) {
-                const err: Error = status
-                throw new ErrorThrower(err)
-            }
-            const {isAllEnough, items} = status
-            if (!isAllEnough) {
-                // 一部の商品の在庫がなくなっている場合
-                const err: Error = {
-                    isSuccess: false,
-                    ...injectError(itemGoneError(items.map(i => i.goodsId)))
-                }
-                throw new ErrorThrower(err)
-            }
-
-            // 更新後の在庫情報を計算
-            const calculatedRemainData: (Error | Success & { calculated: GoodsRemainData })[] = order.map((item) => {
-                const itemStatus = status.items.find(i => i.goodsId === item.goodsId)
-                if (itemStatus === undefined) {
-                    const err: Error = {
-                        isSuccess: false,
-                        ...injectError(remainStatusNotFoundError)
-                    }
-                    throw new ErrorThrower(err)
-                }
-                const calculated = calculateModifiedRemainData(itemStatus.remainData, item.count)
-                if (!calculated.isSuccess) {
-                    const err: Error = calculated
-                    throw new ErrorThrower(err)
-                }
-                const suc: (Success & { calculated: GoodsRemainData }) = calculated
-                return suc
-            })
-
-            if (calculatedRemainData.some(i => !i.isSuccess)) {
-                // 更新後の在庫情報が計算できないものが合った場合エラー
-                const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
-                throw new ErrorThrower(err)
-            }
-
-            const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
-            const updateResult = await Promise.all(toUpdate.map(async s => {
-                const {goodsId, ...rawRemainData} = s.calculated
-                return await mergeData(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
-            }))
-
-            const updateFailure = updateResult.filterInstance(singleErrorSchema)
-            if (updateFailure.length > 0) {
-                // 一部の商品の在庫情報の更新に失敗したのでロールバック
-                const err: Error = updateRemainDataFailedError(updateFailure)
-                throw new ErrorThrower(err)
-            }
-
-            const suc: Success = {
-                isSuccess: true
-            }
-            return suc
-        })
-    } catch (e) {
-        if(e instanceof ErrorThrower) {
-            // Transactionの内側のエラーをcatch
-            const err: Error = e.error
-            return err
-        }
-
-        // failed
+export async function reserveGoods(refs: DBRefs, order: Order, transaction?: Transaction): Promise<Result> {
+    // 商品がすべてそろっていることを確認
+    const status = await checkOrderRemainStatus(refs, order, transaction)
+    if (!status.isSuccess) {
+        const err: Error = status
+        return err
+    }
+    const {isAllEnough, items} = status
+    if (!isAllEnough) {
+        // 一部の商品の在庫がなくなっている場合
         const err: Error = {
             isSuccess: false,
-            ...injectError(transactionFailedError),
-            rawError: e
+            ...injectError(itemGoneError(items.map(i => i.goodsId)))
         }
         return err
     }
+
+    // 更新後の在庫情報を計算
+    const calculatedRemainData: (Error | Success & { calculated: GoodsRemainData })[] = order.map((item) => {
+        const itemStatus = status.items.find(i => i.goodsId === item.goodsId)
+        if (itemStatus === undefined) {
+            const err: Error = {
+                isSuccess: false,
+                ...injectError(remainStatusNotFoundError)
+            }
+            throw new ErrorThrower(err)
+        }
+        const calculated = calculateModifiedRemainData(itemStatus.remainData, item.count)
+        if (!calculated.isSuccess) {
+            const err: Error = calculated
+            throw new ErrorThrower(err)
+        }
+        const suc: (Success & { calculated: GoodsRemainData }) = calculated
+        return suc
+    })
+
+    if (calculatedRemainData.some(i => !i.isSuccess)) {
+        // 更新後の在庫情報が計算できないものが合った場合エラー
+        const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
+        return err
+    }
+
+    const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
+    const updateResult = await Promise.all(toUpdate.map(async s => {
+        const {goodsId, ...rawRemainData} = s.calculated
+        return await mergeData(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
+    }))
+
+    const updateFailure = updateResult.filterInstance(singleErrorSchema)
+    if (updateFailure.length > 0) {
+        // 一部の商品の在庫情報の更新に失敗したのでロールバック
+        const err: Error = updateRemainDataFailedError(updateFailure)
+        return err
+    }
+
+    const suc: Success = {
+        isSuccess: true
+    }
+    return suc
 }
 
 /**
