@@ -43,7 +43,8 @@ export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
 
 export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessResponse<R> | EndPointErrorResponse<R>
 
-let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpoint
+let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpointPrefix
+let apiEndpointSuffix = process.env.NEXT_PUBLIC_apiEndpointSuffix
 
 export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     const r = await internalCallEndpoint(endPoint, user, requestData, abortController)
@@ -53,7 +54,7 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
 }
 
 async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
-    let fullPath = apiEndpointPrefix !== undefined ? apiEndpointPrefix + endPoint.endpointPath : endPoint.endpointPath
+    let fullPath = (apiEndpointPrefix ?? "") + endPoint.endpointPath + (apiEndpointSuffix ?? "")
     console.log("full path", fullPath)
     if (user == undefined) {
         return {
