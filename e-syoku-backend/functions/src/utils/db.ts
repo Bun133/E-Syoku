@@ -128,10 +128,11 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
  */
 export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
+        const data = type.parse(toUpdate)
         if (transaction) {
-            transaction.update(ref, toUpdate);
+            transaction.update(ref, data);
         } else {
-            await ref.update(toUpdate);
+            await ref.update(data);
         }
     } catch (e) {
         const err: Error = {
@@ -159,10 +160,11 @@ export async function updateEntireData<T extends DocumentData>(type: ZodType<T>,
  */
 export async function setData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toSet: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
+        const data = type.parse(toSet)
         if (transaction) {
-            await transaction.set(ref, toSet, {merge: false});
+            transaction.set(ref, data, {merge: false});
         } else {
-            await ref.set(toSet, {merge: false});
+            await ref.set(data, {merge: false});
         }
     } catch (e) {
         const err: Error = {
@@ -190,10 +192,11 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
  */
 export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toMerge: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
+        const data = type.parse(toMerge)
         if (transaction) {
-            transaction.set(ref, toMerge, {merge: true});
+            transaction.set(ref, data, {merge: true});
         } else {
-            await ref.set(toMerge, {merge: true});
+            await ref.set(data, {merge: true});
         }
     } catch (e) {
         const err: Error = {
@@ -220,10 +223,11 @@ export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: D
  */
 export async function createData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toCreate: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
+        const data = type.parse(toCreate)
         if (transaction) {
-            transaction.create(ref, toCreate);
+            transaction.create(ref, data);
         } else {
-            await ref.create(toCreate);
+            await ref.create(data);
         }
     } catch (e) {
         const err: Error = {
@@ -246,13 +250,13 @@ export async function createData<T extends DocumentData>(type: ZodType<T>, ref: 
  * @param parent
  * @param transaction
  */
-export async function newRandomRef(parent: CollectionReference,transaction?:Transaction): Promise<DocumentReference> {
+export async function newRandomRef(parent: CollectionReference, transaction?: Transaction): Promise<DocumentReference> {
     let uuid = uuidv4();
     let ref = parent.doc(uuid);
     let data;
-    if(transaction){
+    if (transaction) {
         data = await transaction.get(ref);
-    }else{
+    } else {
         data = await ref.get();
     }
     if (data.exists) {
