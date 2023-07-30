@@ -72,7 +72,9 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
         // @ts-ignore
         const remain = remainData.remain as boolean
 
-        const r: Success & { isEnough: boolean } = {
+        const r: Success & {
+            isEnough: boolean
+        } = {
             isSuccess: true,
             isEnough: remain
         }
@@ -82,7 +84,9 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
         // @ts-ignore
         const remainCount = remainData.remainCount as number
 
-        const r: Success & { isEnough: boolean } = {
+        const r: Success & {
+            isEnough: boolean
+        } = {
             isSuccess: true,
             isEnough: remainCount >= quantity
         }
@@ -103,7 +107,10 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
  * @param order
  */
 export async function cancelReserveGoods(refs: DBRefs, order: Order): Promise<Success> {
-    const canceled: { order: SingleOrder, reserveResult: Result }[] = await Promise.all(order.map(async (single: SingleOrder) => {
+    const canceled: {
+        order: SingleOrder,
+        reserveResult: Result
+    }[] = await Promise.all(order.map(async (single: SingleOrder) => {
         return {
             order: single,
             reserveResult: await cancelReserveSingleGoods(refs, single)
@@ -157,8 +164,16 @@ async function cancelReserveSingleGoods(refs: DBRefs, o: SingleOrder) {
  * @param refs
  * @param order
  */
-export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success | Error & { reserved: SingleOrder[], notReserved: SingleOrder[] }> {
-    const result: { order: SingleOrder, reserveResult: Result }[] = await Promise.all(order.map(async (single: SingleOrder) => {
+export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success & {
+    reserved: SingleOrder[]
+} | Error & {
+    reserved: SingleOrder[],
+    notReserved: SingleOrder[]
+}> {
+    const result: {
+        order: SingleOrder,
+        reserveResult: Result
+    }[] = await Promise.all(order.map(async (single: SingleOrder) => {
         return {
             order: single,
             reserveResult: await reserveSingleGoods(refs, single)
@@ -168,12 +183,18 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success 
     const reserved = result.filter(e => e.reserveResult.isSuccess)
     const notReserved = result.filter(e => !e.reserveResult.isSuccess)
     if (notReserved.length == 0) {
-        const suc: Success = {
-            isSuccess: true
+        const suc: Success & {
+            reserved: SingleOrder[]
+        } = {
+            isSuccess: true,
+            reserved: reserved.map(e => e.order)
         }
         return suc
     } else {
-        const error: Error & { reserved: SingleOrder[], notReserved: SingleOrder[] } = {
+        const error: Error & {
+            reserved: SingleOrder[],
+            notReserved: SingleOrder[]
+        } = {
             isSuccess: false,
             ...injectError(itemGoneError(notReserved.map(e => e.order.goodsId))),
             reserved: reserved.map(e => e.order),
@@ -255,7 +276,9 @@ function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
     // @ts-ignore
     if (remainData.remain != undefined && typeof remainData.remain == "boolean") {
         // Bool値なので変更は手動、よって変化無し
-        const suc: Success & { calculated: GoodsRemainData } = {
+        const suc: Success & {
+            calculated: GoodsRemainData
+        } = {
             isSuccess: true,
             calculated: remainData
         }
@@ -277,7 +300,9 @@ function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
             goodsId: remainData.goodsId,
             remainCount: toChange
         }
-        const suc: Success & { calculated: GoodsRemainData } = {
+        const suc: Success & {
+            calculated: GoodsRemainData
+        } = {
             isSuccess: true,
             calculated: data
         }

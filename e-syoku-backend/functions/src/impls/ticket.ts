@@ -8,6 +8,7 @@ import {getGoodsById} from "./goods";
 import {
     barcodeInvalidError,
     failedToGetItemDataError,
+    failedToRegisterTicketError,
     injectError,
     ticketNotFoundError,
     ticketStatusInvalidError
@@ -164,42 +165,89 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
  * @param ref
  * @param uid
  * @param payment
- * @param transaction
  */
-export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession, transaction?: Transaction): Promise<Error | (Success & {
-    ticketsId: string[]
+export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession): Promise<Error & {
+    registered: {
+        ticketIds: string[]
+    }
+} | (Success & {
+    registered: {
+        // All Ticket IDs
+        ticketIds: string[]
+    }
 })> {
     // 店舗ごとにバラす
     const associated = await associatedWithShop(ref, payment)
     if (!associated.isSuccess) {
-        const err: Error = associated
+        const err: Error & {
+            registered: {
+                ticketIds: string[]
+            }
+        } = {
+            ...associated,
+            registered: {ticketIds: []}
+        }
         return err
     }
     const shopMap = associated.shopMap
 
 
-    // 書き込み済のチケットのID
-    const writtenTicketIds: string[] = []
+    // 書き込み済のチケット
+    const registered: string[] = []
+    const notRegistered: {
+        shopId: string,
+        order: Order
+    }[] = []
 
     let shopId: string
     let order: Order
     // 店舗ごとに分けたOrderから食券登録
     for ([shopId, order] of shopMap.toArray()) {
         const r = await registerTicket(ref, uid, shopId, order, payment)
-        if(!r.isSuccess){
-            // TODO 今までの処理をRollBackしてErrorを返す
+        if (r.isSuccess) {
+            registered.push(r.ticketId)
+        } else {
+            notRegistered.push({shopId: shopId, order: order})
         }
     }
 
-    const suc: Success & { ticketsId: string[] } = {
+    if (notRegistered.length > 0) {
+        const err: Error & {
+            registered: {
+                ticketIds: string[]
+            }
+        } = {
+            isSuccess: false,
+            registered: {ticketIds: registered},
+            ...injectError(failedToRegisterTicketError)
+        }
+
+        return err
+    }
+
+    const suc: Success & {
+        registered: {
+            ticketIds: string[]
+        }
+    } = {
         isSuccess: true,
-        ticketsId: writtenTicketIds
+        registered: {ticketIds: registered}
     }
 
     return suc
 }
 
-async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: Order, associatedPayment: PaymentSession): Promise<Result> {
+/**
+ * 単一のお店の注文データから食券を登録します
+ * @param ref
+ * @param uid
+ * @param shopId
+ * @param order
+ * @param associatedPayment
+ */
+async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: Order, associatedPayment: PaymentSession): Promise<Success & {
+    ticketId: string
+} | Error> {
     return await ref.db.runTransaction(async (transaction) => {
         // ランダムに新しいRefを取得してチケットを登録
         const toWriteRef = await newRandomRef(ref.tickets(uid))
@@ -220,21 +268,39 @@ async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: O
         }
 
         // チケットデータを書き込み
-        await createData(ticketSchema, toWriteRef, ticketData)
+        const create = await createData(ticketSchema, toWriteRef, ticketData)
+        if (!create.isSuccess) return create
         // LastTicketNumを更新
-        await updateLastTicketNum(ref, ticketData, transaction)
+        const last = await updateLastTicketNum(ref, ticketData, transaction)
+        if (!last.isSuccess) return last
         // TicketDisplayDataを更新
-        await updateTicketDisplayDataForTicket(ref, ticketData)
+        const display = await updateTicketDisplayDataForTicket(ref, ticketData)
+        if (!display.isSuccess) return display
 
-        const suc: Success = {
-            isSuccess: true
+        const suc: Success & {
+            ticketId: string
+        } = {
+            isSuccess: true,
+            ticketId: toWriteRef.id
         }
 
         return suc
     })
 }
 
-async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise<Error | Success & { shopMap: Map<UniqueId, SingleOrder[]> }> {
+/**
+ * 食券を削除します(ロールバック用)
+ * @param ref
+ * @param uid
+ * @param ticketIds
+ */
+export async function deleteTickets(ref: DBRefs, uid: string, ticketIds: string[]) {
+
+}
+
+async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise<Error | Success & {
+    shopMap: Map<UniqueId, SingleOrder[]>
+}> {
     // 商品データを取得
     const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
         const itemData = await getGoodsById(ref, e.goodsId)
@@ -271,7 +337,9 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
         }
     }
 
-    const suc: Success & { shopMap: Map<UniqueId, SingleOrder[]> } = {
+    const suc: Success & {
+        shopMap: Map<UniqueId, SingleOrder[]>
+    } = {
         isSuccess: true,
         shopMap: shopMap
     }

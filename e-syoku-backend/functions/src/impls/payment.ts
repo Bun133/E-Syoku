@@ -12,7 +12,8 @@ import {
     paidWrongAmountError,
     paymentNotFoundError
 } from "./errors";
-import {registerTicketsForPayment} from "./ticket";
+import {deleteTickets, registerTicketsForPayment} from "./ticket";
+import {error} from "../utils/logger";
 import DocumentReference = firestore.DocumentReference;
 
 /**
@@ -159,24 +160,36 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
 
     // 商品の在庫を確保(在庫状況をを減らして更新)
     const reserveRes = await reserveGoods(refs, payment.orderContent)
+
+    async function rollBackReserveGoods() {
+        error("in internalMarkPaymentAsPaid,rollBacking Goods Reservation")
+        await cancelReserveGoods(refs, reserveRes.reserved)
+    }
+
     if (!reserveRes.isSuccess) {
         // エラー内容はそのままパスでいいが、ロールバック処理を行う
         const err: Error = reserveRes
-        await cancelReserveGoods(refs, reserveRes.reserved)
+        await rollBackReserveGoods()
         return err
     }
 
     // 決済セッションのデータからチケットを登録
     const ticketRes = await registerTicketsForPayment(refs, uid, payment)
+
+    async function rollBackTickets() {
+        error("in internalMarkPaymentAsPaid,rollBacking Tickets Registration")
+        await deleteTickets(refs, uid, ticketRes.registered.ticketIds)
+    }
+
     if (!ticketRes.isSuccess) {
+        // エラー内容はそのままパスでいいが、ロールバック処理を行う
         const err: Error = ticketRes
+        await rollBackReserveGoods()
+        await rollBackTickets()
         return err
     }
 
     // 決済セッションのステータスを支払い済みに変更
-    // 決済セッションを保存
-    // TODO Transaction
-    // さすがに決済セッションのデータが変更されながら決済するタイミングはないのでTransactionしなくても・・・?
     await updateEntireData(paymentSessionSchema.omit({
         sessionId: true,
         customerId: true,
@@ -189,7 +202,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
 
     const suc: Success & { ticketsId: string[] } = {
         isSuccess: true,
-        ticketsId: ticketRes.ticketsId
+        ticketsId: ticketRes.registered.ticketIds
     }
 
     return suc
