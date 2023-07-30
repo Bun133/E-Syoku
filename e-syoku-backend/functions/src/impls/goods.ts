@@ -1,24 +1,21 @@
 import {Goods, GoodsRemainData, goodsRemainDataSchema, goodsSchema} from "../types/goods";
-import {DBRefs, mergeData, parseData, parseDataAll} from "../utils/db";
+import {DBRefs, parseData, parseDataAll, updateEntireData} from "../utils/db";
 import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
-import {Order} from "../types/order";
-import {Error, Result, singleErrorSchema, Success} from "../types/errors";
-import {checkOrderRemainStatus} from "./order";
+import {Order, SingleOrder} from "../types/order";
+import {Error, Result, Success} from "../types/errors";
 import {
-    ErrorThrower,
+    deltaNegativeError,
     injectError,
     itemGoneError,
-    remainDataCalculateFailedError,
     remainDataTypeNotKnownError,
     remainStatusNegativeError,
-    remainStatusNotFoundError,
-    updateRemainDataFailedError
+    remainStatusNotFoundError
 } from "./errors";
 import Transaction = firestore.Transaction;
 
-export async function getGoodsById(ref: DBRefs, goodsId: UniqueId,transaction?:Transaction): Promise<Goods | undefined> {
+export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<Goods | undefined> {
     const directRef = ref.goods.doc(goodsId)
     return await parseData<Goods>(goodsSchema, directRef, (data) => {
         return {
@@ -29,7 +26,7 @@ export async function getGoodsById(ref: DBRefs, goodsId: UniqueId,transaction?:T
             imageUrl: data.imageUrl,
             price: data.price,
         }
-    },transaction)
+    }, transaction)
 }
 
 export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
@@ -100,71 +97,124 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
 }
 
 /**
- * 指定された個数分の商品を***すべて確保***します
- * 一部でも在庫が足りなかった場合はすべてロールバックします
+ * すでに在庫を確保してしまった商品を解放します
+ * すでに在庫が確保されているかどうかは確認しません(できません)
  * @param refs
  * @param order
- * @param transaction
  */
-export async function reserveGoods(refs: DBRefs, order: Order, transaction?: Transaction): Promise<Result> {
-    // 商品がすべてそろっていることを確認
-    const status = await checkOrderRemainStatus(refs, order, transaction)
-    if (!status.isSuccess) {
-        const err: Error = status
-        return err
-    }
-    const {isAllEnough, items} = status
-    if (!isAllEnough) {
-        // 一部の商品の在庫がなくなっている場合
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(itemGoneError(items.map(i => i.goodsId)))
+export async function cancelReserveGoods(refs: DBRefs, order: Order): Promise<Success> {
+    const canceled: { order: SingleOrder, reserveResult: Result }[] = await Promise.all(order.map(async (single: SingleOrder) => {
+        return {
+            order: single,
+            reserveResult: await cancelReserveSingleGoods(refs, single)
         }
-        return err
-    }
+    }))
 
-    // 更新後の在庫情報を計算
-    const calculatedRemainData: (Error | Success & { calculated: GoodsRemainData })[] = order.map((item) => {
-        const itemStatus = status.items.find(i => i.goodsId === item.goodsId)
-        if (itemStatus === undefined) {
+    // TODO まずい
+    // 解放処理が失敗していようと、他の解放処理をロールバックしたりしない(安全側処理)
+    const suc: Success = {
+        isSuccess: true,
+        canceled
+    }
+    return suc
+}
+
+/**
+ * 単一のOrderに対して商品の確保を解放します
+ * @param refs
+ * @param o
+ */
+async function cancelReserveSingleGoods(refs: DBRefs, o: SingleOrder) {
+    return refs.db.runTransaction(async (transaction) => {
+        const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
+        if (!remainData) {
             const err: Error = {
                 isSuccess: false,
                 ...injectError(remainStatusNotFoundError)
             }
-            throw new ErrorThrower(err)
+            return err
+        } else {
+            const calculated = increaseRemainData(remainData, o.count)
+            if (!calculated.isSuccess) {
+                const err: Error = calculated
+                return err
+            }
+            const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(o.goodsId), calculated.calculated, transaction)
+            if (!update.isSuccess) {
+                const err: Error = update
+                return err
+            }
+            const suc: Success = {
+                isSuccess: true
+            }
+            return suc
         }
-        const calculated = calculateModifiedRemainData(itemStatus.remainData, item.count)
-        if (!calculated.isSuccess) {
-            const err: Error = calculated
-            throw new ErrorThrower(err)
-        }
-        const suc: (Success & { calculated: GoodsRemainData }) = calculated
-        return suc
     })
+}
 
-    if (calculatedRemainData.some(i => !i.isSuccess)) {
-        // 更新後の在庫情報が計算できないものが合った場合エラー
-        const err: Error = remainDataCalculateFailedError(calculatedRemainData.filter(i => !i.isSuccess).filterInstance(singleErrorSchema))
-        return err
-    }
-
-    const toUpdate = calculatedRemainData as unknown as (Success & { calculated: GoodsRemainData })[]
-    const updateResult = await Promise.all(toUpdate.map(async s => {
-        const {goodsId, ...rawRemainData} = s.calculated
-        return await mergeData(goodsRemainDataSchema, refs.remains.doc(s.calculated.goodsId), rawRemainData, transaction)
+/**
+ * 指定された個数分の商品を***すべて確保***します
+ * @param refs
+ * @param order
+ */
+export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success | Error & { reserved: SingleOrder[], notReserved: SingleOrder[] }> {
+    const result: { order: SingleOrder, reserveResult: Result }[] = await Promise.all(order.map(async (single: SingleOrder) => {
+        return {
+            order: single,
+            reserveResult: await reserveSingleGoods(refs, single)
+        }
     }))
 
-    const updateFailure = updateResult.filterInstance(singleErrorSchema)
-    if (updateFailure.length > 0) {
-        // 一部の商品の在庫情報の更新に失敗したのでロールバック
-        const err: Error = updateRemainDataFailedError(updateFailure)
-        return err
-    }
+    const reserved = result.filter(e => e.reserveResult.isSuccess)
+    const notReserved = result.filter(e => !e.reserveResult.isSuccess)
+    if (notReserved.length == 0) {
+        const suc: Success = {
+            isSuccess: true
+        }
+        return suc
+    } else {
+        const error: Error & { reserved: SingleOrder[], notReserved: SingleOrder[] } = {
+            isSuccess: false,
+            ...injectError(itemGoneError(notReserved.map(e => e.order.goodsId))),
+            reserved: reserved.map(e => e.order),
+            notReserved: notReserved.map(e => e.order)
+        }
 
-    const suc: Success = {
-        isSuccess: true
+        return error
     }
-    return suc
+}
+
+/**
+ * 単一のOrderに対して商品を確保します
+ * @param refs
+ * @param o
+ */
+async function reserveSingleGoods(refs: DBRefs, o: SingleOrder): Promise<Result> {
+    return refs.db.runTransaction(async (transaction) => {
+        const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
+        if (!remainData) {
+            const err: Error = {
+                isSuccess: false,
+                ...injectError(remainStatusNotFoundError)
+            }
+            return err
+        } else {
+            const calculated = reduceRemainData(remainData, o.count)
+            if (!calculated.isSuccess) {
+                const err: Error = calculated
+                return err
+            }
+            const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(o.goodsId), calculated.calculated, transaction)
+            if (!update.isSuccess) {
+                const err: Error = update
+                return err
+            }
+            const suc: Success = {
+                isSuccess: true
+            }
+            return suc
+        }
+    })
 }
 
 /**
@@ -172,7 +222,34 @@ export async function reserveGoods(refs: DBRefs, order: Order, transaction?: Tra
  * @param remainData
  * @param decrease 減少する量
  */
-function calculateModifiedRemainData(remainData: GoodsRemainData, decrease: number): Success & {
+function reduceRemainData(remainData: GoodsRemainData, decrease: number): Success & {
+    calculated: GoodsRemainData
+} | Error {
+    if (decrease < 0) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(deltaNegativeError)
+        }
+        return err
+    }
+    return editRemainData(remainData, -decrease)
+}
+
+function increaseRemainData(remainData: GoodsRemainData, increase: number): Success & {
+    calculated: GoodsRemainData
+} | Error {
+    if (increase < 0) {
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(deltaNegativeError)
+        }
+        return err
+    }
+    return editRemainData(remainData, increase)
+}
+
+
+function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
     calculated: GoodsRemainData
 } | Error {
     // @ts-ignore
@@ -187,9 +264,9 @@ function calculateModifiedRemainData(remainData: GoodsRemainData, decrease: numb
     } else if (remainData.remainCount != undefined && typeof remainData.remainCount == "number") {
         // number値なので、自動で個数を変更
         // @ts-ignore
-        const toChange = remainData.remainCount - decrease
+        const toChange = remainData.remainCount + delta
         if (toChange < 0) {
-            error("in calculateModifiedRemainData cannot decrease.Data:", remainData)
+            error("in reduceRemainData cannot delta.Data:", remainData)
             const err: Error = {
                 isSuccess: false,
                 ...injectError(remainStatusNegativeError)
@@ -206,7 +283,7 @@ function calculateModifiedRemainData(remainData: GoodsRemainData, decrease: numb
         }
         return suc
     }
-    error("in remainDataIsEnough cannot decide what type the data is.Data:", remainData)
+    error("in editRemainData cannot decide what type the data is.Data:", remainData)
     const err: Error = {
         isSuccess: false,
         ...injectError(remainDataTypeNotKnownError)
