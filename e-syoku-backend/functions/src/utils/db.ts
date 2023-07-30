@@ -118,7 +118,6 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
     }))).filterNotNull()
 }
 
-// TODO 本当にUpdateでいいのか?Set{merge:true}の方がいいのでは?
 /**
  * [type]全体に合うデータを使ってUpdate処理を行います
  * @param type
