@@ -295,7 +295,9 @@ async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: O
  * @param ticketIds
  */
 export async function deleteTickets(ref: DBRefs, uid: string, ticketIds: string[]) {
-
+    return await Promise.all(ticketIds.map(async(id) => {
+        await (ref.tickets(uid).doc(id).delete())
+    }))
 }
 
 async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise<Error | Success & {
