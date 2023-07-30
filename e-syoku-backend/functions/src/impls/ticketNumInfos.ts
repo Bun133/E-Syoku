@@ -32,6 +32,7 @@ export async function generateNextTicketNum(ref: DBRefs, shopId: string, uid: st
     }
 
     async function loop(suggestedNextTicket: string): Promise<string> {
+        // TODO これ、違う
         const ticket = await ticketById(ref, uid, suggestedNextTicket, transaction)
         if (ticket) {
             return loop(fallBackTicketNumGenerate(ref, uid).suggestingNextTicketNum)
