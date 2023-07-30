@@ -6,7 +6,7 @@ import React from "react";
 
 export default function Layout(params: { children: React.JSX.Element }) {
     return (
-        <AdminOnly children={params.children} fail={() => {
+        <AdminOnly fail={() => {
             return (
                 <Container>
                     <Center>
@@ -14,6 +14,6 @@ export default function Layout(params: { children: React.JSX.Element }) {
                     </Center>
                 </Container>
             )
-        }}/>
+        }}>{params.children}</AdminOnly>
     )
 }

@@ -44,11 +44,11 @@ export function useAuthState() {
     return React.useContext(authTypeContext);
 }
 
-export function AuthState(params: { children: (info: AuthTypeInfo | undefined) => React.JSX.Element | React.JSX.Element[] | null }) {
+export function AuthState(params: { comp: (info: AuthTypeInfo | undefined) => React.JSX.Element | React.JSX.Element[] | null }) {
     const info = useAuthState()
     return (
         <>
-            {params.children(info ?? undefined)}
+            {params.comp(info ?? undefined)}
         </>
     )
 }
@@ -60,7 +60,7 @@ export function Authed(params: {
 }) {
     const failComp = params.fail ?? ((type: AuthType | undefined) => null)
     return (
-        <AuthState children={(info) => {
+        <AuthState comp={(info) => {
             if (info === undefined || info.authType === undefined) {
                 return failComp(undefined)
             } else {

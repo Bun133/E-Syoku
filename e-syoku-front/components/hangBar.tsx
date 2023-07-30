@@ -76,7 +76,7 @@ export function HangBar() {
                             {auth.user !== undefined ? <UserCheck onClick={() => {
                                 router.push("/account")
                             }}></UserCheck> : <UserX></UserX>}
-                            <AuthState children={(info) => {
+                            <AuthState comp={(info) => {
                                 if (info !== undefined && info.authType !== undefined) {
                                     return (<Text>AuthType:{info.authType}</Text>)
                                 } else {
