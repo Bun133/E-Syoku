@@ -190,7 +190,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
     }
 
     // 決済セッションのステータスを支払い済みに変更
-    await updateEntireData(paymentSessionSchema.omit({
+    const update =　await updateEntireData(paymentSessionSchema.omit({
         sessionId: true,
         customerId: true,
         orderContent: true,
@@ -199,6 +199,12 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
         state: "PAID",
         paidDetail: paidDetail
     })
+    if (!update.isSuccess){
+        const err:Error = update
+        await rollBackReserveGoods()
+        await rollBackTickets()
+        return err
+    }
 
     const suc: Success & { ticketsId: string[] } = {
         isSuccess: true,
