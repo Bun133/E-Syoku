@@ -27,8 +27,8 @@ import Transaction = firestore.Transaction;
  * @param ticketId
  * @param transaction
  */
-export async function ticketById(ref: DBRefs, uid: string, ticketId: string,transaction?:Transaction): Promise<Ticket | undefined> {
-    return ticketByRef(ref, uid, ref.tickets(uid).doc(ticketId),transaction);
+export async function ticketById(ref: DBRefs, uid: string, ticketId: string, transaction?: Transaction): Promise<Ticket | undefined> {
+    return ticketByRef(ref, uid, ref.tickets(uid).doc(ticketId), transaction);
 }
 
 /**
@@ -37,7 +37,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string,tran
  * @param uid
  * @param ticketRef
  */
-export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>,transaction?:Transaction): Promise<Ticket | undefined> {
+export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<Ticket | undefined> {
     return await parseData<Ticket>(ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
@@ -49,7 +49,7 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
             paymentSessionId: data.paymentSessionId,
             orderData: data.orderData
         }
-    },transaction);
+    }, transaction);
 }
 
 /**
@@ -166,12 +166,78 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
  * @param payment
  * @param transaction
  */
-export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession,transaction?:Transaction): Promise<Error | (Success & {
+export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession, transaction?: Transaction): Promise<Error | (Success & {
     ticketsId: string[]
 })> {
+    // 店舗ごとにバラす
+    const associated = await associatedWithShop(ref, payment)
+    if (!associated.isSuccess) {
+        const err: Error = associated
+        return err
+    }
+    const shopMap = associated.shopMap
+
+
+    // 書き込み済のチケットのID
+    const writtenTicketIds: string[] = []
+
+    let shopId: string
+    let order: Order
+    // 店舗ごとに分けたOrderから食券登録
+    for ([shopId, order] of shopMap.toArray()) {
+        const r = await registerTicket(ref, uid, shopId, order, payment)
+        if(!r.isSuccess){
+            // TODO 今までの処理をRollBackしてErrorを返す
+        }
+    }
+
+    const suc: Success & { ticketsId: string[] } = {
+        isSuccess: true,
+        ticketsId: writtenTicketIds
+    }
+
+    return suc
+}
+
+async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: Order, associatedPayment: PaymentSession): Promise<Result> {
+    return await ref.db.runTransaction(async (transaction) => {
+        // ランダムに新しいRefを取得してチケットを登録
+        const toWriteRef = await newRandomRef(ref.tickets(uid))
+        // この食券のTicketNumを取得
+        // TODO callBack化する
+        const nextTicketNum = await generateNextTicketNum(ref, shopId, uid, transaction)
+
+        // チケットデータを生成
+        const ticketData: Ticket = {
+            uniqueId: toWriteRef.id,
+            customerId: uid,
+            shopId: shopId,
+            orderData: order,
+            status: "PROCESSING",
+            issueTime: Timestamp.now(),
+            paymentSessionId: associatedPayment.sessionId,
+            ticketNum: nextTicketNum.nextTicketNum
+        }
+
+        // チケットデータを書き込み
+        await createData(ticketSchema, toWriteRef, ticketData)
+        // LastTicketNumを更新
+        await updateLastTicketNum(ref, ticketData, transaction)
+        // TicketDisplayDataを更新
+        await updateTicketDisplayDataForTicket(ref, ticketData)
+
+        const suc: Success = {
+            isSuccess: true
+        }
+
+        return suc
+    })
+}
+
+async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise<Error | Success & { shopMap: Map<UniqueId, SingleOrder[]> }> {
     // 商品データを取得
     const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
-        const itemData = await getGoodsById(ref, e.goodsId,transaction)
+        const itemData = await getGoodsById(ref, e.goodsId)
         if (itemData === undefined) {
             return undefined
         }
@@ -192,9 +258,11 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
     // 店舗ごとに振り分け
     const shopMap: Map<UniqueId, SingleOrder[]> = new Map()
     for (const order of orderWithShopData) {
-        const rawOrder:SingleOrder = {
+        const rawOrder: SingleOrder = {
             goodsId: order.goodsId,
-            count: order.count
+            count: order.count,
+            // @ts-ignore
+            itemData: order.itemData
         }
         if (shopMap.has(order.itemData.shopId)) {
             shopMap.get(order.itemData.shopId)!.push(rawOrder)
@@ -203,42 +271,9 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
         }
     }
 
-    // 書き込み済のチケットのID
-    const writtenTicketIds: string[] = []
-
-    let shopId: string
-    let order: Order
-    // 店舗ごとに分けたOrderから食券登録
-    for ([shopId, order] of shopMap.toArray()) {
-        // ランダムに新しいRefを取得してチケットを登録
-        const toWriteRef = await newRandomRef(ref.tickets(uid),transaction)
-        // この食券のTicketNumを取得
-        const nextTicketNum = await generateNextTicketNum(ref, shopId, uid,transaction)
-
-        // チケットデータを生成
-        const ticketData: Ticket = {
-            uniqueId: toWriteRef.id,
-            customerId: uid,
-            shopId: shopId,
-            orderData: order,
-            status: "PROCESSING",
-            issueTime: Timestamp.now(),
-            paymentSessionId: payment.sessionId,
-            ticketNum: nextTicketNum.nextTicketNum
-        }
-
-        // チケットデータを書き込み
-        await createData(ticketSchema, toWriteRef, ticketData,transaction)
-        writtenTicketIds.push(toWriteRef.id)
-        // LastTicketNumを更新
-        await updateLastTicketNum(ref, ticketData,transaction)
-        // TicketDisplayDataを更新
-        await updateTicketDisplayDataForTicket(ref, ticketData,transaction)
-    }
-
-    const suc: Success & { ticketsId: string[] } = {
+    const suc: Success & { shopMap: Map<UniqueId, SingleOrder[]> } = {
         isSuccess: true,
-        ticketsId: writtenTicketIds
+        shopMap: shopMap
     }
 
     return suc

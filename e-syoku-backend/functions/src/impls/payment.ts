@@ -2,7 +2,7 @@ import {createData, DBRefs, newRandomRef, parseData, parseDataAll, updateEntireD
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
-import {getGoodsById, reserveGoods} from "./goods";
+import {cancelReserveGoods, getGoodsById, reserveGoods} from "./goods";
 import {firestore} from "firebase-admin";
 import {Error, Success} from "../types/errors";
 import {
@@ -14,7 +14,6 @@ import {
 } from "./errors";
 import {registerTicketsForPayment} from "./ticket";
 import DocumentReference = firestore.DocumentReference;
-import Transaction = firestore.Transaction;
 
 /**
  * 実際に決済セッションを作成し、DBに登録
@@ -145,7 +144,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     return await refs.db.runTransaction<Error | Success & {
         ticketsId: string[]
     }>(async (transaction) => {
-        const r = await internalMarkPaymentAsPaid(refs, uid, sessionId, paidDetail, transaction)
+        const r = await internalMarkPaymentAsPaid(refs, uid, sessionId, paidDetail)
         if (!r.isSuccess) {
             // rejectすることでTransactionがもう一度走る
             return Promise.reject(r)
@@ -155,7 +154,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
     })
 }
 
-async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail, transaction: Transaction): Promise<Error | Success & {
+async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
     const assert = await assertPaymentStatus(refs, uid, sessionId, paidDetail)
@@ -169,14 +168,16 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
 
 
     // 商品の在庫を確保(在庫状況をを減らして更新)
-    const reserveRes = await reserveGoods(refs, payment.orderContent, transaction)
+    const reserveRes = await reserveGoods(refs, payment.orderContent)
     if (!reserveRes.isSuccess) {
+        // エラー内容はそのままパスでいいが、ロールバック処理を行う
         const err: Error = reserveRes
+        await cancelReserveGoods(refs, reserveRes.notReserved)
         return err
     }
 
     // 決済セッションのデータからチケットを登録
-    const ticketRes = await registerTicketsForPayment(refs, uid, payment, transaction)
+    const ticketRes = await registerTicketsForPayment(refs, uid, payment)
     if (!ticketRes.isSuccess) {
         const err: Error = ticketRes
         return err
@@ -194,7 +195,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
     }), paymentRef, {
         state: "PAID",
         paidDetail: paidDetail
-    }, transaction)
+    })
 
     const suc: Success & { ticketsId: string[] } = {
         isSuccess: true,
