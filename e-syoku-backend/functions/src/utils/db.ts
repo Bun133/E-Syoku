@@ -129,7 +129,7 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
 export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
-            await transaction.update(ref, toUpdate);
+            transaction.update(ref, toUpdate);
         } else {
             await ref.update(toUpdate);
         }
@@ -191,7 +191,7 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
 export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toMerge: T, transaction?: firestore.Transaction): Promise<Result> {
     try {
         if (transaction) {
-            await transaction.set(ref, toMerge, {merge: true});
+            transaction.set(ref, toMerge, {merge: true});
         } else {
             await ref.set(toMerge, {merge: true});
         }
