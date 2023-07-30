@@ -18,6 +18,7 @@ export default function Page() {
         )
     } else {
 
+        // TODO もっとましにする
         return (
             <VStack>
                 {ticketsId.map(e => TicketEntry({uid: uid, ticketId: e}))}

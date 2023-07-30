@@ -1,7 +1,9 @@
 import Btn from "@/components/btn";
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
-import {Heading, VStack} from "@chakra-ui/layout";
+import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
+import {Box} from "@chakra-ui/react";
+import {Center, Heading} from "@chakra-ui/layout";
 
 
 export default function TicketComponent(param: {
@@ -16,16 +18,19 @@ export default function TicketComponent(param: {
 
 
     return (
-        <VStack>
-            <VStack>
-                <Heading>{param.ticket.ticketNum}</Heading>
-            </VStack>
-
-            <VStack>
-                {param.ticket.status}
-                <div className={"w-2"}></div>
+        <Card>
+            <CardHeader>
+                <Box backgroundColor={"gray.200"} borderRadius={10} px={4} py={1}>
+                    <Center>
+                        <Heading>
+                            {param.ticket.ticketNum}
+                        </Heading>
+                    </Center>
+                </Box>
+            </CardHeader>
+            <CardFooter>
                 {button}
-            </VStack>
-        </VStack>
+            </CardFooter>
+        </Card>
     )
 }

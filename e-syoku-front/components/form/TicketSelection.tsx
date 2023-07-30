@@ -1,7 +1,7 @@
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
 import {default as TicketComponent} from "@/components/Ticket"
-import {Flex, HStack} from "@chakra-ui/layout";
+import {VStack} from "@chakra-ui/layout";
 
 export function TicketSelection(props: {
     tickets: Ticket[] | undefined,
@@ -14,7 +14,7 @@ export function TicketSelection(props: {
         : ((ticket: Ticket) => undefined)
 
     return (
-        <HStack>
+        <VStack>
             {props.tickets !== undefined ? props.tickets.map((ticket: Ticket) => {
                 return (
                     <TicketComponent
@@ -23,6 +23,6 @@ export function TicketSelection(props: {
                         button={button(ticket)}></TicketComponent>
                 )
             }) : null}
-        </HStack>
+        </VStack>
     )
 }
