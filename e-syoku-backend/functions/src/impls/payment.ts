@@ -162,7 +162,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
     if (!reserveRes.isSuccess) {
         // エラー内容はそのままパスでいいが、ロールバック処理を行う
         const err: Error = reserveRes
-        await cancelReserveGoods(refs, reserveRes.notReserved)
+        await cancelReserveGoods(refs, reserveRes.reserved)
         return err
     }
 
