@@ -141,17 +141,7 @@ export async function getAllPayments(ref: DBRefs, userid: string): Promise<Payme
 export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
-    return await refs.db.runTransaction<Error | Success & {
-        ticketsId: string[]
-    }>(async (transaction) => {
-        const r = await internalMarkPaymentAsPaid(refs, uid, sessionId, paidDetail)
-        if (!r.isSuccess) {
-            // rejectすることでTransactionがもう一度走る
-            return Promise.reject(r)
-        } else {
-            return Promise.resolve(r)
-        }
-    })
+    return await internalMarkPaymentAsPaid(refs, uid, sessionId, paidDetail)
 }
 
 async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
