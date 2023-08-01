@@ -4,7 +4,7 @@ import {listGoodsEndPoint, submitOrderEndPoint} from "@/lib/e-syoku-api/EndPoint
 import PageTitle from "@/components/pageTitle";
 import {Center, VStack} from "@chakra-ui/layout";
 import {OrderSelection} from "@/components/form/OrderSelection";
-import {useRef, useState} from "react";
+import React, {useRef, useState} from "react";
 import {Order} from "@/lib/e-syoku-api/Types";
 import Goods from "@/components/goods";
 import Btn from "@/components/btn";
@@ -18,7 +18,7 @@ export default function Page() {
     const [order, setOrder] = useState<Order>()
     const auth = useFirebaseAuth()
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const message = useRef([""])
+    const message = useRef<React.ReactNode[]>([])
     const router = useRouter()
 
     return (
@@ -47,7 +47,9 @@ export default function Page() {
                                         if (r.isSuccess) {
                                             router.push(`/payment/id?id=${r.data.paymentSessionId}`)
                                         } else {
-                                            message.current = ["注文処理に失敗しました", `エラーコード:${r.errorCode}`, `エラー内容:${r.error}`]
+                                            message.current = [<p>"注文処理に失敗しました"</p>,
+                                                <p>`エラーコード:${r.errorCode}`</p>, <p>`エラー内容:${r.error}`</p>,
+                                                <p>`スタック情報:${r.stack}`</p>]
                                             onOpen()
                                         }
                                     }}>注文を確定</Btn>

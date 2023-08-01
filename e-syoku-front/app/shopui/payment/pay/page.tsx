@@ -3,7 +3,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {Container, FormControl, FormErrorMessage, FormLabel, NumberInput, NumberInputField} from "@chakra-ui/react";
-import {useRef, useState} from "react";
+import React, {useRef, useState} from "react";
 import Btn from "@/components/btn";
 import {callEndpoint} from "@/lib/e-syoku-api/Axios";
 import {markPaymentPaidEndpoint} from "@/lib/e-syoku-api/EndPoints";
@@ -20,7 +20,7 @@ export default function Page() {
     const isAmountError = amount <= 0
 
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const message = useRef([""])
+    const message = useRef<React.ReactNode[]>([])
     const auth = useFirebaseAuth()
 
     const router = useRouter()
@@ -71,7 +71,9 @@ export default function Page() {
 
                                 router.push(`/shopui/payment/barcode?${param.toString()}`)
                             } else {
-                                message.current = ["Response:", JSON.stringify(res)]
+                                message.current = [<p>"決済処理に失敗しました"</p>,
+                                    <p>`エラーコード:${res.errorCode}`</p>, <p>`エラー内容:${res.error}`</p>,
+                                    <p>`スタック情報:${res.stack}`</p>]
                                 onOpen()
                             }
                         }

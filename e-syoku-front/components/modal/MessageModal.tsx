@@ -8,8 +8,13 @@ import {
     ModalOverlay
 } from "@chakra-ui/modal";
 import Btn from "@/components/btn";
+import React from "react";
 
-export function MessageModal(param: { message: string[], isOpen: boolean, onClose: () => void }) {
+export function MessageModal(param: {
+    message: React.ReactNode[],
+    isOpen: boolean,
+    onClose: () => void
+}) {
     return (
         <>
             <Modal isOpen={param.isOpen} onClose={param.onClose}>
@@ -18,7 +23,7 @@ export function MessageModal(param: { message: string[], isOpen: boolean, onClos
                     <ModalHeader>Message</ModalHeader>
                     <ModalCloseButton/>
                     <ModalBody>
-                        {param.message.map((m, i) => <p key={i}>{m}</p>)}
+                        {param.message.map((m, i) => m)}
                     </ModalBody>
 
                     <ModalFooter>
