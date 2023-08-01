@@ -48,9 +48,9 @@ export default function Page() {
                                         if (r.isSuccess) {
                                             router.push(`/payment/id?id=${r.data.paymentSessionId}`)
                                         } else {
-                                            message.current = [<p>"注文処理に失敗しました"</p>,
-                                                <p>`エラーコード:${r.errorCode}`</p>, <p>`エラー内容:${r.error}`</p>,
-                                                <Code>`スタック情報:${r.stack}`</Code>]
+                                            message.current = [<p>注文処理に失敗しました</p>,
+                                                <p>エラーコード:${r.errorCode}</p>, <p>エラー内容:${r.error}</p>,
+                                                <Code>スタック情報:${r.stack}</Code>]
                                             onOpen()
                                         }
                                     }}>注文を確定</Btn>
