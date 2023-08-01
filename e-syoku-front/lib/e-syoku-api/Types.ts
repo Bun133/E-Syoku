@@ -264,3 +264,7 @@ export const grantPermissionRequest = z.object({
 export const paidResponse = defaultResponseFormat.and(z.object({
     ticketsId: z.string().array()
 }))
+
+export const bindTicketResponse = defaultResponseFormat.and(z.object({
+    boundTicketId: uniqueId
+}))

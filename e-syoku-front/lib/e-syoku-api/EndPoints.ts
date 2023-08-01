@@ -1,7 +1,7 @@
 import {endpoint} from "@/lib/e-syoku-api/Axios";
 import {z} from "zod";
 import {
-    authStateResponse,
+    authStateResponse, bindTicketResponse,
     callTicketResponse,
     cancelCallingResponse,
     defaultResponseFormat,
@@ -49,5 +49,5 @@ export const grantPermissionEndpoint = endpoint("grantPermission", grantPermissi
 export const bindBarcodeEndpoint = endpoint("bindBarcode", z.object({
     ticketId: uniqueId,
     uid: uniqueId,
-    barcode: z.string()
-}), defaultResponseFormat)
+    barcode: z.string().array().nonempty()
+}), bindTicketResponse)
