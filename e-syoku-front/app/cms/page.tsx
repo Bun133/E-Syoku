@@ -1,11 +1,14 @@
 "use client"
 
-import {Text} from "@chakra-ui/react";
+import {Center, VStack} from "@chakra-ui/layout";
+import Btn from "@/components/btn";
 
 export default function Page() {
     return (
-        <Text>
-            Hello CMS!
-        </Text>
+        <Center>
+            <VStack>
+                <Btn href="/cms/ticket">食券照会</Btn>
+            </VStack>
+        </Center>
     )
 }

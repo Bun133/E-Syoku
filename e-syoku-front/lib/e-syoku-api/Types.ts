@@ -160,11 +160,11 @@ export const defaultResponseFormat = resultSchema
 
 export type DefaultResponseFormat = z.infer<typeof defaultResponseFormat>
 
-export const ticketStatusResponse = defaultResponseFormat.and(z.object({
+export const ticketResponse = defaultResponseFormat.and(z.object({
     ticket: ticketType.optional()
 }))
 
-export type TicketStatusResponse = z.infer<typeof ticketStatusResponse>
+export type TicketStatusResponse = z.infer<typeof ticketResponse>
 
 export const listTicketResponse = defaultResponseFormat.and(z.object({
     tickets: z.array(ticketType)
