@@ -4,6 +4,7 @@ import {Grid, GridItem, Text} from "@chakra-ui/react";
 import {useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {VStack} from "@chakra-ui/layout";
+import {BarcodeReader} from "@/components/reader/BarcodeReader";
 
 export default function Page() {
     const params = useSearchParams()
@@ -21,7 +22,9 @@ export default function Page() {
         // TODO もっとましにする
         return (
             <VStack>
-                {ticketsId.map(e => TicketEntry({uid: uid, ticketId: e}))}
+                <BarcodeReader onRead={(e) => {
+                    console.log("read", e)
+                }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>
             </VStack>
         )
     }
