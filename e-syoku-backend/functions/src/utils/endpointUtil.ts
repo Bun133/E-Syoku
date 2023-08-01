@@ -103,10 +103,13 @@ async function handleRequest<R extends ResultOrPromise>(request: Request, respon
         }
     } catch (e) {
         const rawErrorMessage = e instanceof Error ? e.message : "Not ES6 Error"
+        // @ts-ignore
+        const stack = e.stack !== undefined ? e.stack : "No Stack"
         const err: EError = {
             isSuccess: false,
             ...injectError(internalErrorThrownError),
-            rawError: rawErrorMessage
+            rawError: rawErrorMessage,
+            stack: stack
         }
         writeLog({
             severity: "ERROR",

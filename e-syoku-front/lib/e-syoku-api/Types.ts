@@ -150,7 +150,8 @@ export const successSchema = z.object({
 export const errorSchema = z.object({
     isSuccess: z.literal(false),
     error: z.string(),
-    errorCode: z.string()
+    errorCode: z.string(),
+    stack: z.string().optional()
 })
 
 export const resultSchema = successSchema.or(errorSchema)

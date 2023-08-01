@@ -2,7 +2,7 @@
 
 import {ZodType} from "zod";
 import {defaultResponseFormat, DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
-import React, {useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {User} from "@firebase/auth";
 
@@ -38,7 +38,8 @@ export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
     // 正常にparseできたときのAPIResponseのisSuccess
     // 正常にparse出来なかったときはfalse
     // defaultResponseFormatでparse出来てもfalse
-    isSuccess: false
+    isSuccess: false,
+    stack: string | undefined
 } & EndPointBaseResponse<R>
 
 export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessResponse<R> | EndPointErrorResponse<R>
@@ -64,6 +65,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             parseFailed: false,
             fetchFailed: false,
             isSuccess: false,
+            stack: undefined
         }
     }
     const tokenString = await (user.getIdToken(true))
@@ -89,6 +91,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             parseFailed: false,
             fetchFailed: true,
             isSuccess: false,
+            stack: e.stack ?? "No stack"
         }
     }
 
@@ -115,6 +118,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
                 parseFailed: false,
                 fetchFailed: false,
                 isSuccess: parsed.data.isSuccess,
+                stack: parsed.data.stack
             }
             return r
         }
@@ -133,7 +137,8 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
                     errorCode: "[Client]SUCCESS_FALLBACK_PARSING",
                     parseFailed: false,
                     fetchFailed: false,
-                    isSuccess: false
+                    isSuccess: false,
+                    stack: "No stack"
                 }
                 return r
             } else {
@@ -143,7 +148,8 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
                     errorCode: defaultParsed.data.errorCode,
                     error: defaultParsed.data.error,
                     fetchFailed: false,
-                    isSuccess: false
+                    isSuccess: false,
+                    stack: defaultParsed.data.stack
                 }
                 return r
             }
@@ -157,6 +163,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
                 parseFailed: true,
                 fetchFailed: false,
                 isSuccess: false,
+                stack: "No stack"
             }
             return r
         }
@@ -266,7 +273,7 @@ export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: En
         return call(requestData)
     }
 
-    const firstCall: ((q: Q) => Promise<EndPointResponse<R> | undefined>)  = async (requestData: Q) => {
+    const firstCall: ((q: Q) => Promise<EndPointResponse<R> | undefined>) = async (requestData: Q) => {
         if (!isFirstReqSent.current) {
             // Send first request
             const data = await fetch(requestData)
