@@ -47,7 +47,7 @@ export const authStateEndpoint = endpoint("authState", z.object({}), authStateRe
 export const grantPermissionEndpoint = endpoint("grantPermission", grantPermissionRequest, defaultResponseFormat)
 
 export const bindBarcodeEndpoint = endpoint("bindBarcode", z.object({
-    ticketId: uniqueId,
+    ticketId: uniqueId.array().nonempty(),
     uid: uniqueId,
-    barcode: z.string().array().nonempty()
+    barcode: z.string()
 }), bindTicketResponse)
