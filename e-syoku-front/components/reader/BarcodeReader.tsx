@@ -8,18 +8,46 @@ import Btn from "@/components/btn";
 export function BarcodeReader(params: {
     onRead: (read: string) => void | Promise<void>,
     placeholder?: string,
-    autoSelect: boolean
+    autoSelect: boolean,
+    timeout?: number,
+    autoClear?: boolean
 }) {
     const placeHolderString = params.placeholder ?? "バーコード読み取り"
-    const str = useRef<string>()
+    const [str, setStr] = useState<string>()
     const [isDisabled, setDisabled] = useState(true)
+    const timeout = params.timeout ?? 1000
+    const timer = useRef<NodeJS.Timeout>()
+    const toClear = params.autoClear ?? true
+
+
+    async function onRead() {
+        if (str !== undefined) {
+            setDisabled(true)
+            await params.onRead(str)
+            if (toClear) {
+                setStr("")
+            }
+            setDisabled(false)
+        }
+    }
+
+    function resetTimer() {
+        clearTimeout(timer.current)
+        timer.current = setTimeout(async () => {
+            // 時間が切れたので自動で入力扱い
+            await onRead()
+        }, timeout)
+    }
 
     function updateValue(value: string | undefined) {
-        str.current = value
         const disabled = value === undefined || value === ""
         if (disabled !== isDisabled) {
             setDisabled(disabled)
         }
+        if (str !== value && !disabled) {
+            resetTimer()
+        }
+        setStr(value)
     }
 
     return (
@@ -29,14 +57,11 @@ export function BarcodeReader(params: {
                     type="text"
                     placeholder={placeHolderString}
                     onChange={(e) => updateValue(e.target.value)}
+                    value={str}
                 />
             </InputGroup>
 
-            <Btn onClick={async () => {
-                if (str.current !== undefined) {
-                    await params.onRead(str.current)
-                }
-            }} disabled={isDisabled} autoFocus={params.autoSelect}>
+            <Btn onClick={onRead} disabled={isDisabled} autoFocus={params.autoSelect}>
                 <ArrowRight color={"white"}/>
             </Btn>
         </Flex>
