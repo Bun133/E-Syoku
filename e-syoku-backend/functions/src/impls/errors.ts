@@ -45,6 +45,13 @@ const internalError: (msg: string, errorCode: string) => ErrorType = (msg: strin
     }
 }
 
+const cmsError:  (msg: string, errorCode: string) => ErrorType = (msg: string, errorCode: string) => {
+    return {
+        error: msg,
+        errorCode: `CMS_${errorCode}`
+    }
+}
+
 export const authFailedError: ErrorType = {
     error: "認証に失敗しました",
     errorCode: "AUTH_FAILED"
@@ -154,3 +161,5 @@ export const failedToRegisterTicketError = internalError("チケットの登録�
 export const barcodeNotMatch = internalError("バーコードが合致しません","BARCODE_NOT_MATCH")
 
 export const barcodeMatchTooMuch = internalError("バーコードが複数に合致します","BARCODE_MATCH_TOO_MUCH")
+
+export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎます","TICKET_NOT_SATISFY_CONDITION")

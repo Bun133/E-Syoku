@@ -55,13 +55,12 @@ export function requireOptionalParameter<Z>(paramName: string, type: ZodType<Z>,
     }
 }
 
-export type ResultOrPromise = {
+export type EndpointResult = {
     result: Result,
     statusCode?: number
-} | Promise<{
-    result: Result,
-    statusCode?: number
-}>
+}
+
+export type ResultOrPromise = EndpointResult | Promise<EndpointResult>
 
 async function handleRequest<R extends ResultOrPromise>(request: Request, response: Response, body: () => R) {
     if (response.writableFinished) {

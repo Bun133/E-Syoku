@@ -27,6 +27,7 @@ import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket} from "./impls/barcode";
+import {cmsFunction, satisfyCondition} from "./cms";
 
 
 admin.initializeApp()
@@ -538,4 +539,18 @@ export const bindBarcode = standardFunction(async (req, res) => {
             }
         })
     })
+})
+
+/**
+ * バーコードやuidなどから条件にマッチする食券一覧を返却します
+ * Param:
+ *  - uid:string(optional)
+ *  - ticketId:string(optional)
+ *  - barcode:string(optional)
+ * Response:
+ * Permission:
+ *  - ADMIN
+ */
+export const cmsTicket = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
+    return await satisfyCondition(refs,req)
 })
