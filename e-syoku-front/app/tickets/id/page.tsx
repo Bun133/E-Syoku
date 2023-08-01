@@ -10,6 +10,7 @@ import {Card, CardBody, CardHeader} from "@chakra-ui/card";
 import {Box, Text} from "@chakra-ui/react";
 import {orderDataTransform, ticketStatusTransform} from "@/lib/e-syoku-api/Transformers";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
+import {Ticket} from "@/lib/e-syoku-api/Types";
 
 export default function Page() {
     const params = useSearchParams()
@@ -24,27 +25,7 @@ export default function Page() {
                         <>
                             <PageTitle title={"食券番号 " + ticket.ticketNum}></PageTitle>
                             <VStack>
-                                <Card>
-
-                                    <Box backgroundColor={"gray.200"} borderRadius={10} mx={4} my={1}>
-                                        <Center>
-                                            <CardHeader><Heading>{ticket.ticketNum}</Heading></CardHeader>
-                                        </Center>
-                                    </Box>
-
-
-                                    <CardBody>
-                                        <VStack>
-                                            <Text>Status : {ticketStatusTransform(ticket.status)}</Text>
-                                            <Text>UniqueId : {ticket.uniqueId}</Text>
-                                            <Text>ShopId : {ticket.shopId}</Text>
-                                            <Text>PaymentSessionId :{ticket.paymentSessionId}</Text>
-                                            <Text>OrderData :{orderDataTransform(ticket.orderData)}</Text>
-                                            {/**TODO 時刻表示**/}
-                                            <Text>IssueTime :{ticket.issueTime._seconds}</Text>
-                                        </VStack>
-                                    </CardBody>
-                                </Card>
+                                <TicketCard ticket={ticket}/>
                                 <Center>
                                     <Btn onClick={() => reload()}>再読み込み</Btn>
                                 </Center>
@@ -63,5 +44,31 @@ export default function Page() {
                 }
             }}/>
         </>
+    )
+}
+
+export function TicketCard(params: { ticket: Ticket }) {
+    return (
+        <Card>
+
+            <Box backgroundColor={"gray.200"} borderRadius={10} mx={4} my={1}>
+                <Center>
+                    <CardHeader><Heading>{params.ticket.ticketNum}</Heading></CardHeader>
+                </Center>
+            </Box>
+
+
+            <CardBody>
+                <VStack>
+                    <Text>Status : {ticketStatusTransform(params.ticket.status)}</Text>
+                    <Text>UniqueId : {params.ticket.uniqueId}</Text>
+                    <Text>ShopId : {params.ticket.shopId}</Text>
+                    <Text>PaymentSessionId :{params.ticket.paymentSessionId}</Text>
+                    <Text>OrderData :{orderDataTransform(params.ticket.orderData)}</Text>
+                    {/**TODO 時刻表示**/}
+                    <Text>IssueTime :{params.ticket.issueTime._seconds}</Text>
+                </VStack>
+            </CardBody>
+        </Card>
     )
 }
