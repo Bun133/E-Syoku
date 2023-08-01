@@ -18,7 +18,8 @@ export async function allBarcodeInfos(refs: DBRefs): Promise<BarcodeInfo[]> {
     const barcodeRefs = shopIds.map(d => refs.barcodeInfos(d.shopId))
     return await parseDataAll<BarcodeInfo>(barcodeInfoSchema, barcodeRefs, (ref, data) => {
         return {
-            shopId: ref.id,
+            // TODO 安全ではない気が・・・
+            shopId: ref.parent.parent!!.id,
             barcodeStartsWith: data.barcodeStartsWith
         }
     })
