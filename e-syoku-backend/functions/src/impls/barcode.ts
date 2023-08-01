@@ -1,9 +1,9 @@
 import {DBRefs, parseData, setData} from "../utils/db";
 import {Error, Result, Success} from "../types/errors";
 import {BarcodeBindData, barcodeBindDataSchema} from "../types/barcode";
-import {judgeBarcode} from "../types/barcodeInfos";
 import {getTickets} from "./ticket";
 import {barcodeMatchTooMuch, barcodeNotMatch, injectError} from "./errors";
+import {judgeBarcode} from "./barcodeInfos";
 
 export async function getBarcodeBindData(ref: DBRefs, barcode: string): Promise<undefined | BarcodeBindData> {
     return parseData(barcodeBindDataSchema, ref.binds(barcode), (data) => {
