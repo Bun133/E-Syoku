@@ -1,15 +1,14 @@
 "use client"
 import {useSearchParams} from "next/navigation";
-import {Code, Grid, GridItem, Text} from "@chakra-ui/react";
+import {Flex, Grid, GridItem, Spacer, Text} from "@chakra-ui/react";
 import {callEndpoint, EndPointErrorResponse, useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {bindBarcodeEndpoint, ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
-import {VStack} from "@chakra-ui/layout";
+import {HStack, VStack} from "@chakra-ui/layout";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
-import React, {useRef, useState} from "react";
-import {MessageModal} from "@/components/modal/MessageModal";
-import {useDisclosure} from "@chakra-ui/hooks";
+import React, {useState} from "react";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {APIErrorModal} from "@/components/modal/APIErrorModal";
+import Btn from "@/components/btn";
 
 type BindStatus = {
     ticketId: string,
@@ -24,6 +23,7 @@ export default function Page() {
     const token = useFirebaseAuth()
 
     const [status, setStatus] = useState<BindStatus[]>(ticketsId.map(id => ({ticketId: id, isBound: false})))
+    const isAllBound = status.filter(s => !s.isBound).length == 0
 
     const [error, setError] = useState<EndPointErrorResponse<any>>()
 
@@ -37,29 +37,49 @@ export default function Page() {
 
         // TODO もっとましにする
         return (
-            <VStack>
-                <BarcodeReader onRead={async (e) => {
-                    const res = await callEndpoint(bindBarcodeEndpoint, token.user, {
-                        barcode: e,
-                        uid: uid,
-                        ticketId: ticketsId
-                    })
-
-                    if (res.isSuccess) {
-                        const newStatus = status.map(s => {
-                            if (s.ticketId === res.data.boundTicketId) {
-                                return {...s, isBound: true}
-                            } else {
-                                return s
-                            }
+            <Flex direction={"column"} h={"max"}>
+                <VStack>
+                    <BarcodeReader onRead={async (e) => {
+                        const res = await callEndpoint(bindBarcodeEndpoint, token.user, {
+                            barcode: e,
+                            uid: uid,
+                            ticketId: ticketsId
                         })
-                        setStatus(newStatus)
-                    } else {
-                        setError(res)
-                    }
-                }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>
-                <APIErrorModal error={error}/>
-            </VStack>
+
+                        if (res.isSuccess) {
+                            const newStatus = status.map(s => {
+                                if (s.ticketId === res.data.boundTicketId) {
+                                    return {...s, isBound: true}
+                                } else {
+                                    return s
+                                }
+                            })
+                            setStatus(newStatus)
+                        } else {
+                            setError(res)
+                        }
+                    }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>
+                    <APIErrorModal error={error}/>
+                    <VStack>
+                        {status.map(s => {
+                            return (
+                                <HStack>
+                                    <Text>{s.ticketId}</Text>
+                                    <Spacer/>
+                                    {s.isBound ? <Text color={"green"}>紐づけ済み</Text> :
+                                        <Text color={"red"}>紐づけ前</Text>}
+                                </HStack>
+                            )
+                        })}
+                    </VStack>
+                </VStack>
+
+                <Spacer/>
+
+                <VStack>
+                    <Btn disabled={!isAllBound} href={"/shopui/payment/scan"}>決済処理の最初に戻る</Btn>
+                </VStack>
+            </Flex>
         )
     }
 }
