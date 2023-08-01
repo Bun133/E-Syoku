@@ -43,7 +43,7 @@ export default function Page() {
                         const res = await callEndpoint(bindBarcodeEndpoint, token.user, {
                             barcode: e,
                             uid: uid,
-                            ticketId: ticketsId
+                            ticketId: status.filter(s => !s.isBound).map(s => s.ticketId)
                         })
 
                         if (res.isSuccess) {
