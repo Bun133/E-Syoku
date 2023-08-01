@@ -1,7 +1,7 @@
 "use client"
 import {useSearchParams} from "next/navigation";
 import {Code, Grid, GridItem, Text} from "@chakra-ui/react";
-import {callEndpoint, useEndpoint} from "@/lib/e-syoku-api/Axios";
+import {callEndpoint, EndPointErrorResponse, useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {bindBarcodeEndpoint, ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {VStack} from "@chakra-ui/layout";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
@@ -9,6 +9,7 @@ import React, {useRef, useState} from "react";
 import {MessageModal} from "@/components/modal/MessageModal";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
+import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
 type BindStatus = {
     ticketId: string,
@@ -24,8 +25,7 @@ export default function Page() {
 
     const [status, setStatus] = useState<BindStatus[]>(ticketsId.map(id => ({ticketId: id, isBound: false})))
 
-    const message = useRef<React.ReactNode[]>([])
-    const {isOpen, onOpen, onClose} = useDisclosure()
+    const [error, setError] = useState<EndPointErrorResponse<any>>()
 
     if (uid === null || ticketsId.length == 0) {
         return (
@@ -55,13 +55,10 @@ export default function Page() {
                         })
                         setStatus(newStatus)
                     } else {
-                        message.current = [<p>紐づけに失敗しました</p>, <p>エラーコード:{res.errorCode}</p>,
-                            <p>エラーメッセージ:{res.error}</p>, (<><p>スタック情報:</p><Code>{res.stack}</Code></>)]
-                        onOpen()
+                        setError(res)
                     }
                 }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>
-                <MessageModal message={message.current} isOpen={isOpen}
-                              onClose={onClose}></MessageModal>
+                <APIErrorModal error={error}/>
             </VStack>
         )
     }

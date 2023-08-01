@@ -1,5 +1,5 @@
 "use client"
-import {callEndpoint} from "@/lib/e-syoku-api/Axios";
+import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
 import {listGoodsEndPoint, submitOrderEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import PageTitle from "@/components/pageTitle";
 import {Center, VStack} from "@chakra-ui/layout";
@@ -10,17 +10,15 @@ import Goods from "@/components/goods";
 import Btn from "@/components/btn";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {useDisclosure} from "@chakra-ui/hooks";
-import {MessageModal} from "@/components/modal/MessageModal";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {useRouter} from "next/navigation";
-import {Code} from "@chakra-ui/react";
+import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
 export default function Page() {
     const [order, setOrder] = useState<Order>()
     const auth = useFirebaseAuth()
-    const {isOpen, onOpen, onClose} = useDisclosure()
-    const message = useRef<React.ReactNode[]>([])
     const router = useRouter()
+    const [error, setError] = useState<EndPointErrorResponse<any>>()
 
     return (
         <>
@@ -48,14 +46,10 @@ export default function Page() {
                                         if (r.isSuccess) {
                                             router.push(`/payment/id?id=${r.data.paymentSessionId}`)
                                         } else {
-                                            message.current = [<p>注文処理に失敗しました</p>,
-                                                <p>エラーコード:{r.errorCode}</p>, <p>エラー内容:{r.error}</p>,
-                                                (<><p>スタック情報:</p><Code>{r.stack}</Code></>)]
-                                            onOpen()
+                                            setError(r)
                                         }
                                     }}>注文を確定</Btn>
-                                    <MessageModal message={message.current} isOpen={isOpen}
-                                                  onClose={onClose}></MessageModal>
+                                    <APIErrorModal error={error}/>
                                 </Center>
                             </VStack>
                         </>

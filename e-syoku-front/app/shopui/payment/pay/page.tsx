@@ -2,22 +2,13 @@
 import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {
-    Code,
-    Container,
-    FormControl,
-    FormErrorMessage,
-    FormLabel,
-    NumberInput,
-    NumberInputField
-} from "@chakra-ui/react";
-import React, {useRef, useState} from "react";
+import {Container, FormControl, FormErrorMessage, FormLabel, NumberInput, NumberInputField} from "@chakra-ui/react";
+import React, {useState} from "react";
 import Btn from "@/components/btn";
-import {callEndpoint} from "@/lib/e-syoku-api/Axios";
+import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
 import {markPaymentPaidEndpoint} from "@/lib/e-syoku-api/EndPoints";
-import {useDisclosure} from "@chakra-ui/hooks";
-import {MessageModal} from "@/components/modal/MessageModal";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
+import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
 export default function Page() {
     const params = useSearchParams()
@@ -27,8 +18,8 @@ export default function Page() {
     const [amount, setAmount] = useState(0)
     const isAmountError = amount <= 0
 
-    const {isOpen, onOpen, onClose} = useDisclosure()
-    const message = useRef<React.ReactNode[]>([])
+    const [error, setError] = useState<EndPointErrorResponse<any>>()
+
     const auth = useFirebaseAuth()
 
     const router = useRouter()
@@ -79,15 +70,12 @@ export default function Page() {
 
                                 router.push(`/shopui/payment/barcode?${param.toString()}`)
                             } else {
-                                message.current = [<p>決済処理に失敗しました</p>,
-                                    <p>エラーコード:{res.errorCode}</p>, <p>エラー内容:{res.error}</p>,
-                                    (<><p>スタック情報:</p><Code>{res.stack}</Code></>)]
-                                onOpen()
+                                setError(res)
                             }
                         }
                         f()
                     }} disabled={isAmountError}>決済処理</Btn>
-                    <MessageModal message={message.current} isOpen={isOpen} onClose={onClose}></MessageModal>
+                    <APIErrorModal error={error}/>
                 </VStack>
             </Container>
         </>
