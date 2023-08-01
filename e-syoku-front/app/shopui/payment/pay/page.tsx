@@ -21,7 +21,6 @@ export default function Page() {
 
     const {isOpen, onOpen, onClose} = useDisclosure()
     const message = useRef([""])
-    const auth = useFirebaseAuth()
 
     const router = useRouter()
 
@@ -52,7 +51,7 @@ export default function Page() {
                     </FormControl>
                     <Btn onClick={() => {
                         const f = async () => {
-                            const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
+                            const res = await callEndpoint(markPaymentPaidEndpoint, {
                                 paidAmount: amount,
                                 // TODO paidMeansとremarkを簡単に入力できるように
                                 paidMeans: "テスト",

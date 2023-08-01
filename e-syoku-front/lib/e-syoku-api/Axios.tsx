@@ -46,7 +46,9 @@ export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessR
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpointPrefix
 let apiEndpointSuffix = process.env.NEXT_PUBLIC_apiEndpointSuffix
 
-export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
+export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
+    const token = useFirebaseAuth()
+    const user = token.user
     const r = await internalCallEndpoint(endPoint, user, requestData, abortController)
     console.log("[callEndpoint:Request]", requestData)
     console.log("[callEndpoint:Response]", r)
@@ -181,12 +183,8 @@ export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoi
     const isHandledFirstReq = useRef(false)
 
     const call = () => {
-        if (token.user == undefined) {
-            // 見なかったことにする
-            return
-        }
         isRequestPending.current = true
-        callEndpoint(endPoint, token.user, requestData).then(data => {
+        callEndpoint(endPoint, requestData).then(data => {
             console.log("SET", data)
             setResponse(data)
             setLoaded(true)
@@ -233,7 +231,7 @@ export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: En
         }
         isRequestPending.current = true
         try {
-            const data = await callEndpoint(endPoint, token.user, requestData, abort.current)
+            const data = await callEndpoint(endPoint, requestData, abort.current)
             console.log("SET", data)
             setResponse(data)
             setLoaded(true)
