@@ -10,7 +10,7 @@ import {APIErrorModal} from "@/components/modal/APIErrorModal";
 import {Input, InputGroup} from "@chakra-ui/react";
 import {ArrowRight} from "react-feather";
 import Btn from "@/components/btn";
-import {TicketCard} from "@/app/tickets/id/page";
+import {TicketCard} from "@/components/Ticket";
 
 export default function Page() {
     const [ticket, setTicket] = useState<Ticket>()
