@@ -16,6 +16,7 @@ import {useRouter} from "next/navigation";
 
 export default function Page() {
     const [order, setOrder] = useState<Order>()
+    const auth = useFirebaseAuth()
     const {isOpen, onOpen, onClose} = useDisclosure()
     const message = useRef([""])
     const router = useRouter()
@@ -42,7 +43,7 @@ export default function Page() {
 
                                 <Center>
                                     <Btn onClick={async () => {
-                                        const r = await callEndpoint(submitOrderEndPoint,  {order: order})
+                                        const r = await callEndpoint(submitOrderEndPoint, auth.user, {order: order})
                                         if (r.isSuccess) {
                                             router.push(`/payment/id?id=${r.data.paymentSessionId}`)
                                         } else {
