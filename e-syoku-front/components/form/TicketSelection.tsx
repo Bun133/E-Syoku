@@ -1,6 +1,6 @@
 import {Ticket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
-import {default as TicketComponent} from "@/components/Ticket"
+import {TicketComponent} from "@/components/Ticket"
 import {VStack} from "@chakra-ui/layout";
 
 export function TicketSelection(props: {

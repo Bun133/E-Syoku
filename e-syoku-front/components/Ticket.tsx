@@ -1,12 +1,13 @@
 import Btn from "@/components/btn";
 import {Ticket} from "@/lib/e-syoku-api/Types";
-import {ReactNode} from "react";
+import React, {ReactNode} from "react";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
-import {Box} from "@chakra-ui/react";
-import {Center, Heading} from "@chakra-ui/layout";
+import {Box, Text} from "@chakra-ui/react";
+import {Center, Heading, VStack} from "@chakra-ui/layout";
+import {orderDataTransform, ticketStatusTransform} from "@/lib/e-syoku-api/Transformers";
 
 
-export default function TicketComponent(param: {
+export function TicketComponent(param: {
     ticket: Ticket,
     button?: ReactNode
 }) {
@@ -31,6 +32,32 @@ export default function TicketComponent(param: {
             <CardFooter>
                 {button}
             </CardFooter>
+        </Card>
+    )
+}
+
+export function TicketCard(params: { ticket: Ticket }) {
+    return (
+        <Card>
+
+            <Box backgroundColor={"gray.200"} borderRadius={10} mx={4} my={1}>
+                <Center>
+                    <CardHeader><Heading>{params.ticket.ticketNum}</Heading></CardHeader>
+                </Center>
+            </Box>
+
+
+            <CardBody>
+                <VStack>
+                    <Text>Status : {ticketStatusTransform(params.ticket.status)}</Text>
+                    <Text>UniqueId : {params.ticket.uniqueId}</Text>
+                    <Text>ShopId : {params.ticket.shopId}</Text>
+                    <Text>PaymentSessionId :{params.ticket.paymentSessionId}</Text>
+                    <Text>OrderData :{orderDataTransform(params.ticket.orderData)}</Text>
+                    {/**TODO 時刻表示**/}
+                    <Text>IssueTime :{params.ticket.issueTime._seconds}</Text>
+                </VStack>
+            </CardBody>
         </Card>
     )
 }
