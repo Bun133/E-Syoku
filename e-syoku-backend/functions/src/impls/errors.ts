@@ -150,3 +150,7 @@ export const ticketNotSpecifiedError = internalError("このデータではチ�
 export const internalErrorThrownError = internalError("内部でエラーが発生しました", "INTERNAL_ERROR_THROWN")
 
 export const failedToRegisterTicketError = internalError("チケットの登録に失敗しました", "REGISTER_TICKET_FAILED")
+
+export const barcodeNotMatch = internalError("バーコードが合致しません","BARCODE_NOT_MATCH")
+
+export const barcodeMatchTooMuch = internalError("バーコードが複数に合致します","BARCODE_MATCH_TOO_MUCH")

@@ -26,7 +26,7 @@ import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
-import {setBarcodeBindData} from "./impls/barcode";
+import {bindBarcodeToTicket} from "./impls/barcode";
 
 
 admin.initializeApp()
@@ -527,12 +527,12 @@ export const bindBarcode = standardFunction(async (req, res) => {
         return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const uid = requireParameter("uid", z.string(), req)
             if (uid.param == undefined) return {result: uid.error}
-            const ticketId = requireParameter("ticketId", z.string(), req)
+            const ticketId = requireParameter("ticketId", z.string().array().nonempty(), req)
             if (ticketId.param == undefined) return {result: ticketId.error}
             const barcode = requireParameter("barcode", z.string(), req)
             if (barcode.param == undefined) return {result: barcode.error}
 
-            const result = await setBarcodeBindData(refs, barcode.param, ticketId.param, uid.param)
+            const result = await bindBarcodeToTicket(refs, barcode.param, uid.param, ticketId.param)
             return {
                 result: result
             }

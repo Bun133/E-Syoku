@@ -53,6 +53,21 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
     }, transaction);
 }
 
+export async function getTickets(ref:DBRefs,uid:string,ticketIds:string[]){
+    return await parseDataAll<Ticket>(ticketSchema,ticketIds.map(e => ref.tickets(uid).doc(e)),(ref,data) => {
+        return{
+            uniqueId: ref.id,
+            ticketNum: data.ticketNum,
+            shopId: data.shopId,
+            customerId: uid,
+            issueTime: data.issueTime,
+            status: data.status,
+            paymentSessionId: data.paymentSessionId,
+            orderData: data.orderData
+        }
+    })
+}
+
 /**
  * List tickets for the user
  * @param ref

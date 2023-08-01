@@ -33,7 +33,8 @@ export type DBRefs = {
     payments: DynamicCollectionReference<UserIdDBKey>,
     ticketDisplays: DynamicCollectionReference<ShopIdDBKey>,
     ticketNumInfo: DynamicDocumentReference<ShopIdDBKey>,
-    binds: DynamicDocumentReference<BarcodeKey>
+    binds: DynamicDocumentReference<BarcodeKey>,
+    barcodeInfos: DynamicDocumentReference<ShopIdDBKey>
 }
 
 /**
@@ -51,7 +52,8 @@ export function dbrefs(db: Firestore): DBRefs {
         payments: (uid) => db.collection("payments").doc(uid).collection("payments"),
         ticketDisplays: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketDisplays"),
         ticketNumInfo: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketNumInfos").doc("ticketNumInfo"),
-        binds: (barcode) => db.collection("barcodeBind").doc(Number(barcode).toString())
+        binds: (barcode) => db.collection("barcodeBind").doc(Number(barcode).toString()),
+        barcodeInfos: (sid) => db.collection("ticketRefs").doc(sid).collection("barcodeInfos").doc("barcodeInfo")
     };
 }
 
@@ -95,6 +97,16 @@ export async function parseData<T extends DocumentData>(type: ZodType<T>, ref: D
     }
 }
 
+type CollectionReferenceLike = CollectionReference | DocumentReference[]
+
+async function allDocList(collectionLike: CollectionReferenceLike) :Promise<DocumentReference[]>{
+    if (collectionLike instanceof CollectionReference) {
+        return await collectionLike.listDocuments()
+    } else {
+        return collectionLike
+    }
+}
+
 /**
  * Collection内のDocumentすべてに対して[parseData]を行います
  * @param type
@@ -103,8 +115,8 @@ export async function parseData<T extends DocumentData>(type: ZodType<T>, ref: D
  * @param transaction
  * @param filter
  */
-export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: CollectionReference, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
-    let docs = await collectionRef.listDocuments()
+export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: CollectionReferenceLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
+    let docs = await allDocList(collectionRef)
     if (filter) {
         docs = docs.filter(filter)
     }
