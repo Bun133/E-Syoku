@@ -1,4 +1,5 @@
 import {firestore} from "firebase-admin";
+import {CollectionReference,Firestore,DocumentReference,DocumentData,Transaction} from "firebase-admin/firestore"
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
@@ -10,11 +11,6 @@ import {
     setDataFailedError,
     updateDataFailedError
 } from "../impls/errors";
-import Firestore = firestore.Firestore;
-import DocumentReference = firestore.DocumentReference;
-import DocumentData = firestore.DocumentData;
-import CollectionReference = firestore.CollectionReference;
-import Transaction = firestore.Transaction;
 
 export type DynamicCollectionReference<T> = (t: T) => firestore.CollectionReference<firestore.DocumentData>
 export type DynamicDocumentReference<T> = (t: T) => DocumentReference<firestore.DocumentData>
@@ -52,7 +48,7 @@ export function dbrefs(db: Firestore): DBRefs {
         payments: (uid) => db.collection("payments").doc(uid).collection("payments"),
         ticketDisplays: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketDisplays"),
         ticketNumInfo: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketNumInfos").doc("ticketNumInfo"),
-        binds: (barcode) => db.collection("barcodeBind").doc(Number(barcode).toString()),
+        binds: (barcode) => db.collection("barcodeBind").doc(barcode),
         barcodeInfos: (sid) => db.collection("ticketRefs").doc(sid).collection("barcodeInfos").doc("barcodeInfo")
     };
 }
