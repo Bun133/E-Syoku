@@ -10,8 +10,8 @@ export function APIErrorModal(params: {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const message = useRef<React.ReactNode[]>()
     if (params.error && !isOpen) {
-        message.current = [<p>エラーが発生しました</p>, <p>エラーコード:{params.error.errorCode}</p>,
-            <p>エラーメッセージ:{params.error.error}</p>, (<><p>スタック情報:</p><Code>{params.error.stack}</Code></>)]
+        message.current = [<p key={"title"}>エラーが発生しました</p>, <p key={"code"}>エラーコード:{params.error.errorCode}</p>,
+            <p key={"message"}>エラーメッセージ:{params.error.error}</p>, (<div key={"stack"}><p>スタック情報:</p><Code>{params.error.stack}</Code></div>)]
         onOpen()
     } else if (!params.error && isOpen) {
         onClose()
