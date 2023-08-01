@@ -2,7 +2,15 @@
 import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {Container, FormControl, FormErrorMessage, FormLabel, NumberInput, NumberInputField} from "@chakra-ui/react";
+import {
+    Code,
+    Container,
+    FormControl,
+    FormErrorMessage,
+    FormLabel,
+    NumberInput,
+    NumberInputField
+} from "@chakra-ui/react";
 import React, {useRef, useState} from "react";
 import Btn from "@/components/btn";
 import {callEndpoint} from "@/lib/e-syoku-api/Axios";
@@ -73,7 +81,7 @@ export default function Page() {
                             } else {
                                 message.current = [<p>"決済処理に失敗しました"</p>,
                                     <p>`エラーコード:${res.errorCode}`</p>, <p>`エラー内容:${res.error}`</p>,
-                                    <p>`スタック情報:${res.stack}`</p>]
+                                    <Code>`スタック情報:${res.stack}`</Code>]
                                 onOpen()
                             }
                         }

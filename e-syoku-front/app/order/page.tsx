@@ -13,6 +13,7 @@ import {useDisclosure} from "@chakra-ui/hooks";
 import {MessageModal} from "@/components/modal/MessageModal";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {useRouter} from "next/navigation";
+import {Code} from "@chakra-ui/react";
 
 export default function Page() {
     const [order, setOrder] = useState<Order>()
@@ -49,7 +50,7 @@ export default function Page() {
                                         } else {
                                             message.current = [<p>"注文処理に失敗しました"</p>,
                                                 <p>`エラーコード:${r.errorCode}`</p>, <p>`エラー内容:${r.error}`</p>,
-                                                <p>`スタック情報:${r.stack}`</p>]
+                                                <Code>`スタック情報:${r.stack}`</Code>]
                                             onOpen()
                                         }
                                     }}>注文を確定</Btn>

@@ -1,6 +1,6 @@
 "use client"
 import {useSearchParams} from "next/navigation";
-import {Grid, GridItem, Text} from "@chakra-ui/react";
+import {Code, Grid, GridItem, Text} from "@chakra-ui/react";
 import {callEndpoint, useEndpoint} from "@/lib/e-syoku-api/Axios";
 import {bindBarcodeEndpoint, ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {VStack} from "@chakra-ui/layout";
@@ -56,7 +56,7 @@ export default function Page() {
                         setStatus(newStatus)
                     } else {
                         message.current = [<p>"紐づけに失敗しました"</p>, <p>`エラーコード:${res.errorCode}`</p>,
-                            <p>`エラーメッセージ:${res.error}`</p>, <p>`スタック情報:${res.stack}`</p>]
+                            <p>`エラーメッセージ:${res.error}`</p>, <Code>`スタック情報:${res.stack}`</Code>]
                         onOpen()
                     }
                 }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>
