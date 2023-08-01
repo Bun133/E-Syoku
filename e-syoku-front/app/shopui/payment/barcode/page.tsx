@@ -63,7 +63,7 @@ export default function Page() {
                     <VStack>
                         {status.map(s => {
                             return (
-                                <HStack>
+                                <HStack key={s.ticketId}>
                                     <Text>{s.ticketId}</Text>
                                     <Spacer/>
                                     {s.isBound ? <Text color={"green"}>紐づけ済み</Text> :
