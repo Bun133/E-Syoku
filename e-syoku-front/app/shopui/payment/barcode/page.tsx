@@ -55,8 +55,8 @@ export default function Page() {
                         })
                         setStatus(newStatus)
                     } else {
-                        message.current = [<p>紐づけに失敗しました</p>, <p>エラーコード:${res.errorCode}</p>,
-                            <p>エラーメッセージ:${res.error}</p>, <Code>スタック情報:${res.stack}</Code>]
+                        message.current = [<p>紐づけに失敗しました</p>, <p>エラーコード:{res.errorCode}</p>,
+                            <p>エラーメッセージ:{res.error}</p>, (<><p>スタック情報:</p><Code>{res.stack}</Code></>)]
                         onOpen()
                     }
                 }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>

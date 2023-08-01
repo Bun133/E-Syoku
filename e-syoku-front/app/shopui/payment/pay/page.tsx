@@ -80,8 +80,8 @@ export default function Page() {
                                 router.push(`/shopui/payment/barcode?${param.toString()}`)
                             } else {
                                 message.current = [<p>決済処理に失敗しました</p>,
-                                    <p>エラーコード:${res.errorCode}</p>, <p>エラー内容:${res.error}</p>,
-                                    <Code>スタック情報:${res.stack}</Code>]
+                                    <p>エラーコード:{res.errorCode}</p>, <p>エラー内容:{res.error}</p>,
+                                    (<><p>スタック情報:</p><Code>{res.stack}</Code></>)]
                                 onOpen()
                             }
                         }
