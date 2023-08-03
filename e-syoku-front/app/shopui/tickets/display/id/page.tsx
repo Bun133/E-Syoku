@@ -28,7 +28,7 @@ export default function Page() {
                                      <TicketDisplay displays={processing} ticketStatus={"調理中"}
                                                     ticketColor={"gray.200"} autoScroll={true}/>
                                      <TicketDisplay displays={called} ticketStatus={"受け渡し可能"}
-                                                    ticketColor={"green.200"} autoScroll={true}/>
+                                                    ticketColor={"green.200"} autoScroll={false}/>
                                      {informed.length > 0 && (
                                          <TicketDisplay displays={informed} ticketStatus={"お呼び出し"}
                                                         ticketColor={"blue.200"} autoScroll={true}/>)}
@@ -54,26 +54,36 @@ function TicketDisplay(props: {
     ticketColor: string,
     autoScroll: boolean
 }) {
-    const startElement = useRef<HTMLDivElement>(null)
-    const endElement = useRef<HTMLDivElement>(null)
-    const isToEnd = useRef(true)
-
     const duration = 2000
+    const currentIndex = useRef(0)
+    const listElement = useRef<HTMLDivElement>(null)
+
+    function moveToElement(elementIndex: number) {
+        if (listElement.current == null) return
+        const element = listElement.current.children[elementIndex]
+        if (element == null) return
+        element.scrollIntoView({
+            behavior: "smooth",
+        })
+    }
+
+    function move() {
+        if(listElement.current != null){
+            const len = listElement.current.children.length
+            let toBeIndex = currentIndex.current + 1
+            if (toBeIndex >= len) {
+                toBeIndex = 0
+            }
+
+            moveToElement(toBeIndex)
+            currentIndex.current = toBeIndex
+        }
+        setTimeout(move, duration)
+    }
 
     useEffect(() => {
         if (props.autoScroll) {
-            const scroll = () => {
-                if (isToEnd.current) {
-                    endElement.current?.scrollIntoView({behavior: "smooth"})
-                    isToEnd.current = false
-                } else {
-                    startElement.current?.scrollIntoView({behavior: "smooth"})
-                    isToEnd.current = true
-                }
-
-                setTimeout(scroll, duration)
-            }
-            setTimeout(scroll, duration)
+            move()
         }
     }, [])
 
@@ -81,11 +91,10 @@ function TicketDisplay(props: {
         <Flex direction={"column"} alignContent={"start"} w={"100%"}>
             <Heading>{props.ticketStatus}</Heading>
             <Box h={"1rem"}/>
-            <HStack spacing={"2rem"} overflowX={"scroll"} w={"100%"} px={2}>
-                <div ref={startElement}/>
+            <HStack spacing={"2rem"} overflowX={"scroll"} w={"100%"} px={2} ref={listElement}>
                 {props.displays.map((display) => {
                     return (
-                        <Box key={display.ticketId} backgroundColor={props.ticketColor} w={"7rem"} p={2}
+                        <Box key={display.ticketId} backgroundColor={props.ticketColor} w={"8rem"} p={2}
                              borderRadius={5} flexShrink={0} flexGrow={0}>
                             <Center>
                                 <Heading>{display.ticketNum}</Heading>
@@ -93,7 +102,6 @@ function TicketDisplay(props: {
                         </Box>
                     )
                 })}
-                <div ref={endElement}/>
             </HStack>
         </Flex>
     )
