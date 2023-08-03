@@ -17,10 +17,14 @@ export default function Page() {
             <PageTitle title={"TicketDisplay"}/>
             <APIEndpoint endpoint={ticketDisplayEndpoint} query={{shopId: shopId}}
                          onEnd={(response, reload) => {
-                             const processing = response.data.displays.filter((display) => display.status === "PROCESSING")
-                             const called = response.data.displays.filter((display) => display.status === "CALLED")
-                             const informed = response.data.displays.filter((display) => display.status === "INFORMED")
-                             const resolved = response.data.displays.filter((display) => display.status === "RESOLVED")
+                             const displays = response.data.displays.sort((a, b) => {
+                                 return a.lastUpdated._seconds - b.lastUpdated._seconds
+                             })
+
+                             const processing = displays.filter((display) => display.status === "PROCESSING")
+                             const called = displays.filter((display) => display.status === "CALLED")
+                             const informed = displays.filter((display) => display.status === "INFORMED")
+                             const resolved = displays.filter((display) => display.status === "RESOLVED")
 
 
                              return (
@@ -68,7 +72,7 @@ function TicketDisplay(props: {
     }
 
     function move() {
-        if(listElement.current != null){
+        if (listElement.current != null) {
             const len = listElement.current.children.length
             let toBeIndex = currentIndex.current + 1
             if (toBeIndex >= len) {

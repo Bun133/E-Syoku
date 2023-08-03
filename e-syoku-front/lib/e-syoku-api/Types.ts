@@ -239,7 +239,8 @@ export const markPaymentPaidRequest = z.object({
 export const ticketDisplayData = z.object({
     ticketNum: z.string(),
     status: ticketStatus,
-    ticketId: uniqueId
+    ticketId: uniqueId,
+    lastUpdated: timeStampSchema,
 })
 export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
     displays: z.array(ticketDisplayData)

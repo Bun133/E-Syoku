@@ -3,6 +3,7 @@ import {TicketDisplayData, ticketDisplaySchema} from "../types/ticketDisplays";
 import {Ticket} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import Transaction = firestore.Transaction;
+import {Timestamp} from "firebase-admin/firestore";
 
 export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string) {
     return parseData(ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
@@ -18,11 +19,12 @@ export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Pr
  * @param ticket
  * @param transaction
  */
-export async function updateTicketDisplayDataForTicket(ref: DBRefs, ticket: Ticket,transaction?:Transaction) {
+export async function updateTicketDisplayDataForTicket(ref: DBRefs, ticket: Ticket, transaction?: Transaction) {
     return mergeData(ticketDisplaySchema, ref.ticketDisplays(ticket.shopId).doc(ticket.uniqueId), {
         status: ticket.status,
         ticketId: ticket.uniqueId,
         ticketDataRef: ref.tickets(ticket.customerId).doc(ticket.uniqueId),
         ticketNum: ticket.ticketNum,
-    },transaction)
+        lastUpdated: Timestamp.now()
+    }, transaction)
 }

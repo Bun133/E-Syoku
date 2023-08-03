@@ -1,12 +1,13 @@
 import {z} from 'zod';
 import {ticketStatusSchema} from "./ticket";
-import {firestoreRefSchema, uniqueId} from "./types";
+import {firestoreRefSchema, timeStampSchema, uniqueId} from "./types";
 
 export const ticketDisplaySchema = z.object({
     ticketNum: z.string(),
     status: ticketStatusSchema,
     ticketDataRef: firestoreRefSchema,
-    ticketId: uniqueId
+    ticketId: uniqueId,
+    lastUpdated: timeStampSchema
 })
 
 export type TicketDisplayData = z.infer<typeof ticketDisplaySchema>

@@ -439,6 +439,7 @@ export const ticketDisplay = standardFunction(async (req, res) => {
                     status: data.status,
                     ticketId: data.ticketId,
                     ticketNum: data.ticketNum,
+                    lastUpdated: data.lastUpdated
                 }
             })
             const suc: Success = {
@@ -552,5 +553,5 @@ export const bindBarcode = standardFunction(async (req, res) => {
  *  - ADMIN
  */
 export const cmsTicket = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
-    return await satisfyCondition(refs,req)
+    return await satisfyCondition(refs, req)
 })
