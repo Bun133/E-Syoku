@@ -14,6 +14,7 @@ import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
 import {
+    authFailedError,
     barcodeInvalidError,
     injectError,
     paymentNotFoundError,
@@ -29,7 +30,7 @@ import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
-import {NotificationData, sendMessage} from "./impls/notification";
+import {addMessageToken, NotificationData, sendMessage} from "./impls/notification";
 
 
 admin.initializeApp()
@@ -176,8 +177,8 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                 let uidParam = requireOptionalParameter("uid", z.string(), request);
                 let ticketIdParam = requireOptionalParameter("ticketId", z.string(), request);
 
-                let uid:string | undefined
-                let ticketId:string | undefined
+                let uid: string | undefined
+                let ticketId: string | undefined
 
                 if (barcode.param) {
                     // チケットのデータからUID,TicketIdを取得します
@@ -199,7 +200,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                     ticketId = ticketIdParam.param
                 }
 
-                if(uid && ticketId){
+                if (uid && ticketId) {
                     // チケットのステータスを変更します
                     let called = await updateTicketStatusByIds(refs, uid, ticketId, fromStatus, toStatus)
                     if (!called.isSuccess) {
@@ -217,7 +218,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
                     const suc: Success = {"isSuccess": true, "success": successMessage}
                     return {result: suc}
-                }else{
+                } else {
                     const err: Error = {
                         "isSuccess": false,
                         ...injectError(ticketNotSpecifiedError)
@@ -573,4 +574,24 @@ export const bindBarcode = standardFunction(async (req, res) => {
  */
 export const cmsTicket = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
     return await satisfyCondition(refs, req)
+})
+
+export const listenNotification = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authed(auth, refs, req, res, async (authInstance) => {
+            const token = requireParameter("token", z.string(), req)
+            if (token.param == undefined) return {result: token.error}
+            const res = await addMessageToken(refs, authInstance.uid, [token.param])
+            return {
+                result: res
+            }
+        }, () => {
+            return {
+                result: {
+                    isSuccess: false,
+                    ...injectError(authFailedError)
+                }
+            }
+        })
+    })
 })
