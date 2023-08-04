@@ -59,3 +59,5 @@ export const cmsTicketEndpoint = endpoint("cmsTicket", z.object({
     uid: z.string().optional(),
     ticketId: z.string().optional()
 }), ticketResponse)
+
+export const listenNotificationEndpoint = endpoint("listenNotification", z.object({token: z.string()}), defaultResponseFormat)
