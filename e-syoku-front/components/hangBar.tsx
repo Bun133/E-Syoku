@@ -4,7 +4,7 @@ import React, {useContext} from "react";
 import {firebaseAuthContext, FirebaseAuthContextType} from "@/lib/firebase/authentication";
 import {signOut} from "@firebase/auth";
 import {useRouter} from "next/navigation";
-import {Divider, Flex, HStack, VStack} from "@chakra-ui/layout";
+import {Center, Divider, Flex, HStack, VStack} from "@chakra-ui/layout";
 import {
     Box,
     Drawer,
@@ -19,6 +19,7 @@ import {
 import {AdminOnly, AuthState, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/AuthTypeProvider";
 import {useDisclosure} from "@chakra-ui/hooks";
 import Link from "next/link";
+import {NotificationEnsure} from "@/lib/firebase/notification";
 
 
 function HangEntity(params: { text: string, onClick?: () => void, href?: string }) {
@@ -49,6 +50,12 @@ export function HangBar() {
                 <Box p={2}>
                     <Menu onClick={onOpen}/>
                 </Box>
+                <NotificationEnsure comp={(token) => {
+                    if (!token) {
+                        return (<NotificationErrorComp/>)
+                    }
+                    return null
+                }}/>
             </Flex>
             <Drawer placement={"left"} isOpen={isOpen} onClose={onClose}>
                 <DrawerOverlay/>
@@ -141,4 +148,14 @@ async function logOut(auth: FirebaseAuthContextType) {
     } else {
         console.log("auth is not exist")
     }
+}
+
+function NotificationErrorComp() {
+    return (
+        <Box backgroundColor={"red"}>
+            <Center>
+                <Text>通知設定に失敗しました</Text>
+            </Center>
+        </Box>
+    )
 }
