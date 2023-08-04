@@ -30,7 +30,8 @@ export type DBRefs = {
     ticketDisplays: DynamicCollectionReference<ShopIdDBKey>,
     ticketNumInfo: DynamicDocumentReference<ShopIdDBKey>,
     binds: DynamicDocumentReference<BarcodeKey>,
-    barcodeInfos: DynamicDocumentReference<ShopIdDBKey>
+    barcodeInfos: DynamicDocumentReference<ShopIdDBKey>,
+    messageTokens: DynamicDocumentReference<UserIdDBKey>
 }
 
 /**
@@ -49,7 +50,8 @@ export function dbrefs(db: Firestore): DBRefs {
         ticketDisplays: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketDisplays"),
         ticketNumInfo: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketNumInfos").doc("ticketNumInfo"),
         binds: (barcode) => db.collection("barcodeBind").doc(barcode),
-        barcodeInfos: (sid) => db.collection("ticketRefs").doc(sid).collection("barcodeInfos").doc("barcodeInfo")
+        barcodeInfos: (sid) => db.collection("ticketRefs").doc(sid).collection("barcodeInfos").doc("barcodeInfo"),
+        messageTokens: (uid) => db.collection("messageTokens").doc(uid)
     };
 }
 

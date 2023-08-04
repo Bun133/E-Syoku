@@ -6,7 +6,7 @@ import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance, AuthTypeSchema} from "./types/auth";
-import {listTicketForUser, ticketById, updateTicketStatusByBarcode, updateTicketStatusByIds} from "./impls/ticket";
+import {listTicketForUser, ticketById, updateTicketStatusByIds} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
@@ -14,6 +14,7 @@ import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
 import {
+    barcodeInvalidError,
     injectError,
     paymentNotFoundError,
     requestNotContainUserIdError,
@@ -26,8 +27,9 @@ import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
-import {bindBarcodeToTicket} from "./impls/barcode";
+import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
+import {NotificationData, sendMessage} from "./impls/notification";
 
 
 admin.initializeApp()
@@ -35,6 +37,8 @@ const db = admin.firestore();
 const refs = dbrefs(db);
 // @ts-ignore
 const auth = admin.auth();
+// @ts-ignore
+const messaging = admin.messaging();
 
 /**
  * リクエストユーザーの[ticketId]に該当するチケットデータを返却します
@@ -164,17 +168,40 @@ export const resolveTicket =
  *  - ADMIN
  *  - SHOP
  */
-function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string): HttpsFunction {
+function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string, sendNotification?: NotificationData): HttpsFunction {
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
                 let barcode = requireOptionalParameter("barcode", z.string(), request);
-                let uid = requireOptionalParameter("uid", z.string(), request);
-                let ticketId = requireOptionalParameter("ticketId", z.string(), request);
+                let uidParam = requireOptionalParameter("uid", z.string(), request);
+                let ticketIdParam = requireOptionalParameter("ticketId", z.string(), request);
+
+                let uid:string | undefined
+                let ticketId:string | undefined
 
                 if (barcode.param) {
+                    // チケットのデータからUID,TicketIdを取得します
+                    const barcodeData = await getBarcodeBindData(refs, barcode.param)
+                    if (!barcodeData) {
+                        const err: Error = {
+                            isSuccess: false,
+                            ...injectError(barcodeInvalidError)
+                        }
+                        return {
+                            statusCode: 400,
+                            result: err
+                        }
+                    }
+                    uid = barcodeData.uid
+                    ticketId = barcodeData.ticketId
+                } else if (uidParam.param && ticketIdParam.param) {
+                    uid = uidParam.param
+                    ticketId = ticketIdParam.param
+                }
+
+                if(uid && ticketId){
                     // チケットのステータスを変更します
-                    let called = await updateTicketStatusByBarcode(refs, barcode.param, fromStatus, toStatus)
+                    let called = await updateTicketStatusByIds(refs, uid, ticketId, fromStatus, toStatus)
                     if (!called.isSuccess) {
                         const err: Error = called
                         return {
@@ -183,29 +210,21 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                         }
                     }
 
-                    const suc: Success = {"isSuccess": true, "success": successMessage}
-                    return {result: suc}
-                } else if (uid.param && ticketId.param) {
-                    // チケットのステータスを変更します
-                    let called = await updateTicketStatusByIds(refs, uid.param, ticketId.param, fromStatus, toStatus)
-                    if (!called.isSuccess) {
-                        const err: Error = called
-                        return {
-                            statusCode: 400,
-                            result: err
-                        }
+                    // 通知を送信する場合は送信処理を行います
+                    if (sendNotification) {
+                        await sendMessage(refs, messaging, uid, sendNotification)
                     }
 
                     const suc: Success = {"isSuccess": true, "success": successMessage}
                     return {result: suc}
-                }
-
-                const err: Error = {
-                    "isSuccess": false,
-                    ...injectError(ticketNotSpecifiedError)
-                }
-                return {
-                    result: err
+                }else{
+                    const err: Error = {
+                        "isSuccess": false,
+                        ...injectError(ticketNotSpecifiedError)
+                    }
+                    return {
+                        result: err
+                    }
                 }
             })
         })
