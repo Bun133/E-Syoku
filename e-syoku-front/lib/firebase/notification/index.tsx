@@ -44,7 +44,7 @@ export function NotificationEnsure(params: { comp: (token: string | undefined) =
 
     useEffect(() => {
         main()
-    }, [])
+    }, [auth.user])
 
     return (
         <>
