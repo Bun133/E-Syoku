@@ -50,9 +50,9 @@ export function HangBar() {
                 <Box p={2}>
                     <Menu onClick={onOpen}/>
                 </Box>
-                <NotificationEnsure comp={(token) => {
+                <NotificationEnsure comp={(token, popup) => {
                     if (!token) {
-                        return (<NotificationErrorComp/>)
+                        return (<NotificationErrorComp popup={popup}/>)
                     }
                     return null
                 }}/>
@@ -150,9 +150,9 @@ async function logOut(auth: FirebaseAuthContextType) {
     }
 }
 
-function NotificationErrorComp() {
+function NotificationErrorComp(params: { popup: () => void }) {
     return (
-        <Box backgroundColor={"red"}>
+        <Box backgroundColor={"red"} onClick={params.popup}>
             <Center>
                 <Text>通知設定に失敗しました</Text>
             </Center>

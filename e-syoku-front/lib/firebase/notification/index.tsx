@@ -29,7 +29,9 @@ export function useCloudMessaging() {
     return useContext(cloudMessagingContext)
 }
 
-export function NotificationEnsure(params: { comp: (token: string | undefined) => React.ReactNode }) {
+export function NotificationEnsure(params: {
+    comp: (token: string | undefined, popup: () => void) => React.ReactNode
+}) {
     const [token, setToken] = useState<string>()
     const messaging = useCloudMessaging()
     const auth = useFirebaseAuth()
@@ -37,7 +39,12 @@ export function NotificationEnsure(params: { comp: (token: string | undefined) =
     const listenerRegistered = useRef(false)
 
     async function requestPermission() {
-        return await Notification.requestPermission() === "granted"
+        if(Notification.permission !== "granted"){
+            await Notification.requestPermission()
+
+            // auto re-run main
+            await main()
+        }
     }
 
     async function generateToken() {
@@ -98,7 +105,9 @@ export function NotificationEnsure(params: { comp: (token: string | undefined) =
 
     return (
         <>
-            {params.comp(token)}
+            {params.comp(token,()=>{
+                requestPermission()
+            })}
         </>
     )
 }
