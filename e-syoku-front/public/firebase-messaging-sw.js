@@ -18,12 +18,13 @@ firebase.initializeApp({
     measurementId: 'G-3899ZFCT6J',
 });
 
+// TODO 動いてるか怪しい
 // Retrieve an instance of Firebase Messaging so that it can handle background
 // messages.
 const messaging = firebase.messaging();
 messaging.onBackgroundMessage(messaging, (payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    if(payload.notification){
+    if (payload.notification) {
         const title = payload.notification.title ?? "E-Syokuからの通知"
         const body = payload.notification.body ?? ""
         const icon = payload.notification.icon ?? undefined

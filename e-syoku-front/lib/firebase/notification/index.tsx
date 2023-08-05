@@ -1,23 +1,49 @@
 "use client"
-import {useEffect, useState} from "react";
-import {getMessaging, getToken, onMessage} from "@firebase/messaging";
+import {createContext, useContext, useEffect, useRef, useState} from "react";
+import {getMessaging, getToken, isSupported, Messaging, onMessage} from "@firebase/messaging";
 import {firebaseApp} from "@/lib/firebase";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {callEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listenNotificationEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import {useToast} from "@chakra-ui/toast";
 
+export const cloudMessagingContext = createContext<Messaging | undefined>(undefined)
+
+export const CloudMessagingProvider = (params: { children: React.ReactNode }) => {
+    const [messaging, setMessaging] = useState<Messaging | undefined>()
+    const main = async () => {
+        if (await isSupported()) {
+            setMessaging(getMessaging(firebaseApp))
+        } else {
+            console.log("Messaging not supported")
+        }
+    }
+    useEffect(() => {
+        main()
+    }, [])
+
+    return <cloudMessagingContext.Provider value={messaging}>{params.children}</cloudMessagingContext.Provider>
+}
+
+export function useCloudMessaging() {
+    return useContext(cloudMessagingContext)
+}
+
 export function NotificationEnsure(params: { comp: (token: string | undefined) => React.ReactNode }) {
     const [token, setToken] = useState<string>()
-    const messaging = getMessaging(firebaseApp)
+    const messaging = useCloudMessaging()
     const auth = useFirebaseAuth()
     const toast = useToast()
+    const listenerRegistered = useRef(false)
 
     async function requestPermission() {
         return await Notification.requestPermission() === "granted"
     }
 
     async function generateToken() {
+        if (messaging === undefined) {
+            return
+        }
         return await getToken(messaging, {
             vapidKey: process.env.NEXT_PUBLIC_messagingVAPID,
         })
@@ -31,12 +57,17 @@ export function NotificationEnsure(params: { comp: (token: string | undefined) =
     async function main() {
         try {
             const token = await generateToken()
-            console.log("FCM Token:", token)
-            const result = await postToken(token)
-            if (!result) {
-                setToken(undefined)
+            if (token) {
+                console.log("FCM Token:", token)
+                const result = await postToken(token)
+                if (!result) {
+                    setToken(undefined)
+                } else {
+                    setToken(token)
+                }
             } else {
-                setToken(token)
+                // no messaging service available
+                setToken(undefined)
             }
         } catch (e) {
             console.error(e)
@@ -49,17 +80,21 @@ export function NotificationEnsure(params: { comp: (token: string | undefined) =
     }, [auth.user])
 
     useEffect(() => {
-        onMessage(messaging, (value) => {
-            console.log("message",value)
-            toast({
-                title: value.notification?.title ?? "通知",
-                description: value.notification?.body ?? "",
-                status: "info",
-                isClosable: true,
-                duration: null
+        if (messaging && !listenerRegistered.current) {
+            onMessage(messaging, (value) => {
+                console.log("message", value)
+                toast({
+                    title: value.notification?.title ?? "通知",
+                    description: value.notification?.body ?? "",
+                    status: "info",
+                    isClosable: true,
+                    duration: null
+                })
             })
-        })
-    }, [])
+
+            listenerRegistered.current = true
+        }
+    }, [messaging])
 
     return (
         <>

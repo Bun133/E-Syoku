@@ -4,6 +4,7 @@ import React from "react";
 import {FirebaseAuthProvider} from "@/lib/firebase/authentication";
 import {ChakraProvider, extendBaseTheme} from '@chakra-ui/react'
 import {AuthTypeProvider} from "@/lib/e-syoku-api/AuthTypeProvider";
+import {CloudMessagingProvider} from "@/lib/firebase/notification";
 
 
 export const metadata = {
@@ -23,10 +24,12 @@ export default function RootLayout({
         <body>
         <ChakraProvider>
             <FirebaseAuthProvider>
-                <AuthTypeProvider>
-                    <HangBar></HangBar>
-                    {children}
-                </AuthTypeProvider>
+                <CloudMessagingProvider>
+                    <AuthTypeProvider>
+                        <HangBar></HangBar>
+                        {children}
+                    </AuthTypeProvider>
+                </CloudMessagingProvider>
             </FirebaseAuthProvider>
         </ChakraProvider>
         </body>
