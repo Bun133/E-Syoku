@@ -39,7 +39,9 @@ export function NotificationEnsure(params: {
     const listenerRegistered = useRef(false)
 
     async function requestPermission() {
-        if(Notification.permission !== "granted"){
+        if (Notification.permission !== "granted") {
+            // TODO popupが出ない環境がある
+            // PWAなら出るのでPWAさせる
             await Notification.requestPermission()
 
             // auto re-run main
@@ -105,7 +107,7 @@ export function NotificationEnsure(params: {
 
     return (
         <>
-            {params.comp(token,()=>{
+            {params.comp(token, () => {
                 requestPermission()
             })}
         </>
