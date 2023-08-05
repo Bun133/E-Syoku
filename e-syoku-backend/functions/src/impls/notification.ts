@@ -18,7 +18,8 @@ export async function addMessageToken(refs: DBRefs, uid: string, toAddToken: str
     if (data) {
         toMerge = {
             uid: uid,
-            registeredTokens: [...data.registeredTokens, ...toAddToken]
+            // Distinct
+            registeredTokens: Array.from(new Set([...data.registeredTokens, ...toAddToken]))
         }
     } else {
         toMerge = {
