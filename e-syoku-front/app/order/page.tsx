@@ -31,10 +31,10 @@ export default function Page() {
                         <>
                             <VStack>
                                 {order.map((orderData, index) => {
-                                    const item = itemsData.data.find((item) => item.key.goodsId === orderData.goodsId)
+                                    const item = itemsData.data.find((item) => item.goods.goodsId === orderData.goodsId)
                                     if (!item) return null
                                     return (
-                                        <Goods key={index} goods={item.key} footer={(<div>
+                                        <Goods key={index} goods={item.goods} footer={(<div>
                                             注文個数:{orderData.count}
                                         </div>)}></Goods>
                                     )

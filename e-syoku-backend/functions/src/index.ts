@@ -29,7 +29,7 @@ import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
 import {addMessageToken, NotificationData, sendMessage} from "./impls/notification";
-import {prettyPayment, prettyTicket} from "./impls/prettyPrint";
+import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 
 
 admin.initializeApp()
@@ -246,13 +246,23 @@ export const listGoods = standardFunction(async (request, response) => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // すべてのGoodsのデータを取得
             const goods = await getAllGoods(refs)
-            // それぞれの在庫の状況を取得してMapにする
-            // TODO 気持ち悪い書き方やめる
-            const remainData = (await goods
-                .associateWithPromise((it) => getRemainDataOfGoods(refs, it.goodsId)))
-                .filterValueNotNull({toLog: {message: "Failed to get remain data for some goods"}})
+            const data = (await Promise.all(goods.map(async g => {
+                const pGoods = await prettyGoods(refs, g)
+                if (!pGoods.isSuccess) {
+                    return undefined
+                }
 
-            const suc: Success = {"isSuccess": true, "data": remainData.toJson()}
+                const remainData = await getRemainDataOfGoods(refs, g.goodsId)
+                if (!remainData.isSuccess) {
+                    return undefined
+                }
+                return {
+                    goods: pGoods.data,
+                    remainData: remainData.data
+                }
+            }))).filter(d => d != undefined)
+
+            const suc: Success = {"isSuccess": true, "data": data}
             return {
                 result: suc
             }

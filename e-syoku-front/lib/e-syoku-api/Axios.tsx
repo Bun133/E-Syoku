@@ -151,6 +151,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             return r
         }
     } else {
+        console.log("[Client]Parse Error:", parsed.error)
         // Failed to parse,but still be able to parse as DefaultResponseFormat
         console.log("Try parsing DefaultResponseFormat")
         const defaultParsed = await defaultResponseFormat.safeParseAsync(json)

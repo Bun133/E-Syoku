@@ -271,7 +271,7 @@ export const ticketSpecifyRequest = z.object({
     uid: uniqueId
 })))
 
-export const goodsWithRemainDataSchema = z.object({key: goodsSchema, value: goodsRemainDataSchema})
+export const goodsWithRemainDataSchema = z.object({goods: prettyGoodsSchema, remainData: goodsRemainDataSchema})
 
 
 export type GoodsWithRemainData = z.infer<typeof goodsWithRemainDataSchema>
