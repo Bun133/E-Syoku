@@ -364,7 +364,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
 
             // UserIdとPaymentIdから決済セッションデータを取得
             const payment = await getPaymentSessionById(refs, userId, id.param)
-            if (!payment) {
+            if (!payment.isSuccess) {
                 const err: Error = {
                     "isSuccess": false,
                     ...injectError(paymentNotFoundError)
@@ -373,7 +373,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
                     result: err
                 }
             }
-            const suc: Success = {"isSuccess": true, "payment": payment}
+            const suc: Success = {"isSuccess": true, "payment": payment.data}
             return {
                 result: suc
             }
