@@ -98,7 +98,7 @@ function TicketEntry(params: {
                             {data.data.ticket.ticketNum}
                         </GridItem>
                         <GridItem>
-                            {data.data.ticket.shopId}
+                            {data.data.ticket.shop.shopId}
                         </GridItem>
                         <GridItem>
                             {data.data.ticket.uniqueId}
