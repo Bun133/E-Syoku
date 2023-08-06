@@ -245,7 +245,7 @@ async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string,
 
     const suc: Success & { payment: PaymentSession, paymentRef: DocumentReference } = {
         isSuccess: true,
-        payment.data,
+        payment: payment.data,
         paymentRef
     }
 
