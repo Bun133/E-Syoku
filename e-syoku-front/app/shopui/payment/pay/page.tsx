@@ -2,7 +2,18 @@
 import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {Container, FormControl, FormErrorMessage, FormLabel, NumberInput, NumberInputField} from "@chakra-ui/react";
+import {
+    Box,
+    Container,
+    Flex,
+    FormControl,
+    FormErrorMessage,
+    FormLabel,
+    NumberInput,
+    NumberInputField,
+    useRadio,
+    useRadioGroup
+} from "@chakra-ui/react";
 import React, {useState} from "react";
 import Btn from "@/components/btn";
 import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
@@ -17,6 +28,9 @@ export default function Page() {
 
     const [amount, setAmount] = useState(0)
     const isAmountError = amount <= 0
+
+    const [paidMeans, setPaidMeans] = useState<string>("")
+    const isPaidMeansError = paidMeans.length <= 0
 
     const [error, setError] = useState<EndPointErrorResponse<any>>()
 
@@ -40,6 +54,17 @@ export default function Page() {
             <PageTitle title={`決済取扱い:${uid}:${paymentId}`}/>
             <Container>
                 <VStack>
+                    <FormControl>
+                        <FormLabel>決済方法</FormLabel>
+                        <Center>
+                            <PaidMeans onChange={(mean) => {
+                                setPaidMeans(mean)
+                            }}/>
+                        </Center>
+                        {isPaidMeansError ? (<FormErrorMessage>
+                            決済方法を選択してください
+                        </FormErrorMessage>) : null}
+                    </FormControl>
                     <FormControl isRequired={true} isInvalid={isAmountError}>
                         <FormLabel>決済金額</FormLabel>
                         <NumberInput min={0} value={amount} onChange={(s, n) => setAmount(n)}>
@@ -53,10 +78,10 @@ export default function Page() {
                         const f = async () => {
                             const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
                                 paidAmount: amount,
-                                // TODO paidMeansとremarkを簡単に入力できるように
-                                paidMeans: "テスト",
+                                paidMeans: paidMeans,
                                 userId: uid,
                                 paymentId: paymentId,
+                                // TODO remarkを簡単に入力できるように
                                 remark: "テストです！"
                             })
 
@@ -74,10 +99,68 @@ export default function Page() {
                             }
                         }
                         f()
-                    }} disabled={isAmountError}>決済処理</Btn>
+                    }} disabled={isAmountError || isPaidMeansError}>決済処理</Btn>
                     <APIErrorModal error={error}/>
                 </VStack>
             </Container>
         </>
+    )
+}
+
+function PaidMeans(params: {
+    onChange: (mean: string) => void
+}) {
+    const values = ["現金", "IC"]
+
+    const {getRootProps, getRadioProps} = useRadioGroup({
+        name: 'framework',
+        defaultValue: 'react',
+        onChange: params.onChange
+    })
+
+    const group = getRootProps()
+
+    return (
+        <Flex {...group} w={"max"}>
+            {values.map(v => {
+                const radio = getRadioProps({value: v})
+                return (
+                    <PaidMean
+                        key={v}
+                        {...radio}
+                    >
+                        <Center>
+                            <Heading>
+                                {v}
+                            </Heading>
+                        </Center>
+                    </PaidMean>
+                )
+            })}
+        </Flex>
+    )
+}
+
+function PaidMean(params: any) {
+    const {getInputProps, getRadioProps} = useRadio(params)
+
+    return (
+        <Box as="label" flexGrow={1}>
+            <input {...getInputProps()}/>
+            <Box
+                {...getRadioProps()}
+                cursor="pointer"
+                borderColor={"blue.300"}
+                borderWidth={1}
+                borderRadius={4}
+                _checked={{
+                    backgroundColor: "blue.100"
+                }}
+                p={2} mx={5}
+                minWidth={"10rem"}
+            >
+                {params.children}
+            </Box>
+        </Box>
     )
 }
