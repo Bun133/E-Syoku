@@ -99,9 +99,12 @@ export const listTickets = standardFunction(async (request, response) => {
             // 要求ユーザーのすべてのチケットを取得します
             let allTickets = await listTicketForUser(refs, authInstance.uid);
 
+            const pTickets = await Promise.all(allTickets.map((e) => prettyTicket(refs, e)))
+
+            // TODO Error Handling
             const suc: Success = {
                 "isSuccess": true,
-                "tickets": allTickets
+                "tickets": pTickets.filter(e => e.isSuccess).map(e => e.data)
             }
             return {
                 result: suc

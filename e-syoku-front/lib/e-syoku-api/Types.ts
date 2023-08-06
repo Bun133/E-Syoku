@@ -204,7 +204,7 @@ export const ticketResponse = defaultResponseFormat.and(z.object({
 export type TicketStatusResponse = z.infer<typeof ticketResponse>
 
 export const listTicketResponse = defaultResponseFormat.and(z.object({
-    tickets: z.array(ticketType)
+    tickets: z.array(prettyTicketSchema)
 }))
 
 export const listShopResponse = defaultResponseFormat.and(z.object({
