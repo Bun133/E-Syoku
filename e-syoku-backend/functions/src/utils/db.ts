@@ -1,13 +1,15 @@
 import {firestore} from "firebase-admin";
-import {CollectionReference,Firestore,DocumentReference,DocumentData,Transaction} from "firebase-admin/firestore"
+import {CollectionReference, DocumentData, DocumentReference, Firestore, Transaction} from "firebase-admin/firestore"
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
-import {Error, Result, Success} from "../types/errors";
+import {Error, Result, Success, TypedResult, TypedSuccess} from "../types/errors";
 import {
     createDataFailedError,
     injectError,
     mergeDataFailedError,
+    parseDataNotFound,
+    parseDataZodFailed,
     setDataFailedError,
     updateDataFailedError
 } from "../impls/errors";
@@ -57,12 +59,13 @@ export function dbrefs(db: Firestore): DBRefs {
 
 /**
  * Simply Parse data from db using zod type.
+ * @param dataName
  * @param type
  * @param ref
  * @param transform
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
-export async function parseData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<T | undefined> {
+export async function parseData<T extends DocumentData>(dataName: string, type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedResult<T>> {
     let doc;
     if (transaction) {
         doc = await transaction.get(ref)
@@ -80,24 +83,39 @@ export async function parseData<T extends DocumentData>(type: ZodType<T>, ref: D
         try {
             const parsed = type.safeParse(processed);
             if (parsed.success) {
-                return parsed.data;
+                const suc: TypedSuccess<T> = {
+                    isSuccess: true,
+                    data: parsed.data
+                }
+                return suc
             } else {
-                error("in ParseData,zod parse failed", parsed.error)
-                return undefined;
+                const err: Error = {
+                    isSuccess: false,
+                    ...injectError(parseDataZodFailed(dataName, parsed.error.message))
+                }
+                return err;
             }
         } catch (e) {
             error("in ParseData,zod threw an error", e)
+            const err: Error = {
+                isSuccess: false,
+                ...injectError(parseDataZodFailed(dataName, "{Raw Error,Check Console}"))
+            }
+            return err
         }
 
-        return undefined;
     } else {
-        return undefined;
+        const err: Error = {
+            isSuccess: false,
+            ...injectError(parseDataNotFound(dataName))
+        }
+        return err
     }
 }
 
 type CollectionReferenceLike = CollectionReference | DocumentReference[]
 
-async function allDocList(collectionLike: CollectionReferenceLike) :Promise<DocumentReference[]>{
+async function allDocList(collectionLike: CollectionReferenceLike): Promise<DocumentReference[]> {
     if (collectionLike instanceof CollectionReference) {
         return await collectionLike.listDocuments()
     } else {
@@ -107,13 +125,14 @@ async function allDocList(collectionLike: CollectionReferenceLike) :Promise<Docu
 
 /**
  * Collection内のDocumentすべてに対して[parseData]を行います
+ * @param dataName
  * @param type
  * @param collectionRef
  * @param transform
  * @param transaction
  * @param filter
  */
-export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: CollectionReferenceLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
+export async function parseDataAll<T extends DocumentData>(dataName: string, type: ZodType<T>, collectionRef: CollectionReferenceLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
     let docs = await allDocList(collectionRef)
     if (filter) {
         docs = docs.filter(filter)
@@ -124,7 +143,13 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
             return transform(doc, data)
         } : undefined
 
-        return await parseData(type, doc, transformFunc, transaction)
+        const data = await parseData(`Array<${dataName}>`, type, doc, transformFunc, transaction)
+
+        if (data.isSuccess) {
+            return data.data
+        } else {
+            return null
+        }
     }))).filterNotNull()
 }
 
