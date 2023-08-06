@@ -1,5 +1,5 @@
 import {GoodsRemainData, GoodsWithRemainData, Order} from "@/lib/e-syoku-api/Types";
-import {SimpleGrid, Spacer} from "@chakra-ui/react";
+import {SimpleGrid, Spacer, Text} from "@chakra-ui/react";
 import Goods from "@/components/goods";
 import {useState} from "react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
@@ -48,8 +48,7 @@ export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: 
                                            const copy = listRefs.slice()
                                            copy[index] = to
                                            setListRefs(copy)
-                                       }}
-                                                             isDisabled={!isRemain(g.remainData)}/>)}></Goods>
+                                       }} isDisabled={!isRemain(g.remainData)}/>)}></Goods>
                         )
                     })}
                 </SimpleGrid>
@@ -67,12 +66,16 @@ export function OrderSelectionFooter(param: { onChange: (to: number) => void, ma
     const [count, setCount] = useState(0)
 
     return (
-        <HStack>
+        <HStack p={1}>
             <Btn onClick={() => {
                 const toUpdate = Math.max(0, count - 1)
                 setCount(toUpdate)
                 param.onChange(toUpdate)
-            }} disabled={param.isDisabled}>-</Btn>
+            }} disabled={param.isDisabled}>
+                <Center>
+                    <Text>-</Text>
+                </Center>
+            </Btn>
             <Spacer/>
             <Heading>{count}</Heading>
             <Spacer/>
@@ -82,7 +85,11 @@ export function OrderSelectionFooter(param: { onChange: (to: number) => void, ma
                 else toUpdate = Math.max(0, count + 1)
                 setCount(toUpdate)
                 param.onChange(toUpdate)
-            }} disabled={param.isDisabled}>+</Btn>
+            }} disabled={param.isDisabled}>
+                <Center>
+                    <Text>+</Text>
+                </Center>
+            </Btn>
         </HStack>
     )
 }
