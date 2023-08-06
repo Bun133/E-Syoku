@@ -15,7 +15,6 @@ import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/
 import {error} from "./utils/logger";
 import {
     authFailedError,
-    barcodeInvalidError,
     injectError,
     paymentNotFoundError,
     requestNotContainUserIdError,
@@ -183,18 +182,15 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                 if (barcode.param) {
                     // チケットのデータからUID,TicketIdを取得します
                     const barcodeData = await getBarcodeBindData(refs, barcode.param)
-                    if (!barcodeData) {
-                        const err: Error = {
-                            isSuccess: false,
-                            ...injectError(barcodeInvalidError)
-                        }
+                    if (!barcodeData.isSuccess) {
+                        const err: Error = barcodeData
                         return {
                             statusCode: 400,
                             result: err
                         }
                     }
-                    uid = barcodeData.uid
-                    ticketId = barcodeData.ticketId
+                    uid = barcodeData.data.uid
+                    ticketId = barcodeData.data.ticketId
                 } else if (uidParam.param && ticketIdParam.param) {
                     uid = uidParam.param
                     ticketId = ticketIdParam.param

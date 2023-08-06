@@ -4,13 +4,14 @@ import {Ticket} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import Transaction = firestore.Transaction;
 import {Timestamp} from "firebase-admin/firestore";
+import {TypedResult} from "../types/errors";
 
-export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string) {
-    return parseData(ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
+export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string):Promise<TypedResult<TicketDisplayData>> {
+    return parseData("ticketDisplayData",ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
 }
 
 export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Promise<TicketDisplayData[]> {
-    return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId))
+    return parseDataAll("ticketDisplayData",ticketDisplaySchema, ref.ticketDisplays(shopId))
 }
 
 /***

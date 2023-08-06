@@ -1,10 +1,10 @@
 import {DBRefs, mergeData, parseData} from "../utils/db";
-import {Result} from "../types/errors";
+import {Result, TypedResult} from "../types/errors";
 import {MessageTokenData, messageTokenDataSchema} from "../types/notification";
 import {Messaging, MulticastMessage} from "firebase-admin/lib/messaging";
 
-export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<MessageTokenData | undefined> {
-    return parseData(messageTokenDataSchema, refs.messageTokens(uid), (data) => {
+export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<TypedResult<MessageTokenData>> {
+    return parseData("messageTokenData", messageTokenDataSchema, refs.messageTokens(uid), (data) => {
         return {
             uid: uid,
             registeredTokens: data.registeredTokens
@@ -15,11 +15,11 @@ export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<Me
 export async function addMessageToken(refs: DBRefs, uid: string, toAddToken: string[]): Promise<Result> {
     const data = await getMessageTokenData(refs, uid)
     let toMerge: MessageTokenData
-    if (data) {
+    if (data.isSuccess) {
         toMerge = {
             uid: uid,
             // Distinct
-            registeredTokens: Array.from(new Set([...data.registeredTokens, ...toAddToken]))
+            registeredTokens: Array.from(new Set([...data.data.registeredTokens, ...toAddToken]))
         }
     } else {
         toMerge = {
@@ -56,12 +56,12 @@ export type NotificationData = {
 
 export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: string, notificationData: NotificationData) {
     const data = await getMessageTokenData(refs, uid)
-    if (!data) {
+    if (!data.isSuccess) {
         return
     }
 
     const multicastMessage = multicastMessageBuilder({
-        tokens: data.registeredTokens,
+        tokens: data.data.registeredTokens,
         body: notificationData.body,
         title: notificationData.title,
         imageUrl: notificationData.imageUrl

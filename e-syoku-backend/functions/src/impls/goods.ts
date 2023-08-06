@@ -4,7 +4,7 @@ import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
 import {Order, SingleOrder} from "../types/order";
-import {Error, Result, Success} from "../types/errors";
+import {Error, Result, Success, TypedResult} from "../types/errors";
 import {
     deltaNegativeError,
     injectError,
@@ -15,9 +15,9 @@ import {
 } from "./errors";
 import Transaction = firestore.Transaction;
 
-export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<Goods | undefined> {
+export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<TypedResult<Goods>> {
     const directRef = ref.goods.doc(goodsId)
-    return await parseData<Goods>(goodsSchema, directRef, (data) => {
+    return await parseData<Goods>("goods", goodsSchema, directRef, (data) => {
         return {
             goodsId: directRef.id,
             description: data.description,
@@ -30,7 +30,7 @@ export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?:
 }
 
 export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
-    return await parseDataAll<Goods>(goodsSchema, refs.goods, (doc, data) => {
+    return await parseDataAll<Goods>("goods", goodsSchema, refs.goods, (doc, data) => {
         return {
             goodsId: doc.id,
             description: data.description,
@@ -48,9 +48,9 @@ export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
  * @param goodsId
  * @param transaction
  */
-export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, transaction?: firestore.Transaction) {
+export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, transaction?: firestore.Transaction): Promise<TypedResult<GoodsRemainData>> {
     const ref = refs.remains.doc(goodsId)
-    return await parseData<GoodsRemainData>(goodsRemainDataSchema, ref, (data) => {
+    return await parseData<GoodsRemainData>("goodsRemainData", goodsRemainDataSchema, ref, (data) => {
         return {
             goodsId: ref.id,
             remainCount: data.remainCount,
@@ -134,14 +134,14 @@ export async function cancelReserveGoods(refs: DBRefs, order: Order): Promise<Su
 async function cancelReserveSingleGoods(refs: DBRefs, o: SingleOrder) {
     return refs.db.runTransaction(async (transaction) => {
         const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
-        if (!remainData) {
+        if (!remainData.isSuccess) {
             const err: Error = {
                 isSuccess: false,
                 ...injectError(remainStatusNotFoundError)
             }
             return err
         } else {
-            const calculated = increaseRemainData(remainData, o.count)
+            const calculated = increaseRemainData(remainData.data, o.count)
             if (!calculated.isSuccess) {
                 const err: Error = calculated
                 return err
@@ -213,14 +213,11 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success 
 async function reserveSingleGoods(refs: DBRefs, o: SingleOrder): Promise<Result> {
     return refs.db.runTransaction(async (transaction) => {
         const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
-        if (!remainData) {
-            const err: Error = {
-                isSuccess: false,
-                ...injectError(remainStatusNotFoundError)
-            }
+        if (!remainData.isSuccess) {
+            const err: Error = remainData
             return err
         } else {
-            const calculated = reduceRemainData(remainData, o.count)
+            const calculated = reduceRemainData(remainData.data, o.count)
             if (!calculated.isSuccess) {
                 const err: Error = calculated
                 return err

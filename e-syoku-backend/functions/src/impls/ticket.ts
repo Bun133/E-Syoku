@@ -2,17 +2,10 @@ import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import {DBRefs, mergeData, parseData, parseDataAll} from "../utils/db";
 import {UniqueId} from "../types/types";
-import {Error, Result, Success} from "../types/errors";
+import {Error, Result, Success, TypedResult} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
-import {
-    barcodeInvalidError,
-    failedToGetItemDataError,
-    failedToRegisterTicketError,
-    injectError,
-    ticketNotFoundError,
-    ticketStatusInvalidError
-} from "./errors";
+import {failedToGetItemDataError, failedToRegisterTicketError, injectError, ticketStatusInvalidError} from "./errors";
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
@@ -28,7 +21,7 @@ import Transaction = firestore.Transaction;
  * @param ticketId
  * @param transaction
  */
-export async function ticketById(ref: DBRefs, uid: string, ticketId: string, transaction?: Transaction): Promise<Ticket | undefined> {
+export async function ticketById(ref: DBRefs, uid: string, ticketId: string, transaction?: Transaction): Promise<TypedResult<Ticket>> {
     return ticketByRef(ref, uid, ref.tickets(uid).doc(ticketId), transaction);
 }
 
@@ -38,8 +31,8 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string, tra
  * @param uid
  * @param ticketRef
  */
-export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<Ticket | undefined> {
-    return await parseData<Ticket>(ticketSchema, ticketRef, (data) => {
+export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedResult<Ticket>> {
+    return await parseData<Ticket>("ticket", ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
             ticketNum: data.ticketNum,
@@ -53,9 +46,9 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
     }, transaction);
 }
 
-export async function getTickets(ref:DBRefs,uid:string,ticketIds:string[]){
-    return await parseDataAll<Ticket>(ticketSchema,ticketIds.map(e => ref.tickets(uid).doc(e)),(ref,data) => {
-        return{
+export async function getTickets(ref: DBRefs, uid: string, ticketIds: string[]) {
+    return await parseDataAll<Ticket>("ticket", ticketSchema, ticketIds.map(e => ref.tickets(uid).doc(e)), (ref, data) => {
+        return {
             uniqueId: ref.id,
             ticketNum: data.ticketNum,
             shopId: data.shopId,
@@ -74,7 +67,7 @@ export async function getTickets(ref:DBRefs,uid:string,ticketIds:string[]){
  * @param uid
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
-    return parseDataAll<Ticket>(ticketSchema, ref.tickets(uid), (doc, data) => {
+    return parseDataAll<Ticket>("ticket", ticketSchema, ref.tickets(uid), (doc, data) => {
         return {
             uniqueId: doc.id,
             ticketNum: data.ticketNum,
@@ -98,15 +91,12 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
  */
 export async function updateTicketStatusByBarcode(ref: DBRefs, barcode: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
     const barcodeData = await getBarcodeBindData(ref, barcode)
-    if (!barcodeData) {
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(barcodeInvalidError)
-        }
+    if (!barcodeData.isSuccess) {
+        const err: Error = barcodeData
         return err
     }
 
-    return await updateTicketStatusByIds(ref, barcodeData.uid, barcodeData.ticketId, fromStatus, toStatus, transaction)
+    return await updateTicketStatusByIds(ref, barcodeData.data.uid, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
 }
 
 export async function updateTicketStatusByIds(ref: DBRefs, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
@@ -126,11 +116,8 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
 
     // チケットの存在を確認する
     const ticket = await ticketByRef(ref, uid, ticketRef)
-    if (!ticket) {
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(ticketNotFoundError)
-        }
+    if (!ticket.isSuccess) {
+        const err: Error = ticket
         return err
     }
 
@@ -138,14 +125,14 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
         // チケットのステータスが変更前のステータスではないのでエラー
         const err: Error = {
             "isSuccess": false,
-            ...injectError(ticketStatusInvalidError(fromStatus, ticket.status))
+            ...injectError(ticketStatusInvalidError(fromStatus, ticket.data.status))
         }
         return err
     }
 
     // 変更後のチケットのデータ
     const toWriteTicket: Ticket = {
-        ...ticket,
+        ...ticket.data,
         status: toStatus
     }
 
@@ -310,12 +297,12 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
     // 商品データを取得
     const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
         const itemData = await getGoodsById(ref, e.goodsId)
-        if (itemData === undefined) {
+        if (!itemData.isSuccess) {
             return undefined
         }
         return {
             ...e,
-            itemData: itemData
+            itemData: itemData.data
         }
     }))).filterNotNullStrict()
     if (orderWithShopData === undefined) {

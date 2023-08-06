@@ -1,13 +1,13 @@
 import {DBRefs, parseData, setData} from "../utils/db";
-import {Error, Result, Success} from "../types/errors";
+import {Error, Result, Success, TypedResult} from "../types/errors";
 import {BarcodeBindData, barcodeBindDataSchema} from "../types/barcode";
 import {getTickets, ticketById} from "./ticket";
 import {barcodeMatchTooMuch, barcodeNotMatch, injectError} from "./errors";
 import {judgeBarcode} from "./barcodeInfos";
 import {Ticket} from "../types/ticket";
 
-export async function getBarcodeBindData(ref: DBRefs, barcode: string): Promise<undefined | BarcodeBindData> {
-    return parseData(barcodeBindDataSchema, ref.binds(barcode), (data) => {
+export async function getBarcodeBindData(ref: DBRefs, barcode: string): Promise<TypedResult<BarcodeBindData>> {
+    return parseData("barcodeBindData", barcodeBindDataSchema, ref.binds(barcode), (data) => {
         return {
             barcode: barcode,
             ticketId: data.ticketId,
@@ -75,11 +75,11 @@ export async function bindBarcodeToTicket(ref: DBRefs, barcode: string, uid: str
     }
 }
 
-export async function ticketByBarcode(ref: DBRefs, barcode: string): Promise<Ticket | undefined> {
+export async function ticketByBarcode(ref: DBRefs, barcode: string): Promise<TypedResult<Ticket>> {
     const info = await getBarcodeBindData(ref, barcode)
-    if (!info) {
-        return undefined
+    if (!info.isSuccess) {
+        return info
     } else {
-        return await ticketById(ref, info.uid, info.ticketId)
+        return await ticketById(ref, info.data.uid, info.data.ticketId)
     }
 }
