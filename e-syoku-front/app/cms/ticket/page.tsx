@@ -1,6 +1,6 @@
 "use client"
 import React, {useRef, useState} from "react";
-import {Ticket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket, Ticket} from "@/lib/e-syoku-api/Types";
 import {Flex, HStack, VStack} from "@chakra-ui/layout";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
@@ -13,7 +13,7 @@ import Btn from "@/components/btn";
 import {TicketCard} from "@/components/Ticket";
 
 export default function Page() {
-    const [ticket, setTicket] = useState<Ticket>()
+    const [ticket, setTicket] = useState<PrettyTicket>()
     const token = useFirebaseAuth()
     const [error, setError] = useState<EndPointErrorResponse<any>>()
     const uid = useRef<string>()
