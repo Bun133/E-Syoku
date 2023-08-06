@@ -121,7 +121,7 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
         return err
     }
 
-    if (ticket.status !== fromStatus) {
+    if (ticket.data.status !== fromStatus) {
         // チケットのステータスが変更前のステータスではないのでエラー
         const err: Error = {
             "isSuccess": false,
