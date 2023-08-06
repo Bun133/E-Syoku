@@ -45,7 +45,7 @@ const internalError: (msg: string, errorCode: string) => ErrorType = (msg: strin
     }
 }
 
-const cmsError:  (msg: string, errorCode: string) => ErrorType = (msg: string, errorCode: string) => {
+const cmsError: (msg: string, errorCode: string) => ErrorType = (msg: string, errorCode: string) => {
     return {
         error: msg,
         errorCode: `CMS_${errorCode}`
@@ -158,8 +158,12 @@ export const internalErrorThrownError = internalError("内部でエラーが発�
 
 export const failedToRegisterTicketError = internalError("チケットの登録に失敗しました", "REGISTER_TICKET_FAILED")
 
-export const barcodeNotMatch = internalError("バーコードが合致しません","BARCODE_NOT_MATCH")
+export const barcodeNotMatch = internalError("バーコードが合致しません", "BARCODE_NOT_MATCH")
 
-export const barcodeMatchTooMuch = internalError("バーコードが複数に合致します","BARCODE_MATCH_TOO_MUCH")
+export const barcodeMatchTooMuch = internalError("バーコードが複数に合致します", "BARCODE_MATCH_TOO_MUCH")
 
-export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎます","TICKET_NOT_SATISFY_CONDITION")
+export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎます", "TICKET_NOT_SATISFY_CONDITION")
+
+export const parseDataZodFailed = (dataName: string, errorMsg: string) => internalError(`正常にデータを処理できませんでした\nZodError:${errorMsg}`, `PARSE_DATA_FAILED_ZOD_${dataName}`)
+
+export const parseDataNotFound = (dataName: string) => internalError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND_${dataName}`)
