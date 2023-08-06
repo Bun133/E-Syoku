@@ -4,9 +4,9 @@ import {Ticket} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import Transaction = firestore.Transaction;
 import {Timestamp} from "firebase-admin/firestore";
-import {TypedResult} from "../types/errors";
+import {TypedSingleResult} from "../types/errors";
 
-export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string):Promise<TypedResult<TicketDisplayData>> {
+export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string):Promise<TypedSingleResult<TicketDisplayData>> {
     return parseData("ticketDisplayData",ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
 }
 

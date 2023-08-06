@@ -2,7 +2,7 @@ import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import {DBRefs, mergeData, parseData, parseDataAll} from "../utils/db";
 import {UniqueId} from "../types/types";
-import {Error, Result, Success, TypedResult} from "../types/errors";
+import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
 import {failedToGetItemDataError, failedToRegisterTicketError, injectError, ticketStatusInvalidError} from "./errors";
@@ -21,7 +21,7 @@ import Transaction = firestore.Transaction;
  * @param ticketId
  * @param transaction
  */
-export async function ticketById(ref: DBRefs, uid: string, ticketId: string, transaction?: Transaction): Promise<TypedResult<Ticket>> {
+export async function ticketById(ref: DBRefs, uid: string, ticketId: string, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
     return ticketByRef(ref, uid, ref.tickets(uid).doc(ticketId), transaction);
 }
 
@@ -31,7 +31,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string, tra
  * @param uid
  * @param ticketRef
  */
-export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedResult<Ticket>> {
+export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
     return await parseData<Ticket>("ticket", ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,

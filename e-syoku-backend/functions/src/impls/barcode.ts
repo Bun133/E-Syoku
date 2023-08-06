@@ -1,12 +1,12 @@
 import {DBRefs, parseData, setData} from "../utils/db";
-import {Error, Result, Success, TypedResult} from "../types/errors";
+import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {BarcodeBindData, barcodeBindDataSchema} from "../types/barcode";
 import {getTickets, ticketById} from "./ticket";
 import {barcodeMatchTooMuch, barcodeNotMatch, injectError} from "./errors";
 import {judgeBarcode} from "./barcodeInfos";
 import {Ticket} from "../types/ticket";
 
-export async function getBarcodeBindData(ref: DBRefs, barcode: string): Promise<TypedResult<BarcodeBindData>> {
+export async function getBarcodeBindData(ref: DBRefs, barcode: string): Promise<TypedSingleResult<BarcodeBindData>> {
     return parseData("barcodeBindData", barcodeBindDataSchema, ref.binds(barcode), (data) => {
         return {
             barcode: barcode,
@@ -75,7 +75,7 @@ export async function bindBarcodeToTicket(ref: DBRefs, barcode: string, uid: str
     }
 }
 
-export async function ticketByBarcode(ref: DBRefs, barcode: string): Promise<TypedResult<Ticket>> {
+export async function ticketByBarcode(ref: DBRefs, barcode: string): Promise<TypedSingleResult<Ticket>> {
     const info = await getBarcodeBindData(ref, barcode)
     if (!info.isSuccess) {
         return info

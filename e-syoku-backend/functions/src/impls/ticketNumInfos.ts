@@ -1,13 +1,13 @@
 import {createData, DBRefs, newRandomRef, parseData, updateEntireData} from "../utils/db";
 import {Ticket, ticketSchema} from "../types/ticket";
-import {Error, Success, TypedResult} from "../types/errors";
+import {Error, Success, TypedSingleResult} from "../types/errors";
 import {injectError, ticketNumGenerateFailedError, ticketNumInfoNotFound} from "./errors";
 import {TicketNumInfo, ticketNumInfoSchema} from "../types/ticketNumInfos";
 import {firestore} from "firebase-admin";
 import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
 import Transaction = firestore.Transaction;
 
-export async function ticketNumInfoById(ref: DBRefs, shopId: string, transaction?: Transaction):Promise<TypedResult<TicketNumInfo>> {
+export async function ticketNumInfoById(ref: DBRefs, shopId: string, transaction?: Transaction):Promise<TypedSingleResult<TicketNumInfo>> {
     return parseData("ticketNumInfo",ticketNumInfoSchema, ref.ticketNumInfo(shopId), undefined, transaction)
 }
 
@@ -28,14 +28,14 @@ export async function createNewTicket(ref: DBRefs, shopId: string, uid: string, 
         // さすがに被らないと信じてるぞUUID
         const toWriteRef = await newRandomRef(ref.tickets(uid))
         const info = await ticketNumInfoById(ref, shopId, transaction)
-        if (!info) {
+        if (!info.isSuccess) {
             const err: Error = {
                 isSuccess: false,
                 ...injectError(ticketNumInfoNotFound)
             }
             return err
         }
-        const next = nextTicketNum(info)
+        const next = nextTicketNum(info.data)
         if (!next.isSuccess) {
             const err: Error = next
             return err

@@ -1,9 +1,9 @@
 import {DBRefs, mergeData, parseData} from "../utils/db";
-import {Result, TypedResult} from "../types/errors";
+import {Result, TypedSingleResult} from "../types/errors";
 import {MessageTokenData, messageTokenDataSchema} from "../types/notification";
 import {Messaging, MulticastMessage} from "firebase-admin/lib/messaging";
 
-export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<TypedResult<MessageTokenData>> {
+export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<TypedSingleResult<MessageTokenData>> {
     return parseData("messageTokenData", messageTokenDataSchema, refs.messageTokens(uid), (data) => {
         return {
             uid: uid,

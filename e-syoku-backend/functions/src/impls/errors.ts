@@ -167,3 +167,5 @@ export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎ�
 export const parseDataZodFailed = (dataName: string, errorMsg: string) => internalError(`正常にデータを処理できませんでした\nZodError:${errorMsg}`, `PARSE_DATA_FAILED_ZOD_${dataName}`)
 
 export const parseDataNotFound = (dataName: string) => internalError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND_${dataName}`)
+
+export const prettyOrderFailed = representativeError(internalError("OrderデータをPretty化できませんでした","PRETTY_ORDER_FAILED"))

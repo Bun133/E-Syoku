@@ -4,7 +4,7 @@ import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
 import {Order, SingleOrder} from "../types/order";
-import {Error, Result, Success, TypedResult} from "../types/errors";
+import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {
     deltaNegativeError,
     injectError,
@@ -15,7 +15,7 @@ import {
 } from "./errors";
 import Transaction = firestore.Transaction;
 
-export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<TypedResult<Goods>> {
+export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<TypedSingleResult<Goods>> {
     const directRef = ref.goods.doc(goodsId)
     return await parseData<Goods>("goods", goodsSchema, directRef, (data) => {
         return {
@@ -48,7 +48,7 @@ export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
  * @param goodsId
  * @param transaction
  */
-export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, transaction?: firestore.Transaction): Promise<TypedResult<GoodsRemainData>> {
+export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, transaction?: firestore.Transaction): Promise<TypedSingleResult<GoodsRemainData>> {
     const ref = refs.remains.doc(goodsId)
     return await parseData<GoodsRemainData>("goodsRemainData", goodsRemainDataSchema, ref, (data) => {
         return {

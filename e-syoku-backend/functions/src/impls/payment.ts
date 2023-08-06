@@ -4,14 +4,8 @@ import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
 import {cancelReserveGoods, getGoodsById, reserveGoods} from "./goods";
 import {firestore} from "firebase-admin";
-import {Error, Success} from "../types/errors";
-import {
-    alreadyPaidError,
-    calculateTotalAmountFailed,
-    injectError,
-    paidWrongAmountError,
-    paymentNotFoundError
-} from "./errors";
+import {Error, Success, TypedSingleResult} from "../types/errors";
+import {alreadyPaidError, calculateTotalAmountFailed, injectError, paidWrongAmountError} from "./errors";
 import {deleteTickets, registerTicketsForPayment} from "./ticket";
 import {error} from "../utils/logger";
 import DocumentReference = firestore.DocumentReference;
@@ -75,8 +69,8 @@ async function calculateTotalAmount(ref: DBRefs, order: Order) {
             order.map(async (o) => {
                 // 商品データを取得
                 const data = await getGoodsById(ref, o.goodsId)
-                if (!data) return undefined
-                return data.price * o.count
+                if (!data.isSuccess) return undefined
+                return data.data.price * o.count
             }))
     ).filterNotNullStrict({toLog: {message: "in calculateTotalAmount,Failed to get goods data.Operation Terminated"}})
 
@@ -103,8 +97,8 @@ export async function getPaymentSessionById(ref: DBRefs, userid: string, payment
     return getPaymentSessionByRef(ref, ref.payments(userid).doc(paymentSessionId))
 }
 
-export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentReference) {
-    return parseData<PaymentSession>(paymentSessionSchema, paymentRef, (data) => {
+export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentReference): Promise<TypedSingleResult<PaymentSession>> {
+    return parseData<PaymentSession>("paymentSession", paymentSessionSchema, paymentRef, (data) => {
         return {
             sessionId: paymentRef.id,
             customerId: data.customerId,
@@ -116,7 +110,7 @@ export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentRe
 }
 
 export async function getAllPayments(ref: DBRefs, userid: string): Promise<PaymentSession[]> {
-    return await parseDataAll<PaymentSession>(paymentSessionSchema, ref.payments(userid), (doc, data) => {
+    return await parseDataAll<PaymentSession>("paymentSession", paymentSessionSchema, ref.payments(userid), (doc, data) => {
         return {
             sessionId: doc.id,
             customerId: data.customerId,
@@ -190,7 +184,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
     }
 
     // 決済セッションのステータスを支払い済みに変更
-    const update =　await updateEntireData(paymentSessionSchema.omit({
+    const update = await updateEntireData(paymentSessionSchema.omit({
         sessionId: true,
         customerId: true,
         orderContent: true,
@@ -199,8 +193,8 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
         state: "PAID",
         paidDetail: paidDetail
     })
-    if (!update.isSuccess){
-        const err:Error = update
+    if (!update.isSuccess) {
+        const err: Error = update
         await rollBackReserveGoods()
         await rollBackTickets()
         return err
@@ -217,22 +211,22 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
 /**
  * 決済取扱いにおいて、満たしていなければいけない前庭条件をassertします
  */
-async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & { payment: PaymentSession, paymentRef: DocumentReference }> {
+async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
+    payment: PaymentSession,
+    paymentRef: DocumentReference
+}> {
     // 決済セッションのRef・データ
     const paymentRef = refs.payments(uid).doc(sessionId)
     const payment = await getPaymentSessionByRef(refs, paymentRef)
 
-    if (!payment) {
+    if (!payment.isSuccess) {
         // 決済セッションのデータが見つからなかった
-        const err: Error = {
-            isSuccess: false,
-            ...injectError(paymentNotFoundError)
-        }
+        const err: Error = payment
         return err
     }
 
     // 決済セッションのデータのステータスが"PAID"になっている
-    if (payment.state === "PAID") {
+    if (payment.data.state === "PAID") {
         const err: Error = {
             isSuccess: false,
             ...injectError(alreadyPaidError)
@@ -241,7 +235,7 @@ async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string,
     }
 
     // 決済済みの金額が決済セッションの合計金額と合致することを確認
-    if (payment.totalAmount !== paidDetail.paidAmount) {
+    if (payment.data.totalAmount !== paidDetail.paidAmount) {
         const err: Error = {
             isSuccess: false,
             ...injectError(paidWrongAmountError)
@@ -251,7 +245,7 @@ async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string,
 
     const suc: Success & { payment: PaymentSession, paymentRef: DocumentReference } = {
         isSuccess: true,
-        payment,
+        payment.data,
         paymentRef
     }
 

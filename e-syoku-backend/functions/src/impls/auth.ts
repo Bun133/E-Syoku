@@ -1,9 +1,9 @@
 import {AuthEntry, authEntrySchema, AuthType} from "../types/auth";
 import {DBRefs, parseData, setData} from "../utils/db";
-import {Error, Result, TypedResult} from "../types/errors";
+import {Error, Result, TypedSingleResult} from "../types/errors";
 import {authTypeInvalidError, injectError, permissionDataMissing} from "./errors";
 
-export async function getAuthData(refs: DBRefs, uid: string): Promise<TypedResult<AuthEntry>> {
+export async function getAuthData(refs: DBRefs, uid: string): Promise<TypedSingleResult<AuthEntry>> {
     return await parseData<AuthEntry>("authData",authEntrySchema, refs.auths.doc(uid), (data) => {
         return {
             uid: uid,

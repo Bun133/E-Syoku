@@ -3,7 +3,7 @@ import {CollectionReference, DocumentData, DocumentReference, Firestore, Transac
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
-import {Error, Result, Success, TypedResult, TypedSuccess} from "../types/errors";
+import {Error, Result, SingleError, Success, TypedSuccess} from "../types/errors";
 import {
     createDataFailedError,
     injectError,
@@ -65,7 +65,7 @@ export function dbrefs(db: Firestore): DBRefs {
  * @param transform
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
-export async function parseData<T extends DocumentData>(dataName: string, type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedResult<T>> {
+export async function parseData<T extends DocumentData>(dataName: string, type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
     let doc;
     if (transaction) {
         doc = await transaction.get(ref)
@@ -89,7 +89,7 @@ export async function parseData<T extends DocumentData>(dataName: string, type: 
                 }
                 return suc
             } else {
-                const err: Error = {
+                const err: SingleError = {
                     isSuccess: false,
                     ...injectError(parseDataZodFailed(dataName, parsed.error.message))
                 }
@@ -97,7 +97,7 @@ export async function parseData<T extends DocumentData>(dataName: string, type: 
             }
         } catch (e) {
             error("in ParseData,zod threw an error", e)
-            const err: Error = {
+            const err: SingleError = {
                 isSuccess: false,
                 ...injectError(parseDataZodFailed(dataName, "{Raw Error,Check Console}"))
             }
@@ -105,7 +105,7 @@ export async function parseData<T extends DocumentData>(dataName: string, type: 
         }
 
     } else {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(parseDataNotFound(dataName))
         }
