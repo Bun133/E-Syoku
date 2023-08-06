@@ -1,13 +1,13 @@
 import Btn from "@/components/btn";
-import {PrettyTicket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket, PrettyTicketStatus} from "@/lib/e-syoku-api/Types";
 import React, {ReactNode} from "react";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Box, Text} from "@chakra-ui/react";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
 
-function ticketColor(ticket: PrettyTicket): string {
-    switch (ticket.status) {
+export function ticketColor(status: PrettyTicketStatus): string {
+    switch (status) {
         case "お知らせ":
             return "cyan.300"
         case "受け取り待ち":
@@ -34,7 +34,7 @@ export function TicketComponent(param: {
     return (
         <Card>
             <CardHeader>
-                <Box backgroundColor={ticketColor(param.ticket)} borderRadius={10} px={4} py={1}>
+                <Box backgroundColor={ticketColor(param.ticket.status)} borderRadius={10} px={4} py={1}>
                     <Center>
                         <Heading>
                             {param.ticket.ticketNum}
@@ -56,7 +56,7 @@ export function TicketCard(params: { ticket: PrettyTicket }) {
     return (
         <Card>
 
-            <Box backgroundColor={ticketColor(params.ticket)} borderRadius={10} mx={4} my={1}>
+            <Box backgroundColor={ticketColor(params.ticket.status)} borderRadius={10} mx={4} my={1}>
                 <Center>
                     <CardHeader><Heading>{params.ticket.ticketNum}</Heading></CardHeader>
                 </Center>

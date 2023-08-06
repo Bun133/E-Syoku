@@ -7,6 +7,7 @@ import {useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
 import {Box} from "@chakra-ui/react";
 import {useEffect, useRef} from "react";
+import {ticketColor} from "@/components/Ticket";
 
 export default function Page() {
     const params = useSearchParams()
@@ -30,12 +31,12 @@ export default function Page() {
                              return (
                                  <VStack>
                                      <TicketDisplay displays={processing} ticketStatus={"調理中"}
-                                                    ticketColor={"gray.200"} autoScroll={true}/>
+                                                    ticketColor={ticketColor("調理中")} autoScroll={true}/>
                                      <TicketDisplay displays={called} ticketStatus={"受け渡し可能"}
-                                                    ticketColor={"green.200"} autoScroll={false}/>
+                                                    ticketColor={ticketColor("受け取り待ち")} autoScroll={false}/>
                                      {informed.length > 0 && (
                                          <TicketDisplay displays={informed} ticketStatus={"お呼び出し"}
-                                                        ticketColor={"blue.200"} autoScroll={true}/>)}
+                                                        ticketColor={ticketColor("お知らせ")} autoScroll={true}/>)}
                                      <Btn onClick={reload}>再読み込み</Btn>
                                  </VStack>
                              )
