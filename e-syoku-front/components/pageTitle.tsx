@@ -5,7 +5,7 @@ import Btn from "@/components/btn";
 
 export default function PageTitle(param: { title: string }) {
     return (
-        <VStack>
+        <VStack mb={3}>
             <Flex direction={"row"} w={"full"}>
                 <Heading px={3}>{param.title}</Heading>
             </Flex>

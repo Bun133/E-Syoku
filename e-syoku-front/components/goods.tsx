@@ -13,7 +13,7 @@ export default function Goods(param: { goods: PrettyGoods, footer?: React.ReactN
             <CardBody>
                 商品説明：{param.goods.description}
                 <br/>
-                商品価格：{param.goods.price}円
+                商品単価：{param.goods.price}円
             </CardBody>
             {param.footer}
         </Card>
