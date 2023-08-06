@@ -21,12 +21,12 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order, tran
     // 商品の在庫データを取得する
     const items = (await Promise.all(orderData.map(async (order) => {
         const remain = await getRemainDataOfGoods(ref, order.goodsId, transaction)
-        if (!remain) return undefined
-        const isEnough = remainDataIsEnough(remain, order.count)
+        if (!remain.isSuccess) return undefined
+        const isEnough = remainDataIsEnough(remain.data, order.count)
         if (!isEnough.isSuccess) return undefined
         return {
             goodsId: order.goodsId,
-            remainData: remain,
+            remainData: remain.data,
             isEnough: isEnough.isEnough
         }
     }))).filterNotNullStrict({toLog: {message: "in checkOrderRemainStatus, Failed to retrieve remainData for some goods."}})
