@@ -7,7 +7,6 @@ export default function PageTitle(param: { title: string }) {
     return (
         <VStack>
             <Flex direction={"row"} w={"full"}>
-                <Btn onClick={backButtonClick}><ArrowLeft></ArrowLeft></Btn>
                 <Heading px={3}>{param.title}</Heading>
             </Flex>
             <Divider></Divider>
