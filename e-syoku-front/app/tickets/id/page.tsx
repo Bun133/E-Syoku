@@ -5,12 +5,8 @@ import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {useSearchParams} from "next/navigation";
 import React from "react";
 import Btn from "@/components/btn";
-import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {Card, CardBody, CardHeader} from "@chakra-ui/card";
-import {Box, Text} from "@chakra-ui/react";
-import {orderDataTransform, ticketStatusTransform} from "@/lib/e-syoku-api/Transformers";
+import {Center, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
-import {Ticket} from "@/lib/e-syoku-api/Types";
 import { TicketCard } from "@/components/Ticket";
 
 export default function Page() {
