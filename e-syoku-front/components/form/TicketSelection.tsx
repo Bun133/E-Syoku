@@ -1,4 +1,4 @@
-import {PrettyTicket, Ticket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
 import {TicketComponent} from "@/components/Ticket"
 import {VStack} from "@chakra-ui/layout";
@@ -15,7 +15,7 @@ export function TicketSelection(props: {
 
     return (
         <VStack>
-            {props.tickets !== undefined ? props.tickets.map((ticket: PrettyTicket) => {
+            {props.tickets !== undefined ? props.tickets.sort((a, b) => a.issueTime.utcSeconds - b.issueTime.utcSeconds).map((ticket: PrettyTicket) => {
                 return (
                     <TicketComponent
                         key={ticket.uniqueId}

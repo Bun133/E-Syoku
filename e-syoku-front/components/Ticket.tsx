@@ -6,6 +6,19 @@ import {Box, Text} from "@chakra-ui/react";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
 
+function ticketColor(ticket: PrettyTicket): string {
+    switch (ticket.status) {
+        case "お知らせ":
+            return "cyan.300"
+        case "受け取り待ち":
+            return "green.300"
+        case "完了":
+            return "gray.300"
+        case "注文済み":
+        case "調理中":
+            return "yellow.100"
+    }
+}
 
 export function TicketComponent(param: {
     ticket: PrettyTicket,
@@ -21,7 +34,7 @@ export function TicketComponent(param: {
     return (
         <Card>
             <CardHeader>
-                <Box backgroundColor={"gray.200"} borderRadius={10} px={4} py={1}>
+                <Box backgroundColor={ticketColor(param.ticket)} borderRadius={10} px={4} py={1}>
                     <Center>
                         <Heading>
                             {param.ticket.ticketNum}
@@ -43,7 +56,7 @@ export function TicketCard(params: { ticket: PrettyTicket }) {
     return (
         <Card>
 
-            <Box backgroundColor={"gray.200"} borderRadius={10} mx={4} my={1}>
+            <Box backgroundColor={ticketColor(params.ticket)} borderRadius={10} mx={4} my={1}>
                 <Center>
                     <CardHeader><Heading>{params.ticket.ticketNum}</Heading></CardHeader>
                 </Center>
