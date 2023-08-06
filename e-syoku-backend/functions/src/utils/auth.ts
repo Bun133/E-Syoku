@@ -50,9 +50,9 @@ export async function authed<R>(auth: Auth, refs: DBRefs, req: Request, res: Res
 
     if (user) {
         let authData = await getAuthData(refs, uid)
-        if (authData) {
+        if (authData.isSuccess) {
             let authInstance: AuthInstance = {
-                ...authData,
+                ...authData.data,
                 auth: user
             }
 
