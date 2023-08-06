@@ -196,6 +196,24 @@ export const prettyTicketSchema = z.object({
 
 export type PrettyTicket = z.infer<typeof prettyTicketSchema>
 
+export const prettyPaymentStateSchema = z.enum([
+    "未支払い",
+    "支払い済み"
+])
+
+export type PrettyPaymentState = z.infer<typeof prettyPaymentStateSchema>
+
+export const prettyPaymentSessionSchema = z.object({
+    sessionId: uniqueId,
+    customerId: uniqueId,
+    orderContent: prettyOrderSchema,
+    totalAmount: z.number(),
+    state: prettyPaymentStateSchema,
+    paidDetail: paidDetailSchema.optional(),
+})
+
+export type PrettyPaymentSession = z.infer<typeof prettyPaymentSessionSchema>
+
 
 export const successSchema = z.object({
     isSuccess: z.literal(true),
@@ -272,7 +290,7 @@ export const listPaymentResponse = defaultResponseFormat.and(z.object({
 }))
 
 export const paymentStatusResponse = defaultResponseFormat.and(z.object({
-    payment: paymentSessionSchema
+    payment: prettyPaymentSessionSchema
 }))
 
 export const paymentIdRequest = z.object({

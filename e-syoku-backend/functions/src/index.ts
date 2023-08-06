@@ -29,7 +29,7 @@ import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
 import {addMessageToken, NotificationData, sendMessage} from "./impls/notification";
-import {prettyTicket} from "./impls/prettyPrint";
+import {prettyPayment, prettyTicket} from "./impls/prettyPrint";
 
 
 admin.initializeApp()
@@ -373,7 +373,14 @@ export const paymentStatus = standardFunction(async (request, response) => {
                     result: err
                 }
             }
-            const suc: Success = {"isSuccess": true, "payment": payment.data}
+
+            const pPayment = await prettyPayment(refs, payment.data)
+            if (!pPayment.isSuccess) {
+                return {result: pPayment}
+            }
+
+
+            const suc: Success = {"isSuccess": true, "payment": pPayment.data}
             return {
                 result: suc
             }

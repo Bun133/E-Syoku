@@ -9,6 +9,7 @@ import {Text} from "@chakra-ui/react";
 import QRCode from "react-qr-code"
 import React from "react";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
+import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
 
 export default function Page() {
     const params = useSearchParams()
@@ -34,13 +35,9 @@ export default function Page() {
                                         <Text>
                                             State:{payment.state}
                                         </Text>
-                                        {payment.orderContent.map((item, index) => {
-                                            return (
-                                                <Text key={index}>
-                                                    商品Id: {item.goodsId} ,個数:{item.count}
-                                                </Text>
-                                            )
-                                        })}
+                                        <Text>
+                                            {orderDataTransform(payment.orderContent)}
+                                        </Text>
                                     </VStack>
                                 </CardBody>
                                 <CardFooter>

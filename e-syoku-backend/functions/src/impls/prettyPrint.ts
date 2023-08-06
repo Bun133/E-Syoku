@@ -2,7 +2,7 @@ import {Ticket, TicketStatus} from "../types/ticket";
 import {DBRefs} from "../utils/db";
 import {
     PrettyGoods,
-    PrettyOrder,
+    PrettyOrder, PrettyPaymentSession, PrettyPaymentState,
     PrettySingleOrder,
     PrettyTicket,
     PrettyTicketStatus,
@@ -15,6 +15,7 @@ import {SingleError, TypedResult, TypedSingleResult, TypedSuccess} from "../type
 import {Goods} from "../types/goods";
 import {getShopById} from "./shop";
 import {prettyOrderFailed} from "./errors";
+import {PaymentSession, PaymentState} from "../types/payment";
 
 function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
     const date = timeStamp.toDate();
@@ -135,4 +136,36 @@ export async function prettyTicket(refs: DBRefs, ticket: Ticket): Promise<TypedR
     }
 
     return suc
+}
+
+function prettyPaymentStatus(state:PaymentState):PrettyPaymentState{
+    switch (state){
+        case "PAID":
+            return "支払い済み"
+        case "UNPAID":
+            return "未支払い"
+    }
+}
+
+export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Promise<TypedResult<PrettyPaymentSession>> {
+    const pOrder = await prettyOrder(refs, payment.orderContent)
+    if (!pOrder.isSuccess) {
+        return pOrder
+    }
+
+    const pStatus = prettyPaymentStatus(payment.state)
+
+    const session:PrettyPaymentSession ={
+        sessionId: payment.sessionId,
+        paidDetail: payment.paidDetail,
+        customerId: payment.customerId,
+        orderContent: pOrder.data,
+        state: pStatus,
+        totalAmount: payment.totalAmount,
+    }
+
+    return {
+        isSuccess: true,
+        data: session,
+    }
 }
