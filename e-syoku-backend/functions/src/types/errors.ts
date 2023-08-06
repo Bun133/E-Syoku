@@ -27,3 +27,6 @@ export type Success = z.infer<typeof successSchema>
 export type Error = z.infer<typeof errorSchema>
 export type SingleError = z.infer<typeof singleErrorSchema>
 export type MultipleError = z.infer<typeof multipleErrorSchema>
+
+export type TypedResult<D> = TypedSuccess<D> | Error
+export type TypedSuccess<D> = Success & { data: D }
