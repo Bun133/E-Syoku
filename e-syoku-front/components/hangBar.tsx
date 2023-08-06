@@ -46,7 +46,7 @@ export function HangBar() {
 
     return (
         <>
-            <Flex w={"full"} shadow={1} backgroundColor={"blue.300"} mb={2}>
+            <Flex w={"full"} shadow={1} backgroundColor={"blue.300"} mb={2} direction={"column"}>
                 <Box p={2}>
                     <Menu onClick={onOpen}/>
                 </Box>
@@ -152,7 +152,7 @@ async function logOut(auth: FirebaseAuthContextType) {
 
 function NotificationErrorComp(params: { popup: () => void }) {
     return (
-        <Box backgroundColor={"red"} onClick={params.popup}>
+        <Box backgroundColor={"red"} onClick={params.popup} p={1} cursor={"pointer"}>
             <Center>
                 <Text>通知設定に失敗しました</Text>
             </Center>
