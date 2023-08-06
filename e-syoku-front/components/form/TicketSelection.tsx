@@ -1,21 +1,21 @@
-import {Ticket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket, Ticket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
 import {TicketComponent} from "@/components/Ticket"
 import {VStack} from "@chakra-ui/layout";
 
 export function TicketSelection(props: {
-    tickets: Ticket[] | undefined,
-    onSelect: (ticket: Ticket) => void,
+    tickets: PrettyTicket[] | undefined,
+    onSelect: (ticket: PrettyTicket) => void,
     // for customizing select button
-    button?: (ticket: Ticket) => ReactNode
+    button?: (ticket: PrettyTicket) => ReactNode
 }) {
     const button = props.button !== undefined ?
-        ((ticket: Ticket) => (<div onClick={() => props.onSelect(ticket)}>{props.button!!(ticket)}</div>))
-        : ((ticket: Ticket) => undefined)
+        ((ticket: PrettyTicket) => (<div onClick={() => props.onSelect(ticket)}>{props.button!!(ticket)}</div>))
+        : ((ticket: PrettyTicket) => undefined)
 
     return (
         <VStack>
-            {props.tickets !== undefined ? props.tickets.map((ticket: Ticket) => {
+            {props.tickets !== undefined ? props.tickets.map((ticket: PrettyTicket) => {
                 return (
                     <TicketComponent
                         key={ticket.uniqueId}

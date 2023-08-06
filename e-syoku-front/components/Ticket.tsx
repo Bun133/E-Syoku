@@ -1,14 +1,14 @@
 import Btn from "@/components/btn";
-import {Ticket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket} from "@/lib/e-syoku-api/Types";
 import React, {ReactNode} from "react";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Box, Text} from "@chakra-ui/react";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {orderDataTransform, ticketStatusTransform} from "@/lib/e-syoku-api/Transformers";
+import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
 
 
 export function TicketComponent(param: {
-    ticket: Ticket,
+    ticket: PrettyTicket,
     button?: ReactNode
 }) {
     const button = param.button !== undefined ?
@@ -29,6 +29,9 @@ export function TicketComponent(param: {
                     </Center>
                 </Box>
             </CardHeader>
+            <CardBody>
+                注文内容:{orderDataTransform(param.ticket.orderData)}
+            </CardBody>
             <CardFooter>
                 {button}
             </CardFooter>
@@ -36,7 +39,7 @@ export function TicketComponent(param: {
     )
 }
 
-export function TicketCard(params: { ticket: Ticket }) {
+export function TicketCard(params: { ticket: PrettyTicket }) {
     return (
         <Card>
 
@@ -49,13 +52,13 @@ export function TicketCard(params: { ticket: Ticket }) {
 
             <CardBody>
                 <VStack>
-                    <Text>Status : {ticketStatusTransform(params.ticket.status)}</Text>
+                    <Text>Status : {params.ticket.status}</Text>
                     <Text>UniqueId : {params.ticket.uniqueId}</Text>
-                    <Text>ShopId : {params.ticket.shopId}</Text>
+                    <Text>Shop : {params.ticket.shop.name}</Text>
                     <Text>PaymentSessionId :{params.ticket.paymentSessionId}</Text>
                     <Text>OrderData :{orderDataTransform(params.ticket.orderData)}</Text>
                     {/**TODO 時刻表示**/}
-                    <Text>IssueTime :{params.ticket.issueTime._seconds}</Text>
+                    <Text>IssueTime :{params.ticket.issueTime.utcSeconds}</Text>
                 </VStack>
             </CardBody>
         </Card>

@@ -141,17 +141,6 @@ export const paymentSessionSchema = z.object({
 
 export type PaymentSession = z.infer<typeof paymentSessionSchema>
 
-
-
-export const prettyTimeStampSchema = z.object({
-    utcSeconds: z.number(),
-})
-
-export const prettyOrderSchema = z.array(z.object({
-    goods:goodsSchema,
-    count:z.number()
-}))
-
 export const prettyTicketStatusSchema = z.union([
     // PROCESSING
     z.literal("注文済み"),
@@ -165,10 +154,39 @@ export const prettyTicketStatusSchema = z.union([
     z.literal("お知らせ")
 ])
 
+export type PrettyTicketStatus = z.infer<typeof prettyTicketStatusSchema>
+
+export const prettyTimeStampSchema = z.object({
+    utcSeconds: z.number(),
+})
+
+export type PrettyTimeStamp = z.infer<typeof prettyTimeStampSchema>
+
+export const prettyGoodsSchema = z.object({
+    goodsId:uniqueId,
+    shop:shopDetailType,
+    name:z.string(),
+    price:z.number(),
+    description:z.string().optional(),
+    imageUrl:z.string().optional(),
+})
+
+export type PrettyGoods = z.infer<typeof prettyGoodsSchema>
+
+export const prettySingleOrderSchema = z.object({
+    goods:prettyGoodsSchema,
+    count:z.number()
+})
+
+export type PrettySingleOrder = z.infer<typeof prettySingleOrderSchema>
+
+export const prettyOrderSchema = z.array(prettySingleOrderSchema)
+
+export type PrettyOrder = z.infer<typeof prettyOrderSchema>
 export const prettyTicketSchema = z.object({
     uniqueId: uniqueId,
     ticketNum: z.string(),
-    shop:shopDetailType,
+    shop: shopDetailType,
     customerId: uniqueId,
     issueTime: prettyTimeStampSchema,
     orderData: prettyOrderSchema,
@@ -176,7 +194,7 @@ export const prettyTicketSchema = z.object({
     status: prettyTicketStatusSchema
 })
 
-
+export type PrettyTicket = z.infer<typeof prettyTicketSchema>
 
 
 export const successSchema = z.object({
