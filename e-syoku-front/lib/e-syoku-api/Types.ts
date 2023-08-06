@@ -142,6 +142,43 @@ export const paymentSessionSchema = z.object({
 export type PaymentSession = z.infer<typeof paymentSessionSchema>
 
 
+
+export const prettyTimeStampSchema = z.object({
+    utcSeconds: z.number(),
+})
+
+export const prettyOrderSchema = z.array(z.object({
+    goods:goodsSchema,
+    count:z.number()
+}))
+
+export const prettyTicketStatusSchema = z.union([
+    // PROCESSING
+    z.literal("注文済み"),
+    // COOKING
+    z.literal("調理中"),
+    // CALLED
+    z.literal("受け取り待ち"),
+    // RESOLVED
+    z.literal("完了"),
+    // INFORMED
+    z.literal("お知らせ")
+])
+
+export const prettyTicketSchema = z.object({
+    uniqueId: uniqueId,
+    ticketNum: z.string(),
+    shop:shopDetailType,
+    customerId: uniqueId,
+    issueTime: prettyTimeStampSchema,
+    orderData: prettyOrderSchema,
+    paymentSessionId: uniqueId,
+    status: prettyTicketStatusSchema
+})
+
+
+
+
 export const successSchema = z.object({
     isSuccess: z.literal(true),
     success: z.string().optional()
@@ -161,7 +198,7 @@ export const defaultResponseFormat = resultSchema
 export type DefaultResponseFormat = z.infer<typeof defaultResponseFormat>
 
 export const ticketResponse = defaultResponseFormat.and(z.object({
-    ticket: ticketType.optional()
+    ticket: prettyTicketSchema.optional()
 }))
 
 export type TicketStatusResponse = z.infer<typeof ticketResponse>

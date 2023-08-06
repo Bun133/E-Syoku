@@ -18,7 +18,6 @@ import {
     injectError,
     paymentNotFoundError,
     requestNotContainUserIdError,
-    ticketNotFoundError,
     ticketNotSpecifiedError
 } from "./impls/errors";
 import {Error, Success} from "./types/errors";
@@ -30,6 +29,7 @@ import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
 import {addMessageToken, NotificationData, sendMessage} from "./impls/notification";
+import {prettyTicket} from "./impls/prettyPrint";
 
 
 admin.initializeApp()
@@ -62,19 +62,18 @@ export const ticketStatus = standardFunction(async (request, response) => {
 
             // チケットデータ取得
             let ticket = await ticketById(refs, uid, ticketId.param);
-            if (ticket === undefined) {
-                const err: Error = {
-                    "isSuccess": false,
-                    ...injectError(ticketNotFoundError)
-                }
-                return {
-                    result: err
-                }
+            if (!ticket.isSuccess) {
+                return {result: ticket}
+            }
+
+            const pTicket = await prettyTicket(refs, ticket.data)
+            if (!pTicket.isSuccess) {
+                return {result: pTicket}
             }
 
             const suc: Success = {
                 "isSuccess": true,
-                "ticket": ticket,
+                "ticket": pTicket.data,
             }
             return {
                 result: suc
