@@ -3,7 +3,7 @@ import {authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {Auth} from "firebase-admin/lib/auth";
 import {DBRefs} from "./utils/db";
-import {Error, Result, Success} from "./types/errors";
+import {Error, Result, Success, TypedResult} from "./types/errors";
 import {Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {z} from "zod";
@@ -29,7 +29,7 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
     const ticketId = requireOptionalParameter("ticketId", z.string().optional(), req).param
     const barcode = requireOptionalParameter("barcode", z.string().optional(), req).param
 
-    let ticket: Ticket | undefined = undefined
+    let ticket: TypedResult<Ticket> | undefined = undefined
     let satisfyCondition = false
     if (barcode) {
         satisfyCondition = true
@@ -52,10 +52,10 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
         }
     }
 
-    if (ticket) {
+    if (ticket!!.isSuccess) {
         const suc: Success = {
             isSuccess: true,
-            ticket: ticket
+            ticket: ticket!!.data
         }
         return {
             result: suc
