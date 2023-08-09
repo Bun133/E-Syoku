@@ -1,7 +1,7 @@
 import {createData, DBRefs, newRandomRef, parseData, updateEntireData} from "../utils/db";
 import {Ticket, ticketSchema} from "../types/ticket";
 import {Error, Success, TypedSingleResult} from "../types/errors";
-import {injectError, dbNotFoundError, ticketNumGenerateFailedError, ticketNumInfoNotFound} from "./errors";
+import {injectError, dbNotFoundError, ticketNumGenerateFailedError} from "./errors";
 import {TicketNumInfo, ticketNumInfoSchema} from "../types/ticketNumInfos";
 import {firestore} from "firebase-admin";
 import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
@@ -29,11 +29,7 @@ export async function createNewTicket(ref: DBRefs, shopId: string, uid: string, 
         const toWriteRef = await newRandomRef(ref.tickets(uid))
         const info = await ticketNumInfoById(ref, shopId, transaction)
         if (!info.isSuccess) {
-            const err: Error = {
-                isSuccess: false,
-                ...injectError(ticketNumInfoNotFound)
-            }
-            return err
+            return info
         }
         const next = nextTicketNum(info.data)
         if (!next.isSuccess) {

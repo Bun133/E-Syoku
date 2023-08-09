@@ -10,8 +10,7 @@ import {
     injectError,
     itemGoneError, dbNotFoundError,
     remainDataTypeNotKnownError,
-    remainStatusNegativeError,
-    remainStatusNotFoundError
+    remainStatusNegativeError
 } from "./errors";
 import Transaction = firestore.Transaction;
 
@@ -135,11 +134,7 @@ async function cancelReserveSingleGoods(refs: DBRefs, o: SingleOrder) {
     return refs.db.runTransaction(async (transaction) => {
         const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
         if (!remainData.isSuccess) {
-            const err: Error = {
-                isSuccess: false,
-                ...injectError(remainStatusNotFoundError)
-            }
-            return err
+            return remainData
         } else {
             const calculated = increaseRemainData(remainData.data, o.count)
             if (!calculated.isSuccess) {
