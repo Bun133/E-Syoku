@@ -12,7 +12,7 @@ export default function Home() {
                         新規注文
                     </Btn>
                     <Btn href="/payment/">
-                        決済一覧
+                        支払い一覧
                     </Btn>
                     <Btn href="/tickets">
                         食券一覧

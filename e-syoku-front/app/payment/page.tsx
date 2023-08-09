@@ -10,7 +10,7 @@ import Btn from "@/components/btn";
 export default function Page() {
     return (
         <>
-            <PageTitle title={"決済一覧"}></PageTitle>
+            <PageTitle title={"支払い一覧"}></PageTitle>
             <APIEndpoint endpoint={listPaymentsEndPoint} query={{}} onEnd={(response, reload) => {
                 return (
                     <VStack>
