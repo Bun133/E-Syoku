@@ -6,7 +6,7 @@ import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance, AuthTypeSchema} from "./types/auth";
-import {listTicketForUser, ticketById, updateTicketStatusByIds} from "./impls/ticket";
+import {callTicketStackFunc, listTicketForUser, ticketById, updateTicketStatusByIds} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
@@ -28,7 +28,7 @@ import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
-import {addMessageToken, NotificationData, sendMessage} from "./impls/notification";
+import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 
 
@@ -200,18 +200,13 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
                 if (uid && ticketId) {
                     // チケットのステータスを変更します
-                    let called = await updateTicketStatusByIds(refs, uid, ticketId, fromStatus, toStatus)
+                    let called = await updateTicketStatusByIds(refs, messaging, uid, ticketId, fromStatus, toStatus, undefined, sendNotification)
                     if (!called.isSuccess) {
                         const err: Error = called
                         return {
                             statusCode: 400,
                             result: err
                         }
-                    }
-
-                    // 通知を送信する場合は送信処理を行います
-                    if (sendNotification) {
-                        await sendMessage(refs, messaging, uid, sendNotification)
                     }
 
                     const suc: Success = {"isSuccess": true, "success": successMessage}
@@ -606,6 +601,25 @@ export const listenNotification = standardFunction(async (req, res) => {
                     isSuccess: false,
                     ...injectError(authFailedError)
                 }
+            }
+        })
+    })
+})
+
+/**
+ * 指定された人数まで自動的に呼び出します
+ */
+export const callTicketStack = standardFunction(async (req, res) => {
+    await onPost(req, res, async () => {
+        return authedWithType(["ADMIN", "SHOP"], auth, refs, req, res, async (authInstance: AuthInstance) => {
+            const count = requireParameter("count", z.number(), req)
+            if (count.param == undefined) return {result: count.error}
+            const shopId = requireParameter("shopId", z.string(), req)
+            if (shopId.param == undefined) return {result: shopId.error}
+
+            const res = await callTicketStackFunc(refs, messaging, shopId.param, count.param)
+            return {
+                result: res
             }
         })
     })

@@ -6,17 +6,20 @@ import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
 import {
+    dbNotFoundError,
     failedToGetItemDataError,
     failedToRegisterTicketError,
     injectError,
-    dbNotFoundError,
     ticketStatusInvalidError
 } from "./errors";
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
-import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
+import {ticketDisplayDataByShopId, updateTicketDisplayDataForTicket} from "./ticketDisplays";
 import {getBarcodeBindData} from "./barcode";
+import {NotificationData, sendMessage} from "./notification";
+import {Messaging} from "firebase-admin/lib/messaging";
+import {TicketDisplayData} from "../types/ticketDisplays";
 import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
@@ -90,35 +93,38 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
 /**
  * チケットのステータスをバーコードの情報から食券データを特定し更新します
  * @param ref
+ * @param messaging
  * @param barcode
  * @param fromStatus
  * @param toStatus
  * @param transaction
  */
-export async function updateTicketStatusByBarcode(ref: DBRefs, barcode: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+export async function updateTicketStatusByBarcode(ref: DBRefs, messaging: Messaging, barcode: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
     const barcodeData = await getBarcodeBindData(ref, barcode)
     if (!barcodeData.isSuccess) {
         const err: Error = barcodeData
         return err
     }
 
-    return await updateTicketStatusByIds(ref, barcodeData.data.uid, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
+    return await updateTicketStatusByIds(ref, messaging, barcodeData.data.uid, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
 }
 
-export async function updateTicketStatusByIds(ref: DBRefs, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
-    return await internalUpdateTicketStatus(ref, uid, ref.tickets(uid).doc(ticketId), fromStatus, toStatus, transaction)
+export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
+    return await internalUpdateTicketStatus(ref, messaging, uid, ref.tickets(uid).doc(ticketId), fromStatus, toStatus, transaction, sendNotification)
 }
 
 /**
  * チケットのステータスを[fromStatus]から[toStatus]に変更します
  * @param ref
+ * @param messaging
  * @param uid
  * @param ticketRef
  * @param fromStatus
  * @param toStatus
  * @param transaction
+ * @param sendNotification
  */
-export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
+async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, uid: string, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
 
     // チケットの存在を確認する
     const ticket = await ticketByRef(ref, uid, ticketRef)
@@ -157,6 +163,10 @@ export async function internalUpdateTicketStatus(ref: DBRefs, uid: string, ticke
         // チケットのDisplayDataも変更
         // TODO エラーハンドリングをどうするのか
         await updateTicketDisplayDataForTicket(ref, toWriteTicket)
+        // 通知を送信する場合は送信処理を行います
+        if (sendNotification) {
+            await sendMessage(ref, messaging, uid, sendNotification)
+        }
         const suc: Success = {
             isSuccess: true,
         }
@@ -342,4 +352,64 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
     }
 
     return suc
+}
+
+/**
+ * 指定された店舗に対して、指定された人数が呼ばれている状態にする関数
+ *
+ * なんか失敗しても、無視します。(呼べない分にはセーフ)
+ * @param ref
+ * @param messaging
+ * @param shopId
+ * @param count
+ */
+export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, shopId: string, count: number): Promise<Success & {
+    calledTicketIds: string[]
+}> {
+    const ticketData = (await ticketDisplayDataByShopId(ref, shopId)).sort((a, b) => {
+        return a.lastUpdated.seconds - b.lastUpdated.seconds
+    })
+
+    let calledTicketCount: number = 0
+    ticketData.forEach((e) => {
+        if (e.status === "CALLED") {
+            calledTicketCount++
+        }
+    })
+
+    const toCallCount = count - calledTicketCount
+    if (toCallCount <= 0) {
+        // Do nothing
+        const suc: Success & { calledTicketIds: string[] } = {
+            isSuccess: true,
+            calledTicketIds: []
+        }
+
+        return suc
+    } else {
+        const toCallTicketIds: TicketDisplayData[] = []
+        const processing = ticketData.filter(e => e.status === "PROCESSING")
+        for (let i = 0; i < toCallCount; i++) {
+            if (i < processing.length) {
+                toCallTicketIds.push(processing[i])
+            }
+        }
+
+        const res = await Promise.all(toCallTicketIds.map(async e => {
+            const result = await updateTicketStatusByIds(ref, messaging, e.uid, e.ticketId, "PROCESSING", "CALLED")
+            return {
+                ticketId: e.ticketId,
+                result: result
+            }
+        }))
+
+
+        const success = res.filter(r => r.result.isSuccess)
+
+        const suc: Success & { calledTicketIds: string[] } = {
+            isSuccess: true,
+            calledTicketIds: success.map(e => e.ticketId)
+        }
+        return suc
+    }
 }
