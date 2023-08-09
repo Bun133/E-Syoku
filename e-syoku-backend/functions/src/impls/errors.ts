@@ -1,6 +1,6 @@
 // TSの型チェックを使うためのファンクション
 
-import {Error as ESyokuError, MultipleError, SingleError, TypedResult} from "../types/errors";
+import {MultipleError, SingleError, TypedResult} from "../types/errors";
 
 export function injectError(error: ErrorType) {
     return error
@@ -24,12 +24,6 @@ function representativeError(error: ErrorType): RepresentativeErrorType {
             errors: errors
         }
         return r
-    }
-}
-
-export class ErrorThrower extends Error {
-    constructor(public error: ESyokuError) {
-        super();
     }
 }
 
