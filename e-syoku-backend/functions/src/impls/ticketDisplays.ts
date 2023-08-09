@@ -27,6 +27,7 @@ export async function updateTicketDisplayDataForTicket(ref: DBRefs, ticket: Tick
         ticketId: ticket.uniqueId,
         ticketDataRef: ref.tickets(ticket.customerId).doc(ticket.uniqueId),
         ticketNum: ticket.ticketNum,
+        uid:ticket.customerId,
         lastUpdated: Timestamp.now()
     }, transaction)
 }

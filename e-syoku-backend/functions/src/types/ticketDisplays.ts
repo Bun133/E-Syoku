@@ -7,6 +7,7 @@ export const ticketDisplaySchema = z.object({
     status: ticketStatusSchema,
     ticketDataRef: firestoreRefSchema,
     ticketId: uniqueId,
+    uid:uniqueId,
     lastUpdated: timeStampSchema
 })
 
