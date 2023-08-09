@@ -21,7 +21,9 @@ export function ErrorMdComponent(params: { errorCode: string }) {
 }
 
 async function MdComponent(params: { errorCode: string }) {
-    let d = await fetch(`/error/${mdName(params.errorCode)}`, {
+    const path = mdName(params.errorCode) ?? "test.md"
+
+    let d = await fetch(`/error/${path}`, {
         cache: "force-cache",
     })
     let text = await d.text()
@@ -35,6 +37,12 @@ async function MdComponent(params: { errorCode: string }) {
     )
 }
 
-function mdName(errorCode: string): string {
-    return errorCode + ".md"
+function mdName(errorCode: string): string | undefined {
+    switch (errorCode) {
+        case "test":
+        case "ITEM_GONE":
+            return `${errorCode}.md`
+        default:
+            return undefined
+    }
 }
