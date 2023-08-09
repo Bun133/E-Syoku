@@ -315,6 +315,8 @@ export const ticketDisplayData = z.object({
     ticketId: uniqueId,
     lastUpdated: timeStampSchema,
 })
+
+export type TicketDisplayData = z.infer<typeof ticketDisplayData>
 export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
     displays: z.array(ticketDisplayData)
 }))
