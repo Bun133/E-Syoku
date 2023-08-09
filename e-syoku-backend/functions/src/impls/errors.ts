@@ -60,7 +60,7 @@ export function mapError<T>(value: TypedResult<T>, toMap: ErrorType): TypedResul
 // DB内にデータが見つからない
 export const dbNotFoundError = (dataName: string) => {
     const upperCase = dataName.toUpperCase()
-    return internalError(`${dataName}が見つかりませんでした`, `${upperCase}_NOT_FOUND_IN_DB`)
+    return internalError(`${dataName}が見つかりませんでした`, `NOT_FOUND_IN_DB_${upperCase}`)
 }
 
 // 入力値の変更がない限り、当該メソッドが成功する見込みがないエラー
