@@ -1,6 +1,6 @@
 // TSの型チェックを使うためのファンクション
 
-import {Error as ESyokuError, MultipleError, SingleError} from "../types/errors";
+import {Error as ESyokuError, MultipleError, SingleError, TypedResult} from "../types/errors";
 
 export function injectError(error: ErrorType) {
     return error
@@ -49,6 +49,17 @@ const cmsError: (msg: string, errorCode: string) => ErrorType = (msg: string, er
     return {
         error: msg,
         errorCode: `CMS_${errorCode}`
+    }
+}
+
+export function mapError<T>(value: TypedResult<T>, toMap: ErrorType): TypedResult<T> {
+    if (value.isSuccess) {
+        return value
+    } else {
+        return {
+            isSuccess: false,
+            ...injectError(toMap)
+        }
     }
 }
 
@@ -164,8 +175,15 @@ export const barcodeMatchTooMuch = internalError("バーコードが複数に合
 
 export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎます", "TICKET_NOT_SATISFY_CONDITION")
 
-export const parseDataZodFailed = (dataName: string, errorMsg: string) => internalError(`正常にデータを処理できませんでした\nZodError:${errorMsg}`, `PARSE_DATA_FAILED_ZOD_${dataName}`)
+export const parseDataZodFailed = internalError(`正常にデータを処理できませんでした`, `PARSE_DATA_FAILED_ZOD`)
 
-export const parseDataNotFound = (dataName: string) => internalError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND_${dataName}`)
+export const parseDataNotFound = internalError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND`)
 
-export const prettyOrderFailed = representativeError(internalError("OrderデータをPretty化できませんでした","PRETTY_ORDER_FAILED"))
+export const prettyOrderFailed = representativeError(internalError("OrderデータをPretty化できませんでした", "PRETTY_ORDER_FAILED"))
+
+export const dummyError = internalError("Dummy", "DUMMY_ERROR")
+
+export const notFoundError = (dataName: string) => {
+    const upperCase = dataName.toUpperCase()
+    return internalError(`${dataName}が見つかりませんでした`, upperCase)
+}

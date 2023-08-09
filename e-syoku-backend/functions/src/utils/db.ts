@@ -5,7 +5,8 @@ import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
 import {Error, Result, SingleError, Success, TypedSuccess} from "../types/errors";
 import {
-    createDataFailedError,
+    createDataFailedError, dummyError,
+    ErrorType,
     injectError,
     mergeDataFailedError,
     parseDataNotFound,
@@ -59,13 +60,13 @@ export function dbrefs(db: Firestore): DBRefs {
 
 /**
  * Simply Parse data from db using zod type.
- * @param dataName
+ * @param errorType
  * @param type
  * @param ref
  * @param transform
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
-export async function parseData<T extends DocumentData>(dataName: string, type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
+export async function parseData<T extends DocumentData>(errorType: ErrorType, type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
     let doc;
     if (transaction) {
         doc = await transaction.get(ref)
@@ -91,7 +92,7 @@ export async function parseData<T extends DocumentData>(dataName: string, type: 
             } else {
                 const err: SingleError = {
                     isSuccess: false,
-                    ...injectError(parseDataZodFailed(dataName, parsed.error.message))
+                    ...injectError(errorType)
                 }
                 return err;
             }
@@ -99,7 +100,7 @@ export async function parseData<T extends DocumentData>(dataName: string, type: 
             error("in ParseData,zod threw an error", e)
             const err: SingleError = {
                 isSuccess: false,
-                ...injectError(parseDataZodFailed(dataName, "{Raw Error,Check Console}"))
+                ...injectError(parseDataZodFailed)
             }
             return err
         }
@@ -107,7 +108,7 @@ export async function parseData<T extends DocumentData>(dataName: string, type: 
     } else {
         const err: SingleError = {
             isSuccess: false,
-            ...injectError(parseDataNotFound(dataName))
+            ...injectError(parseDataNotFound)
         }
         return err
     }
@@ -125,14 +126,13 @@ async function allDocList(collectionLike: CollectionReferenceLike): Promise<Docu
 
 /**
  * Collection内のDocumentすべてに対して[parseData]を行います
- * @param dataName
  * @param type
  * @param collectionRef
  * @param transform
  * @param transaction
  * @param filter
  */
-export async function parseDataAll<T extends DocumentData>(dataName: string, type: ZodType<T>, collectionRef: CollectionReferenceLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
+export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: CollectionReferenceLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
     let docs = await allDocList(collectionRef)
     if (filter) {
         docs = docs.filter(filter)
@@ -143,7 +143,7 @@ export async function parseDataAll<T extends DocumentData>(dataName: string, typ
             return transform(doc, data)
         } : undefined
 
-        const data = await parseData(`Array<${dataName}>`, type, doc, transformFunc, transaction)
+        const data = await parseData(dummyError, type, doc, transformFunc, transaction)
 
         if (data.isSuccess) {
             return data.data

@@ -1,11 +1,11 @@
 import {DBRefs, parseData, parseDataAll} from "../utils/db";
 import {listAllShop} from "./shop";
 import {Error, Success, TypedSingleResult} from "../types/errors";
-import {barcodeMatchTooMuch, barcodeNotMatch, injectError} from "./errors";
+import {barcodeMatchTooMuch, barcodeNotMatch, injectError, notFoundError} from "./errors";
 import {BarcodeInfo, barcodeInfoSchema} from "../types/barcodeInfos";
 
 export async function getBarcodeInfo(refs: DBRefs, shopId: string): Promise<TypedSingleResult<BarcodeInfo>> {
-    return await parseData<BarcodeInfo>("barcodeInfo",barcodeInfoSchema, refs.barcodeInfos(shopId), (data) => {
+    return await parseData<BarcodeInfo>(notFoundError("barcodeInfo"),barcodeInfoSchema, refs.barcodeInfos(shopId), (data) => {
         return {
             shopId: shopId,
             barcodeStartsWith: data.barcodeStartsWith
@@ -16,7 +16,7 @@ export async function getBarcodeInfo(refs: DBRefs, shopId: string): Promise<Type
 export async function allBarcodeInfos(refs: DBRefs): Promise<BarcodeInfo[]> {
     const shopIds = await listAllShop(refs)
     const barcodeRefs = shopIds.map(d => refs.barcodeInfos(d.shopId))
-    return await parseDataAll<BarcodeInfo>("barcodeInfo",barcodeInfoSchema, barcodeRefs, (ref, data) => {
+    return await parseDataAll<BarcodeInfo>(barcodeInfoSchema, barcodeRefs, (ref, data) => {
         return {
             // TODO 安全ではない気が・・・
             shopId: ref.parent.parent!!.id,

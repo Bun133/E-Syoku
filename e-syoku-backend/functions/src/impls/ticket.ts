@@ -5,7 +5,13 @@ import {UniqueId} from "../types/types";
 import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
-import {failedToGetItemDataError, failedToRegisterTicketError, injectError, ticketStatusInvalidError} from "./errors";
+import {
+    failedToGetItemDataError,
+    failedToRegisterTicketError,
+    injectError,
+    notFoundError,
+    ticketStatusInvalidError
+} from "./errors";
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
@@ -32,7 +38,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string, tra
  * @param ticketRef
  */
 export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
-    return await parseData<Ticket>("ticket", ticketSchema, ticketRef, (data) => {
+    return await parseData<Ticket>(notFoundError("ticket"), ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
             ticketNum: data.ticketNum,
@@ -47,7 +53,7 @@ export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentR
 }
 
 export async function getTickets(ref: DBRefs, uid: string, ticketIds: string[]) {
-    return await parseDataAll<Ticket>("ticket", ticketSchema, ticketIds.map(e => ref.tickets(uid).doc(e)), (ref, data) => {
+    return await parseDataAll<Ticket>(ticketSchema, ticketIds.map(e => ref.tickets(uid).doc(e)), (ref, data) => {
         return {
             uniqueId: ref.id,
             ticketNum: data.ticketNum,
@@ -67,7 +73,7 @@ export async function getTickets(ref: DBRefs, uid: string, ticketIds: string[]) 
  * @param uid
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
-    return parseDataAll<Ticket>("ticket", ticketSchema, ref.tickets(uid), (doc, data) => {
+    return parseDataAll<Ticket>(ticketSchema, ref.tickets(uid), (doc, data) => {
         return {
             uniqueId: doc.id,
             ticketNum: data.ticketNum,

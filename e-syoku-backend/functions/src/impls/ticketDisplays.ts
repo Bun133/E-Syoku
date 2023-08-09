@@ -5,13 +5,14 @@ import {firestore} from "firebase-admin";
 import Transaction = firestore.Transaction;
 import {Timestamp} from "firebase-admin/firestore";
 import {TypedSingleResult} from "../types/errors";
+import {notFoundError} from "./errors";
 
 export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string):Promise<TypedSingleResult<TicketDisplayData>> {
-    return parseData("ticketDisplayData",ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
+    return parseData(notFoundError("ticketDisplayData"),ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
 }
 
 export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Promise<TicketDisplayData[]> {
-    return parseDataAll("ticketDisplayData",ticketDisplaySchema, ref.ticketDisplays(shopId))
+    return parseDataAll(ticketDisplaySchema, ref.ticketDisplays(shopId))
 }
 
 /***

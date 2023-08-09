@@ -5,7 +5,7 @@ import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment
 import {cancelReserveGoods, getGoodsById, reserveGoods} from "./goods";
 import {firestore} from "firebase-admin";
 import {Error, Success, TypedSingleResult} from "../types/errors";
-import {alreadyPaidError, calculateTotalAmountFailed, injectError, paidWrongAmountError} from "./errors";
+import {alreadyPaidError, calculateTotalAmountFailed, injectError, notFoundError, paidWrongAmountError} from "./errors";
 import {deleteTickets, registerTicketsForPayment} from "./ticket";
 import {error} from "../utils/logger";
 import DocumentReference = firestore.DocumentReference;
@@ -98,7 +98,7 @@ export async function getPaymentSessionById(ref: DBRefs, userid: string, payment
 }
 
 export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentReference): Promise<TypedSingleResult<PaymentSession>> {
-    return parseData<PaymentSession>("paymentSession", paymentSessionSchema, paymentRef, (data) => {
+    return parseData<PaymentSession>(notFoundError("paymentSession"), paymentSessionSchema, paymentRef, (data) => {
         return {
             sessionId: paymentRef.id,
             customerId: data.customerId,
@@ -110,7 +110,7 @@ export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentRe
 }
 
 export async function getAllPayments(ref: DBRefs, userid: string): Promise<PaymentSession[]> {
-    return await parseDataAll<PaymentSession>("paymentSession", paymentSessionSchema, ref.payments(userid), (doc, data) => {
+    return await parseDataAll<PaymentSession>( paymentSessionSchema, ref.payments(userid), (doc, data) => {
         return {
             sessionId: doc.id,
             customerId: data.customerId,

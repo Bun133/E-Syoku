@@ -8,7 +8,7 @@ import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {
     deltaNegativeError,
     injectError,
-    itemGoneError,
+    itemGoneError, notFoundError,
     remainDataTypeNotKnownError,
     remainStatusNegativeError,
     remainStatusNotFoundError
@@ -17,7 +17,7 @@ import Transaction = firestore.Transaction;
 
 export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<TypedSingleResult<Goods>> {
     const directRef = ref.goods.doc(goodsId)
-    return await parseData<Goods>("goods", goodsSchema, directRef, (data) => {
+    return await parseData<Goods>(notFoundError("goods"), goodsSchema, directRef, (data) => {
         return {
             goodsId: directRef.id,
             description: data.description,
@@ -30,7 +30,7 @@ export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?:
 }
 
 export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
-    return await parseDataAll<Goods>("goods", goodsSchema, refs.goods, (doc, data) => {
+    return await parseDataAll<Goods>(goodsSchema, refs.goods, (doc, data) => {
         return {
             goodsId: doc.id,
             description: data.description,
@@ -50,7 +50,7 @@ export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
  */
 export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, transaction?: firestore.Transaction): Promise<TypedSingleResult<GoodsRemainData>> {
     const ref = refs.remains.doc(goodsId)
-    return await parseData<GoodsRemainData>("goodsRemainData", goodsRemainDataSchema, ref, (data) => {
+    return await parseData<GoodsRemainData>(notFoundError("goodsRemainData"), goodsRemainDataSchema, ref, (data) => {
         return {
             goodsId: ref.id,
             remainCount: data.remainCount,
