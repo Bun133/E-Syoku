@@ -42,6 +42,7 @@ function mdName(errorCode: string): string | undefined {
         case "test":
         case "ITEM_GONE":
         case "INPUT_WRONG_PAIDAMOUNT":
+        case "INPUT_WRONG_BARCODE":
             return `${errorCode}.md`
         default:
             return "default.md"
