@@ -1,25 +1,52 @@
 "use client"
-import PageTitle from "@/components/pageTitle";
-import {TicketSelection} from "@/components/form/TicketSelection";
-import {useEndpoint} from "@/lib/e-syoku-api/Axios";
-import {listTicketsEndPoint} from "@/lib/e-syoku-api/EndPoints";
-import {PrettyTicket, Ticket} from "@/lib/e-syoku-api/Types";
+import {AuthState} from "@/lib/e-syoku-api/AuthTypeProvider";
+import {Center, Heading} from "@chakra-ui/layout";
+import {Spinner, VStack} from "@chakra-ui/react";
 import {useRouter} from "next/navigation";
+import {useFirebaseAuth} from "@/lib/firebase/authentication";
+import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
+import {listShopsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
-import {Center} from "@chakra-ui/layout";
 
 export default function Page() {
-    const {response: data} = useEndpoint(listTicketsEndPoint, {})
     const router = useRouter()
-
+    const auth = useFirebaseAuth()
     return (
-        <div>
-            <PageTitle title={"食券呼び出し"}></PageTitle>
-            <Center>
-                <TicketSelection tickets={data?.data?.tickets} onSelect={(ticket: PrettyTicket) => {
-                    router.push("/shopui/tickets/call/id?id=" + ticket.uniqueId)
-                }} button={() => (<Btn>呼び出し</Btn>)}></TicketSelection>
-            </Center>
-        </div>
+        <AuthState comp={(type) => {
+            if (!type) {
+                return (
+                    <Center>
+                        <Spinner/>
+                    </Center>
+                )
+            } else {
+                if (type.authType === "SHOP") {
+                    router.push(`/shopui/tickets/call/id?shopId=${auth.user!!.uid}`)
+                    return <></>
+                } else if (type.authType === "ADMIN") {
+                    return (
+                        <VStack>
+                            <Heading>店舗選択</Heading>
+                            <APIEndpoint endpoint={listShopsEndPoint} query={{}} onEnd={(data) => {
+                                return (
+                                    <VStack>
+                                        {data.data.shops.map(s => {
+                                            return (
+                                                <Btn href={`/shopui/tickets/call/id?shopId=${s.shopId}`} key={s.shopId}>
+                                                    {s.name}
+                                                </Btn>
+                                            )
+                                        })}
+                                    </VStack>
+                                )
+                            }}/>
+                        </VStack>
+                    )
+                } else {
+                    router.push(`/`)
+                    return <></>
+                }
+            }
+        }}/>
     )
 }
