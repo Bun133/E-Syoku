@@ -1,26 +1,58 @@
 import {EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
 import {useDisclosure} from "@chakra-ui/hooks";
-import React, {useEffect, useRef} from "react";
-import {MessageModal} from "@/components/modal/MessageModal";
-import {Code} from "@chakra-ui/react";
+import React, {useEffect} from "react";
+import {
+    Modal,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    ModalOverlay
+} from "@chakra-ui/modal";
+import {ErrorMdComponent} from "@/app/help/page";
+import Btn from "@/components/btn";
+import {Heading} from "@chakra-ui/layout";
 
 export function APIErrorModal(params: {
     error: EndPointErrorResponse<any> | undefined
 }) {
-    const {isOpen, onOpen, onClose} = useDisclosure()
-    const message = useRef<React.ReactNode[]>()
+    const {isOpen, onClose, onOpen} = useDisclosure()
 
-    useEffect(()=>{
-        if (params.error && !isOpen) {
-            message.current = [<p key={"title"}>エラーが発生しました</p>, <p key={"code"}>エラーコード:{params.error.errorCode}</p>,
-                <p key={"message"}>エラーメッセージ:{params.error.error}</p>, (<div key={"stack"}><p>スタック情報:</p><Code>{params.error.stack}</Code></div>)]
+    useEffect(() => {
+        if (params.error) {
             onOpen()
-        } else if (!params.error && isOpen) {
-            onClose()
         }
-    },[params.error])
+    }, [params.error])
 
+    if (params.error) {
+        return (
+            <APIErrorModalBody errorCode={params.error.errorCode} isOpen={isOpen} onClose={onClose}/>
+        )
+    } else {
+        return null
+    }
+}
+
+function APIErrorModalBody(params: {
+    errorCode: string, isOpen: boolean,
+    onClose: () => void
+}) {
     return (
-        <MessageModal message={message.current ?? []} isOpen={isOpen} onClose={onClose}/>
+        <Modal isOpen={params.isOpen} onClose={params.onClose} closeOnOverlayClick={false} scrollBehavior={"inside"}>
+            <ModalOverlay/>
+            <ModalContent>
+                <ModalCloseButton/>
+                <ModalHeader>
+                    <Heading>エラー:{params.errorCode}</Heading>
+                </ModalHeader>
+                <ModalBody>
+                    <ErrorMdComponent errorCode={params.errorCode}/>
+                </ModalBody>
+                <ModalFooter>
+                    <Btn onClick={params.onClose}>閉じる</Btn>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
     )
 }
