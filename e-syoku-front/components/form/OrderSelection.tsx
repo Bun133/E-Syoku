@@ -8,19 +8,6 @@ import Btn from "@/components/btn";
 export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: (order: Order) => void }) {
     const [listRefs, setListRefs] = useState<number[]>([])
 
-    function isRemain(r: GoodsRemainData) {
-        // @ts-ignore
-        if (r.remain != undefined) {
-            // @ts-ignore
-            return r.remain
-            // @ts-ignore
-        } else if (r.remainCount != undefined) {
-            // @ts-ignore
-            return r.remainCount
-        }
-
-        throw new Error("remain is not defined")
-    }
 
     function isPossibleToEnd() {
         return listRefs.some(r => r > 0)
@@ -42,13 +29,19 @@ export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: 
                 <SimpleGrid spacing={4} templateColumns={"repeat(2, 1fr)"} w={"100%"} h={"100%"} p={4}>
                     {param.goods.map((g, index) => {
                         return (
-                            <Goods goods={g.goods} key={g.goods.goodsId}
-                                   footer={(
-                                       <OrderSelectionFooter onChange={(to) => {
-                                           const copy = listRefs.slice()
-                                           copy[index] = to
-                                           setListRefs(copy)
-                                       }} isDisabled={!isRemain(g.remainData)}/>)}></Goods>
+                            <Goods
+                                goods={g.goods}
+                                key={g.goods.goodsId}
+                                footer={(
+                                    <OrderSelectionFooter
+                                        onChange={(to) => {
+                                            const copy = listRefs.slice()
+                                            copy[index] = to
+                                            setListRefs(copy)
+                                        }}
+                                        remainData={g.remainData}/>
+                                )}
+                            />
                         )
                     })}
                 </SimpleGrid>
@@ -62,8 +55,40 @@ export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: 
     )
 }
 
-export function OrderSelectionFooter(param: { onChange: (to: number) => void, max?: number, isDisabled: boolean }) {
+export function OrderSelectionFooter(param: {
+    onChange: (to: number) => void,
+    max?: number,
+    remainData: GoodsRemainData
+}) {
     const [count, setCount] = useState(0)
+
+    function isRemain(r: GoodsRemainData) {
+        // @ts-ignore
+        if (r.remain != undefined) {
+            // @ts-ignore
+            return r.remain
+            // @ts-ignore
+        } else if (r.remainCount != undefined) {
+            // @ts-ignore
+            return r.remainCount > 0
+        }
+
+        throw new Error("remain is not defined")
+    }
+
+    function isToExceed(r: GoodsRemainData, count: number) {
+        // @ts-ignore
+        if (r.remain != undefined) {
+            // @ts-ignore
+            return !r.remain
+            // @ts-ignore
+        } else if (r.remainCount != undefined) {
+            // @ts-ignore
+            return r.remainCount <= count
+        }
+
+        throw new Error("remain is not defined")
+    }
 
     return (
         <HStack p={1}>
@@ -71,7 +96,7 @@ export function OrderSelectionFooter(param: { onChange: (to: number) => void, ma
                 const toUpdate = Math.max(0, count - 1)
                 setCount(toUpdate)
                 param.onChange(toUpdate)
-            }} disabled={param.isDisabled}>
+            }} disabled={!(isRemain(param.remainData) && count > 0)}>
                 <Center>
                     <Text>-</Text>
                 </Center>
@@ -85,7 +110,7 @@ export function OrderSelectionFooter(param: { onChange: (to: number) => void, ma
                 else toUpdate = Math.max(0, count + 1)
                 setCount(toUpdate)
                 param.onChange(toUpdate)
-            }} disabled={param.isDisabled}>
+            }} disabled={isToExceed(param.remainData, count)}>
                 <Center>
                     <Text>+</Text>
                 </Center>
