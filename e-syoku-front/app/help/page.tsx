@@ -43,6 +43,6 @@ function mdName(errorCode: string): string | undefined {
         case "ITEM_GONE":
             return `${errorCode}.md`
         default:
-            return undefined
+            return "default.md"
     }
 }

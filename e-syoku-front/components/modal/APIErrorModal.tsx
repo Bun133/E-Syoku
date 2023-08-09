@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/modal";
 import {ErrorMdComponent} from "@/app/help/page";
 import Btn from "@/components/btn";
-import {Heading} from "@chakra-ui/layout";
+import {Text} from "@chakra-ui/react";
 
 export function APIErrorModal(params: {
     error: EndPointErrorResponse<any> | undefined
@@ -44,7 +44,7 @@ function APIErrorModalBody(params: {
             <ModalContent>
                 <ModalCloseButton/>
                 <ModalHeader>
-                    <Heading>エラー:{params.errorCode}</Heading>
+                    <Text>エラー:{params.errorCode}</Text>
                 </ModalHeader>
                 <ModalBody>
                     <ErrorMdComponent errorCode={params.errorCode}/>
