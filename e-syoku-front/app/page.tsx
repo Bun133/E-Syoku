@@ -19,7 +19,7 @@ export default function Home() {
                         食券一覧
                     </Btn>
                     <CashierOnly>
-                        <Btn href="/payment/scan">
+                        <Btn href="/shopui/payment/scan">
                             決済取扱
                         </Btn>
                     </CashierOnly>
