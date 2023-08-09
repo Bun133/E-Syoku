@@ -10,9 +10,9 @@ import {
     ModalHeader,
     ModalOverlay
 } from "@chakra-ui/modal";
-import {ErrorMdComponent} from "@/app/help/page";
 import Btn from "@/components/btn";
 import {Text} from "@chakra-ui/react";
+import {ErrorMdComponent} from "@/components/error/ErrorMdComponent";
 
 export function APIErrorModal(params: {
     error: EndPointErrorResponse<any> | undefined
