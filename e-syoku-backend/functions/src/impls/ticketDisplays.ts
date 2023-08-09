@@ -5,10 +5,10 @@ import {firestore} from "firebase-admin";
 import Transaction = firestore.Transaction;
 import {Timestamp} from "firebase-admin/firestore";
 import {TypedSingleResult} from "../types/errors";
-import {notFoundError} from "./errors";
+import {dbNotFoundError} from "./errors";
 
 export async function ticketDisplayDataByTicketId(ref: DBRefs, shopId: string, ticketId: string):Promise<TypedSingleResult<TicketDisplayData>> {
-    return parseData(notFoundError("ticketDisplayData"),ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
+    return parseData(dbNotFoundError("ticketDisplayData"),ticketDisplaySchema, ref.ticketDisplays(shopId).doc(ticketId))
 }
 
 export async function ticketDisplayDataByShopId(ref: DBRefs, shopId: string): Promise<TicketDisplayData[]> {

@@ -2,10 +2,10 @@ import {DBRefs, mergeData, parseData} from "../utils/db";
 import {Result, TypedSingleResult} from "../types/errors";
 import {MessageTokenData, messageTokenDataSchema} from "../types/notification";
 import {Messaging, MulticastMessage} from "firebase-admin/lib/messaging";
-import {notFoundError} from "./errors";
+import {dbNotFoundError} from "./errors";
 
 export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<TypedSingleResult<MessageTokenData>> {
-    return parseData(notFoundError("messageTokenData"), messageTokenDataSchema, refs.messageTokens(uid), (data) => {
+    return parseData(dbNotFoundError("messageTokenData"), messageTokenDataSchema, refs.messageTokens(uid), (data) => {
         return {
             uid: uid,
             registeredTokens: data.registeredTokens

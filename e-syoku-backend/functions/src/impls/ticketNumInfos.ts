@@ -1,14 +1,14 @@
 import {createData, DBRefs, newRandomRef, parseData, updateEntireData} from "../utils/db";
 import {Ticket, ticketSchema} from "../types/ticket";
 import {Error, Success, TypedSingleResult} from "../types/errors";
-import {injectError, notFoundError, ticketNumGenerateFailedError, ticketNumInfoNotFound} from "./errors";
+import {injectError, dbNotFoundError, ticketNumGenerateFailedError, ticketNumInfoNotFound} from "./errors";
 import {TicketNumInfo, ticketNumInfoSchema} from "../types/ticketNumInfos";
 import {firestore} from "firebase-admin";
 import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
 import Transaction = firestore.Transaction;
 
 export async function ticketNumInfoById(ref: DBRefs, shopId: string, transaction?: Transaction):Promise<TypedSingleResult<TicketNumInfo>> {
-    return parseData(notFoundError("ticketNumInfo"),ticketNumInfoSchema, ref.ticketNumInfo(shopId), undefined, transaction)
+    return parseData(dbNotFoundError("ticketNumInfo"),ticketNumInfoSchema, ref.ticketNumInfo(shopId), undefined, transaction)
 }
 
 export async function updateLastTicketNum(ref: DBRefs, ticket: Ticket, transaction?: Transaction) {

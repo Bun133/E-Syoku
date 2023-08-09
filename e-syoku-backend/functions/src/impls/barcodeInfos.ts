@@ -1,11 +1,11 @@
 import {DBRefs, parseData, parseDataAll} from "../utils/db";
 import {listAllShop} from "./shop";
 import {Error, Success, TypedSingleResult} from "../types/errors";
-import {barcodeMatchTooMuch, barcodeNotMatch, injectError, notFoundError} from "./errors";
+import {barcodeMatchTooMuch, barcodeNotMatch, injectError, dbNotFoundError} from "./errors";
 import {BarcodeInfo, barcodeInfoSchema} from "../types/barcodeInfos";
 
 export async function getBarcodeInfo(refs: DBRefs, shopId: string): Promise<TypedSingleResult<BarcodeInfo>> {
-    return await parseData<BarcodeInfo>(notFoundError("barcodeInfo"),barcodeInfoSchema, refs.barcodeInfos(shopId), (data) => {
+    return await parseData<BarcodeInfo>(dbNotFoundError("barcodeInfo"),barcodeInfoSchema, refs.barcodeInfos(shopId), (data) => {
         return {
             shopId: shopId,
             barcodeStartsWith: data.barcodeStartsWith

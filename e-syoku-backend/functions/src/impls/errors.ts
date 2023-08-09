@@ -102,11 +102,6 @@ export const ticketStatusInvalidError: (assumed: string, actual: string) => Erro
     }
 }
 
-export const failedToUpdateTicket: ErrorType = {
-    error: "チケット情報の更新に失敗しました",
-    errorCode: "FAILED_TO_UPDATE_TICKET"
-}
-
 export const paidWrongAmountError: ErrorType = {
     error: "決済金額が決済セッションの合計金額と合致しません",
     errorCode: "PAID_WRONG_AMOUNT"
@@ -126,10 +121,6 @@ export const remainDataTypeNotKnownError: ErrorType = internalError("RemainData�
 
 export const remainStatusNotFoundError = internalError("見つかるはずのRemainDataが見つかりませんでした", "REMAIN_STATUS_NOT_FOUND")
 
-export const remainDataCalculateFailedError = representativeError({
-    error: "いくつかの商品の在庫数を計算出来ませんでした",
-    errorCode: "REMAIN_DATA_CALCULATE_FAILED"
-})
 export const remainStatusNegativeError: ErrorType = internalError("RemainStatusのremainCountが負の値になりました", "REMAIN_STATUS_NEGATIVE")
 export const deltaNegativeError: ErrorType = internalError("変化量が負の値になりました", "DELTA_NEGATIVE")
 
@@ -140,16 +131,8 @@ export const mergeDataFailedError = internalError("Mergeの際にエラーが発
 
 export const createDataFailedError = internalError("Createの際にエラーが発生したため、Create出来ませんでした", "CREATE_DATA_FAILED")
 
-// export const updateStrictTypeNotMatchError = internalError("Updateの際に型が合っていないため、Update処理できない", "UPDATE_STRICT_TYPE_NOT_MATCH")
-
-export const updateRemainDataFailedError = representativeError({
-    error: "RemainDataの更新処理に失敗しました",
-    errorCode: "UPDATE_REMAIN_DATA_FAILED"
-})
 
 export const requestNotContainUserIdError = internalError("リクエストにUIDが含まれていない/指定されていません", "REQUEST_NOT_CONTAIN_USER_ID")
-
-export const transactionFailedError = internalError("Transactionの処理に失敗しました", "TRANSACTION_FAILED")
 
 export const ticketNumInfoNotFound = internalError("TicketNumInfoの取得に失敗しました", "TICKETNUM_INFO_NOT_FOUND")
 
@@ -158,11 +141,6 @@ export const ticketNumGenerateFailedError = internalError("次のTicketNumの生
 export const permissionDataMissing = internalError("権限データの一部がかけています", "PERMISSION_DATA_MISSING")
 
 export const authTypeInvalidError = internalError("AuthTypeが適切ではありません", "AUTH_TYPE_INVALID")
-export const barcodeInvalidError: ErrorType = {
-    error: "バーコードが不正です",
-    errorCode: "BARCODE_INVALID"
-}
-
 export const ticketNotSpecifiedError = internalError("このデータではチケットを特定できません", "TICKET_NOT_SPECIFIED")
 
 export const internalErrorThrownError = internalError("内部でエラーが発生しました", "INTERNAL_ERROR_THROWN")
@@ -183,7 +161,7 @@ export const prettyOrderFailed = representativeError(internalError("Orderデー�
 
 export const dummyError = internalError("Dummy", "DUMMY_ERROR")
 
-export const notFoundError = (dataName: string) => {
+export const dbNotFoundError = (dataName: string) => {
     const upperCase = dataName.toUpperCase()
-    return internalError(`${dataName}が見つかりませんでした`, upperCase)
+    return internalError(`${dataName}が見つかりませんでした`, `${upperCase}_NOT_FOUND_IN_DB`)
 }

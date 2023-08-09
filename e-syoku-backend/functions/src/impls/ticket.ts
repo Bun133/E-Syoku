@@ -9,7 +9,7 @@ import {
     failedToGetItemDataError,
     failedToRegisterTicketError,
     injectError,
-    notFoundError,
+    dbNotFoundError,
     ticketStatusInvalidError
 } from "./errors";
 import {Order, SingleOrder} from "../types/order";
@@ -38,7 +38,7 @@ export async function ticketById(ref: DBRefs, uid: string, ticketId: string, tra
  * @param ticketRef
  */
 export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
-    return await parseData<Ticket>(notFoundError("ticket"), ticketSchema, ticketRef, (data) => {
+    return await parseData<Ticket>(dbNotFoundError("ticket"), ticketSchema, ticketRef, (data) => {
         return {
             uniqueId: ticketRef.id,
             ticketNum: data.ticketNum,
