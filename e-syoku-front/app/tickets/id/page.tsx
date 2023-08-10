@@ -15,7 +15,9 @@ export default function Page() {
 
     return (
         <>
-            <APIEndpoint endpoint={ticketStatusEndPoint} query={{ticketId: id}} onEnd={(response, reload) => {
+            <APIEndpoint endpoint={ticketStatusEndPoint} query={{ticketId: id}}
+                         refetch={{interval:30}}
+                         onEnd={(response, reload) => {
                 const ticket = response.data.ticket
                 if (ticket !== undefined) {
                     return (
