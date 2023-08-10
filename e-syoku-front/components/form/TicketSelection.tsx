@@ -1,6 +1,7 @@
 import {PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {ReactNode} from "react";
 import {TicketComponent} from "@/components/Ticket"
+import {Box, Flex} from "@chakra-ui/react";
 import {VStack} from "@chakra-ui/layout";
 
 export function TicketSelection(props: {
@@ -17,10 +18,12 @@ export function TicketSelection(props: {
         <VStack>
             {props.tickets !== undefined ? props.tickets.sort((a, b) => a.issueTime.utcSeconds - b.issueTime.utcSeconds).map((ticket: PrettyTicket) => {
                 return (
-                    <TicketComponent
-                        key={ticket.uniqueId}
-                        ticket={ticket}
-                        button={button(ticket)}></TicketComponent>
+                    <Box w={"full"}>
+                        <TicketComponent
+                            key={ticket.uniqueId}
+                            ticket={ticket}
+                            button={button(ticket)}/>
+                    </Box>
                 )
             }) : null}
         </VStack>

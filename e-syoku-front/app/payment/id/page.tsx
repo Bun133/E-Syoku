@@ -5,7 +5,7 @@ import {Center, VStack} from "@chakra-ui/layout";
 import {paymentStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
-import {Text} from "@chakra-ui/react";
+import {Text, UnorderedList} from "@chakra-ui/react";
 import QRCode from "react-qr-code"
 import React from "react";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
@@ -35,9 +35,9 @@ export default function Page() {
                                         <Text>
                                             State:{payment.state}
                                         </Text>
-                                        <Text>
+                                        <UnorderedList>
                                             {orderDataTransform(payment.orderContent)}
-                                        </Text>
+                                        </UnorderedList>
                                     </VStack>
                                 </CardBody>
                                 <CardFooter>

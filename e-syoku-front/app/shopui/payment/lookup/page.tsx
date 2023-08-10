@@ -1,7 +1,7 @@
 "use client"
 import {useRouter, useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
-import {Text} from "@chakra-ui/react";
+import {Text, UnorderedList} from "@chakra-ui/react";
 import {paymentStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Center, VStack} from "@chakra-ui/layout";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
@@ -38,9 +38,9 @@ export default function Page() {
                                                          <Text>
                                                              State:{payment.state}
                                                          </Text>
-                                                         <Text>
+                                                         <UnorderedList>
                                                              {orderDataTransform(payment.orderContent)}
-                                                         </Text>
+                                                         </UnorderedList>
                                                      </VStack>
                                                  </CardBody>
                                                  <CardFooter>
