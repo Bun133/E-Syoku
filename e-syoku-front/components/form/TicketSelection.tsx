@@ -18,9 +18,8 @@ export function TicketSelection(props: {
         <VStack>
             {props.tickets !== undefined ? props.tickets.sort((a, b) => a.issueTime.utcSeconds - b.issueTime.utcSeconds).map((ticket: PrettyTicket) => {
                 return (
-                    <Box w={"full"}>
+                    <Box w={"full"} key={ticket.uniqueId}>
                         <TicketComponent
-                            key={ticket.uniqueId}
                             ticket={ticket}
                             button={button(ticket)}/>
                     </Box>
