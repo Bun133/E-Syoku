@@ -8,6 +8,7 @@ import Btn from "@/components/btn";
 import {Center, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import { TicketCard } from "@/components/Ticket";
+import {Container} from "@chakra-ui/react";
 
 export default function Page() {
     const params = useSearchParams()
@@ -23,12 +24,12 @@ export default function Page() {
                     return (
                         <>
                             <PageTitle title={"食券番号 " + ticket.ticketNum}></PageTitle>
-                            <VStack>
+                            <Container>
                                 <TicketCard ticket={ticket}/>
                                 <Center>
                                     <Btn onClick={() => reload()}>再読み込み</Btn>
                                 </Center>
-                            </VStack>
+                            </Container>
                         </>
                     )
                 } else {
