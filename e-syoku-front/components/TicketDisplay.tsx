@@ -23,6 +23,7 @@ export function TicketDisplay(params: {
     displaySelection?: DisplaySelection
 }) {
     const selection = params.displaySelection ?? defaultDisplaySelection
+    // TODO sortされてない(nanosecondsが考慮されてない)
     const sorted = params.data.sort((a, b) => a.lastUpdated._seconds - b.lastUpdated._seconds)
     const processing = sorted.filter(e => e.status === "PROCESSING")
     const called = sorted.filter(e => e.status === "CALLED")
@@ -30,7 +31,7 @@ export function TicketDisplay(params: {
     const resolved = sorted.filter(e => e.status === "RESOLVED")
 
     return (
-        <VStack w={"100%"}>
+        <VStack w={"full"} h={"full"} flexShrink={1}>
             {selection.processing &&
                 <TicketDisplayRow title={"調理中"} displays={processing} ticketColor={ticketColor("調理中")}/>}
             {selection.resolved &&
@@ -76,10 +77,10 @@ function TicketDisplayRow(props: { title: string, displays: TicketDisplayData[],
     }, [])
 
     return (
-        <Flex direction={"column"} alignContent={"start"} w={"100%"}>
+        <VStack align={"flex-start"} w={"full"}>
             <Heading>{props.title}</Heading>
             <Box h={"1rem"}/>
-            <HStack spacing={"2rem"} overflowX={"scroll"} w={"100%"} px={2} ref={listElement}>
+            <HStack spacing={"2rem"} overflowX={"scroll"} w={"full"} px={2} ref={listElement}>
                 {props.displays.map((display) => {
                     return (
                         <Box key={display.ticketId} backgroundColor={props.ticketColor} w={"8rem"} p={2}
@@ -91,6 +92,6 @@ function TicketDisplayRow(props: { title: string, displays: TicketDisplayData[],
                     )
                 })}
             </HStack>
-        </Flex>
+        </VStack>
     )
 }

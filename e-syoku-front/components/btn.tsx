@@ -30,13 +30,13 @@ export default function Btn(props: {
     if (props.href && !disabled) {
         return (
             <Link href={props.href} onClick={onClickProxy} className={props.className}>
-                <Button isDisabled={disabled} colorScheme={"blue"} variant={"solid"}
+                <Button isDisabled={disabled} colorScheme={"blue"} variant={"solid"} flexShrink={0}
                         onClick={onClickProxy} isLoading={isLoading} autoFocus={autoSelect}>{props.children}</Button>
             </Link>
         );
     } else {
         return (
-            <Button isDisabled={disabled} colorScheme={"blue"} variant={"solid"} onClick={onClickProxy}
+            <Button isDisabled={disabled} colorScheme={"blue"} variant={"solid"} onClick={onClickProxy} flexShrink={0}
                     className={props.className} isLoading={isLoading} autoFocus={autoSelect}>{props.children}</Button>
         )
     }

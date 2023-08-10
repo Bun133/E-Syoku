@@ -1,7 +1,7 @@
 "use client"
 
 import {useSearchParams} from "next/navigation";
-import {Flex, Spacer, Text} from "@chakra-ui/react";
+import {Box, Spacer, Text} from "@chakra-ui/react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {callTicketStackEndpoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
@@ -31,31 +31,33 @@ export default function Page() {
 
 
     return (
-        <Flex w={"100%"} h={"100%"}>
-            <VStack flexGrow={1}>
+        <HStack w={"full"} h={"100%"}>
+            <VStack flexShrink={1}>
                 <Heading>食券一覧</Heading>
-                <APIEndpoint endpoint={ticketDisplayEndpoint} query={{shopId: shopId}}
-                             onEnd={(res, reload) => {
-                                 return (
-                                     <VStack w={"100%"}>
-                                         <TicketDisplay data={res.data.displays} displaySelection={{
-                                             processing: true,
-                                             called: true,
-                                             resolved: true,
-                                             informed: true
-                                         }}/>
-                                         <Btn onClick={reload}>再読み込み</Btn>
-                                     </VStack>
-                                 )
-                             }}
-                             queryNotSatisfied={() => {
-                                 return (
-                                     <Center>
-                                         <Text>ShopIdが指定されていません</Text>
-                                     </Center>
-                                 )
-                             }}
-                />
+                <Box h={"full"} w={"calc(100vw - 20rem)"}>
+                    <APIEndpoint endpoint={ticketDisplayEndpoint} query={{shopId: shopId}}
+                                 onEnd={(res, reload) => {
+                                     return (
+                                         <VStack w={"full"} h={"full"}>
+                                             <TicketDisplay data={res.data.displays} displaySelection={{
+                                                 processing: true,
+                                                 called: true,
+                                                 resolved: true,
+                                                 informed: true
+                                             }}/>
+                                             <Btn onClick={reload}>再読み込み</Btn>
+                                         </VStack>
+                                     )
+                                 }}
+                                 queryNotSatisfied={() => {
+                                     return (
+                                         <Center>
+                                             <Text>ShopIdが指定されていません</Text>
+                                         </Center>
+                                     )
+                                 }}
+                    />
+                </Box>
             </VStack>
             <CallRight
                 initial={initialCount}
@@ -63,7 +65,7 @@ export default function Page() {
                     callCount.current = toChange
                     autoCall()
                 }}/>
-        </Flex>
+        </HStack>
     )
 }
 
@@ -81,9 +83,9 @@ function CallRight(params: {
     }
 
     return (
-        <Flex flexGrow={0} direction={"column"} px={3}>
+        <VStack px={3} w={"20rem"}>
             <Spacer/>
-            <Center w={"100%"} mx={2}>
+            <Center w={"full"} mx={2}>
                 <VStack>
                     <Text>常に呼ぶ人数</Text>
                     <HStack>
@@ -107,6 +109,6 @@ function CallRight(params: {
                 }} autoSelect={true}/>
             </VStack>
             <Spacer/>
-        </Flex>
+        </VStack>
     )
 }
