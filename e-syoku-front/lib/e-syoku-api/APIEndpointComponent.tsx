@@ -11,13 +11,19 @@ import {Box, Container, Spinner, Text} from "@chakra-ui/react";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
 import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
+export type RefetchOption = {
+    // 次のfetchまでの間隔(sec)
+    interval: number,
+}
+
 export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
     endpoint: EndPoint<Q, R>,
     query: Partial<Q>,
     onEnd: (response: EndPointSuccessResponse<R>, reload: () => void) => React.JSX.Element,
     loading?: () => React.JSX.Element,
     // QueryがQに合わない時に表示するやつ(普通は一瞬しか表示されない・そもそも表示されないはずので、エラー画面にするのがいい)
-    queryNotSatisfied?: () => React.JSX.Element
+    queryNotSatisfied?: () => React.JSX.Element,
+    refetch?: RefetchOption
 }) {
     const loadingFunc = param.loading ?? defaultLoading;
     const queryErrorFunc = param.queryNotSatisfied ?? defaultQueryError;
@@ -40,6 +46,15 @@ export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
     useEffect(() => {
         reloadFunc()
     }, [param.query])
+
+    useEffect(() => {
+        if (param.refetch) {
+            const interval = setInterval(reloadFunc, param.refetch.interval * 1000)
+            return () => {
+                clearInterval(interval)
+            }
+        }
+    }, []);
 
     if (isQueryNotSatisfied.current) {
         return queryErrorFunc()

@@ -57,28 +57,11 @@ export type TimingOption = {
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpointPrefix
 let apiEndpointSuffix = process.env.NEXT_PUBLIC_apiEndpointSuffix
 
-export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController, timingOptions?: TimingOption): Promise<EndPointResponse<R>> {
+export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     let r: EndPointResponse<R>
     r = await internalCallEndpoint(endPoint, user, requestData, abortController)
     console.log("[callEndpoint:Request]", requestData)
     console.log("[callEndpoint:Response]", r)
-
-    if (timingOptions && timingOptions.retryMaximum > 1) {
-        for (let i = 0; i < timingOptions.retryMaximum - 1; i++) {
-            if (!timingOptions.determineRetry(r)) {
-                break
-            }
-
-            // wait for retryDelay
-            await new Promise(resolve => setTimeout(resolve, timingOptions.retryDelay))
-
-            console.log(`[callEndpoint:Retry] Retrying ${i + 1} times`)
-            r = await internalCallEndpoint(endPoint, user, requestData, abortController)
-            console.log("[callEndpoint:Request]", requestData)
-            console.log("[callEndpoint:Response]", r)
-        }
-    }
-
     return r
 }
 
