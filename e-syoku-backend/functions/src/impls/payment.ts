@@ -1,11 +1,17 @@
-import {createData, DBRefs, newRandomRef, parseData, parseDataAll, updateEntireData} from "../utils/db";
+import {createData, DBRefs, newRandomRef, parseData, parseQueryDataAll, updateEntireData} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
 import {cancelReserveGoods, getGoodsById, reserveGoods} from "./goods";
 import {firestore} from "firebase-admin";
 import {Error, Success, TypedSingleResult} from "../types/errors";
-import {alreadyPaidError, calculateTotalAmountFailed, injectError, dbNotFoundError, paidWrongAmountError} from "./errors";
+import {
+    alreadyPaidError,
+    calculateTotalAmountFailed,
+    dbNotFoundError,
+    injectError,
+    paidWrongAmountError
+} from "./errors";
 import {deleteTickets, registerTicketsForPayment} from "./ticket";
 import {error} from "../utils/logger";
 import DocumentReference = firestore.DocumentReference;
@@ -19,7 +25,7 @@ import DocumentReference = firestore.DocumentReference;
  */
 export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthInstance, order: Order) {
     // 実際に決済セッションを作成するRef
-    const paymentSessionRef = await newRandomRef(ref.payments(customer.uid))
+    const paymentSessionRef = await newRandomRef(ref.payments)
 
     // 合計金額を計算
     const totalAmount = await calculateTotalAmount(ref, order)
@@ -93,32 +99,26 @@ async function calculateTotalAmount(ref: DBRefs, order: Order) {
     return suc
 }
 
-export async function getPaymentSessionById(ref: DBRefs, userid: string, paymentSessionId: string) {
-    return getPaymentSessionByRef(ref, ref.payments(userid).doc(paymentSessionId))
+export async function getPaymentSessionById(ref: DBRefs, paymentSessionId: string) {
+    return getPaymentSessionByRef(ref, ref.payments.doc(paymentSessionId))
+}
+
+function transformPaymentSession(sessionId: string, data: firestore.DocumentData) {
+    return {
+        sessionId: sessionId,
+        customerId: data.customerId,
+        orderContent: data.orderContent,
+        state: data.state,
+        totalAmount: data.totalAmount
+    }
 }
 
 export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentReference): Promise<TypedSingleResult<PaymentSession>> {
-    return parseData<PaymentSession>(dbNotFoundError("paymentSession"), paymentSessionSchema, paymentRef, (data) => {
-        return {
-            sessionId: paymentRef.id,
-            customerId: data.customerId,
-            orderContent: data.orderContent,
-            state: data.state,
-            totalAmount: data.totalAmount
-        }
-    })
+    return parseData<PaymentSession>(dbNotFoundError("paymentSession"), paymentSessionSchema, paymentRef, (data) => transformPaymentSession(paymentRef.id, data))
 }
 
 export async function getAllPayments(ref: DBRefs, userid: string): Promise<PaymentSession[]> {
-    return await parseDataAll<PaymentSession>( paymentSessionSchema, ref.payments(userid), (doc, data) => {
-        return {
-            sessionId: doc.id,
-            customerId: data.customerId,
-            orderContent: data.orderContent,
-            state: data.state,
-            totalAmount: data.totalAmount
-        }
-    })
+    return await parseQueryDataAll<PaymentSession>(paymentSessionSchema, ref.payments.where("customerId", "==", userid), (doc, data) => transformPaymentSession(doc.id, data))
 }
 
 /**
@@ -142,7 +142,7 @@ export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: st
 async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
-    const assert = await assertPaymentStatus(refs, uid, sessionId, paidDetail)
+    const assert = await assertPaymentStatus(refs, sessionId, paidDetail)
     if (!assert.isSuccess) {
         // 前庭条件を満たしていない
         const err: Error = assert
@@ -172,7 +172,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
 
     async function rollBackTickets() {
         error("in internalMarkPaymentAsPaid,rollBacking Tickets Registration")
-        await deleteTickets(refs, uid, ticketRes.registered.ticketIds)
+        await deleteTickets(refs, ticketRes.registered.ticketIds)
     }
 
     if (!ticketRes.isSuccess) {
@@ -211,12 +211,12 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
 /**
  * 決済取扱いにおいて、満たしていなければいけない前庭条件をassertします
  */
-async function assertPaymentStatus(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
+async function assertPaymentStatus(refs: DBRefs, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     payment: PaymentSession,
     paymentRef: DocumentReference
 }> {
     // 決済セッションのRef・データ
-    const paymentRef = refs.payments(uid).doc(sessionId)
+    const paymentRef = refs.payments.doc(sessionId)
     const payment = await getPaymentSessionByRef(refs, paymentRef)
 
     if (!payment.isSuccess) {

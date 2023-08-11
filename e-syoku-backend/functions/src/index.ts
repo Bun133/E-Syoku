@@ -368,7 +368,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
             }
 
             // UserIdとPaymentIdから決済セッションデータを取得
-            const payment = await getPaymentSessionById(refs, userId, id.param)
+            const payment = await getPaymentSessionById(refs, id.param)
             if (!payment.isSuccess) {
                 const err: Error = {
                     "isSuccess": false,
