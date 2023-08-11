@@ -15,6 +15,7 @@ export function BarcodeReader(params: {
     const placeHolderString = params.placeholder ?? "バーコード読み取り"
     const [str, setStr] = useState<string>()
     const [isDisabled, setDisabled] = useState(true)
+    // TODO もっと短くしないと連続で読み取れない
     const timeout = params.timeout ?? 1000
     const timer = useRef<NodeJS.Timeout>()
     const toClear = params.autoClear ?? true
