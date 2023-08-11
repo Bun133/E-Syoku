@@ -59,24 +59,31 @@ export function dbrefs(db: Firestore): DBRefs {
     };
 }
 
+type DBDataLike = DocumentReference | firestore.DocumentSnapshot
+
+async function get(data: DBDataLike, transaction?: firestore.Transaction): Promise<firestore.DocumentSnapshot> {
+    if (data instanceof DocumentReference) {
+        if (transaction) {
+            return await transaction.get(data)
+        }
+        return await data.get()
+    } else {
+        return data
+    }
+}
+
 /**
  * Simply Parse data from db using zod type.
  * @param errorType
  * @param type
- * @param ref
+ * @param dataLike
  * @param transform
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
-export async function parseData<T extends DocumentData>(errorType: ErrorType, type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
-    let doc;
-    if (transaction) {
-        doc = await transaction.get(ref)
-    } else {
-        doc = await ref.get()
-    }
+export async function parseData<T extends DocumentData>(errorType: ErrorType, type: ZodType<T>, dataLike: DBDataLike, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
+    let data = await get(dataLike)
 
-    if (doc.exists) {
-        let data = doc.data()!!;
+    if (data.exists) {
         let processed: DocumentData = data
         if (transform) {
             processed = transform(data)
@@ -115,13 +122,27 @@ export async function parseData<T extends DocumentData>(errorType: ErrorType, ty
     }
 }
 
-type CollectionReferenceLike = CollectionReference | DocumentReference[]
+type DBCollectionLike = CollectionReference | DocumentReference[] | firestore.DocumentSnapshot[]
 
-async function allDocList(collectionLike: CollectionReferenceLike): Promise<DocumentReference[]> {
+async function allDocList(collectionLike: DBCollectionLike, transaction?: firestore.Transaction): Promise<firestore.DocumentSnapshot[]> {
     if (collectionLike instanceof CollectionReference) {
-        return await collectionLike.listDocuments()
+        if (transaction) {
+            return await transaction.getAll(...await collectionLike.listDocuments())
+        } else {
+            return await Promise.all((await collectionLike.listDocuments()).map(async e => e.get()))
+        }
     } else {
-        return collectionLike
+        return await Promise.all(collectionLike.map(async e => {
+            if (e instanceof DocumentReference) {
+                if (transaction) {
+                    return await transaction.get(e)
+                } else {
+                    return await e.get()
+                }
+            } else {
+                return e
+            }
+        }))
     }
 }
 
@@ -131,17 +152,13 @@ async function allDocList(collectionLike: CollectionReferenceLike): Promise<Docu
  * @param collectionRef
  * @param transform
  * @param transaction
- * @param filter
  */
-export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: CollectionReferenceLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction, filter?: (doc: DocumentReference<firestore.DocumentData>) => boolean): Promise<T[]> {
+export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, collectionRef: DBCollectionLike, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction): Promise<T[]> {
     let docs = await allDocList(collectionRef)
-    if (filter) {
-        docs = docs.filter(filter)
-    }
 
     return (await Promise.all(docs.map(async (doc) => {
         const transformFunc = transform !== undefined ? (data: DocumentData) => {
-            return transform(doc, data)
+            return transform(doc.ref, data)
         } : undefined
 
         const data = await parseData(dummyError, type, doc, transformFunc, transaction)
@@ -152,6 +169,10 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
             return null
         }
     }))).filterNotNull()
+}
+
+export async function parseQueryDataAll<T extends DocumentData>(type: ZodType<T>, query: firestore.Query<T>, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction) {
+    return await parseDataAll(type, (await query.get()).docs, transform, transaction)
 }
 
 /**
@@ -300,4 +321,19 @@ export async function newRandomRef(parent: CollectionReference, transaction?: Tr
     }
 
     return ref;
+}
+
+export async function newRandomBarcodeRef(col: CollectionReference, digits: number): Promise<DocumentReference> {
+    let code = ""
+    for (let i = 0; i < digits; i++) {
+        code += Math.floor(Math.random() * 10)
+    }
+
+    const ref = col.doc(code)
+    const exists = await ref.get()
+    if (exists.exists) {
+        return newRandomBarcodeRef(col, digits)
+    } else {
+        return ref
+    }
 }
