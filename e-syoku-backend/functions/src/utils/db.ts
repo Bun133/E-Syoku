@@ -25,7 +25,7 @@ export type BarcodeKey = string
 
 export type DBRefs = {
     db: Firestore,
-    tickets: DynamicCollectionReference<UserIdDBKey>,
+    tickets: firestore.CollectionReference,
     shops: firestore.CollectionReference<firestore.DocumentData>,
     auths: firestore.CollectionReference<firestore.DocumentData>,
     goods: firestore.CollectionReference<firestore.DocumentData>,
@@ -45,7 +45,7 @@ export type DBRefs = {
 export function dbrefs(db: Firestore): DBRefs {
     return {
         db: db,
-        tickets: (uid) => db.collection("tickets").doc(uid).collection("tickets"),
+        tickets: db.collection("tickets"),
         shops: db.collection("shops"),
         auths: db.collection("auths"),
         goods: db.collection("goods"),
@@ -81,12 +81,12 @@ async function get(data: DBDataLike, transaction?: firestore.Transaction): Promi
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
 export async function parseData<T extends DocumentData>(errorType: ErrorType, type: ZodType<T>, dataLike: DBDataLike, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
-    let data = await get(dataLike)
+    let data = await get(dataLike,transaction)
 
     if (data.exists) {
-        let processed: DocumentData = data
+        let processed: DocumentData = data.data()!!
         if (transform) {
-            processed = transform(data)
+            processed = transform(processed)
         }
 
         try {
@@ -171,7 +171,7 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
     }))).filterNotNull()
 }
 
-export async function parseQueryDataAll<T extends DocumentData>(type: ZodType<T>, query: firestore.Query<T>, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction) {
+export async function parseQueryDataAll<T extends DocumentData>(type: ZodType<T>, query: firestore.Query, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction) {
     return await parseDataAll(type, (await query.get()).docs, transform, transaction)
 }
 
