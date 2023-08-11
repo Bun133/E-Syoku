@@ -1,4 +1,12 @@
-import {createData, DBRefs, newRandomRef, parseData, parseQueryDataAll, updateEntireData} from "../utils/db";
+import {
+    createData,
+    DBRefs,
+    newRandomBarcode,
+    newRandomRef,
+    parseData,
+    parseQueryDataAll,
+    updateEntireData
+} from "../utils/db";
 import {Order} from "../types/order";
 import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
@@ -26,6 +34,7 @@ import DocumentReference = firestore.DocumentReference;
 export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthInstance, order: Order) {
     // 実際に決済セッションを作成するRef
     const paymentSessionRef = await newRandomRef(ref.payments)
+    const barcode = await newRandomBarcode(ref.payments, 6)
 
     // 合計金額を計算
     const totalAmount = await calculateTotalAmount(ref, order)
@@ -40,7 +49,8 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         orderContent: order,
         sessionId: paymentSessionRef.id,
         state: "UNPAID",
-        totalAmount: totalAmount.totalAmount!
+        totalAmount: totalAmount.totalAmount!,
+        barcode: barcode
     }
 
     // DBに決済セッションのデータを保存
@@ -48,7 +58,8 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         customerId: paymentSession.customerId,
         orderContent: paymentSession.orderContent,
         state: paymentSession.state,
-        totalAmount: paymentSession.totalAmount
+        totalAmount: paymentSession.totalAmount,
+        barcode:barcode
     })
     if (!setRes.isSuccess) {
         // 決済セッションのデータを保存できなかった
@@ -109,7 +120,8 @@ function transformPaymentSession(sessionId: string, data: firestore.DocumentData
         customerId: data.customerId,
         orderContent: data.orderContent,
         state: data.state,
-        totalAmount: data.totalAmount
+        totalAmount: data.totalAmount,
+        barcode:data.barcode
     }
 }
 
@@ -189,6 +201,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
         customerId: true,
         orderContent: true,
         totalAmount: true,
+        barcode: true,
     }), paymentRef, {
         state: "PAID",
         paidDetail: paidDetail

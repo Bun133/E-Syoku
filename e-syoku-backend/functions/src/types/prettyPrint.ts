@@ -67,6 +67,7 @@ export type PrettyPaymentState = z.infer<typeof prettyPaymentStateSchema>
 
 export const prettyPaymentSessionSchema = z.object({
     sessionId: uniqueId,
+    barcode: z.string(),
     customerId: uniqueId,
     orderContent: prettyOrderSchema,
     totalAmount: z.number(),

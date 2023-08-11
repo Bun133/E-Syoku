@@ -81,7 +81,7 @@ async function get(data: DBDataLike, transaction?: firestore.Transaction): Promi
  * @param transaction (Transactionインスタンスがある場合はトランザクションで読み取りを行います)
  */
 export async function parseData<T extends DocumentData>(errorType: ErrorType, type: ZodType<T>, dataLike: DBDataLike, transform?: (data: DocumentData) => T, transaction?: firestore.Transaction): Promise<TypedSuccess<T> | SingleError> {
-    let data = await get(dataLike,transaction)
+    let data = await get(dataLike, transaction)
 
     if (data.exists) {
         let processed: DocumentData = data.data()!!
@@ -323,17 +323,16 @@ export async function newRandomRef(parent: CollectionReference, transaction?: Tr
     return ref;
 }
 
-export async function newRandomBarcodeRef(col: CollectionReference, digits: number): Promise<DocumentReference> {
+export async function newRandomBarcode(col: CollectionReference, digits: number) :Promise<string> {
     let code = ""
     for (let i = 0; i < digits; i++) {
         code += Math.floor(Math.random() * 10)
     }
 
-    const ref = col.doc(code)
-    const exists = await ref.get()
-    if (exists.exists) {
-        return newRandomBarcodeRef(col, digits)
+    const query = await col.where("barcode", "==", code).get()
+    if (query.empty) {
+        return code
     } else {
-        return ref
+        return newRandomBarcode(col, digits)
     }
 }

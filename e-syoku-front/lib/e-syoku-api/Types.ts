@@ -127,6 +127,7 @@ export type PaymentState = z.infer<typeof paymentStateSchema>
 export const paymentSessionSchema = z.object({
     // 決済セッションID
     sessionId: uniqueId,
+    barcode:z.string(),
     // 購入者UserID
     customerId: uniqueId,
     // 注文内容

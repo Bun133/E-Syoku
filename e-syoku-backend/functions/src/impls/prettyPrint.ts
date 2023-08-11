@@ -157,6 +157,7 @@ export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Prom
 
     const session:PrettyPaymentSession ={
         sessionId: payment.sessionId,
+        barcode: payment.barcode,
         paidDetail: payment.paidDetail,
         customerId: payment.customerId,
         orderContent: pOrder.data,
