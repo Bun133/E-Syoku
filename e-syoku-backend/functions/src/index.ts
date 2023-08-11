@@ -11,11 +11,11 @@ import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
-import {getAllPayments, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
+import {getAllPayments, getPaymentSessionByBarcode, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {error} from "./utils/logger";
 import {
     authFailedError,
-    injectError,
+    injectError, paymentIdNotFoundError,
     paymentNotFoundError,
     requestNotContainUserIdError,
     ticketNotSpecifiedError
@@ -416,17 +416,29 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
         return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             let userId = requireParameter("userId", z.string(), req)
             if (userId.param == undefined) return {result: userId.error}
-            let paymentId = requireParameter("paymentId", z.string(), req)
-            if (paymentId.param == undefined) return {result: paymentId.error}
             let paidAmount = requireParameter("paidAmount", z.number(), req)
             if (paidAmount.param == undefined) return {result: paidAmount.error}
             let paidMeans = requireParameter("paidMeans", z.string(), req)
             if (paidMeans.param == undefined) return {result: paidMeans.error}
             let remark = requireOptionalParameter("remark", z.string().optional(), req)
 
+            let paymentId = requireOptionalParameter("paymentId", z.string().optional(), req)
+            let paymentBarcode = requireOptionalParameter("paymentBarcode", z.string().optional(), req)
+
+            let pId: string | undefined
+            if (paymentId.param != undefined) pId = paymentId.param
+            if (paymentBarcode.param != undefined) pId = (await getPaymentSessionByBarcode(refs, paymentBarcode.param))[0]?.sessionId
+            if (pId == undefined) {
+                const err: Error = {
+                    isSuccess: false,
+                    ...injectError(paymentIdNotFoundError)
+                }
+                return {result: err}
+            }
+
             // 要求データから生成された決済詳細データ
             const paidDetail: PaidDetail = {
-                paymentId: paymentId.param,
+                paymentId: pId,
                 customerId: userId.param,
                 paymentStaffId: authInstance.uid,
                 paidTime: Timestamp.now(),
@@ -436,7 +448,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             }
 
             // 決済セッションのステータスをPAIDに変更
-            const result = await markPaymentAsPaid(refs, userId.param, paymentId.param, paidDetail)
+            const result = await markPaymentAsPaid(refs, userId.param, pId, paidDetail)
             return {
                 result: result
             }

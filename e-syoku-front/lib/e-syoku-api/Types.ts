@@ -304,7 +304,8 @@ export type PaymentIdRequest = z.infer<typeof paymentIdRequest>
 
 export const markPaymentPaidRequest = z.object({
     userId: uniqueId,
-    paymentId: uniqueId,
+    paymentId: uniqueId.optional(),
+    paymentBarcode: z.string().optional(),
     paidAmount: z.number(),
     paidMeans: z.string(),
     remark: z.string().optional()

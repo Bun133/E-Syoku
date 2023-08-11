@@ -155,3 +155,5 @@ export const parseDataNotFound = internalError(`データが見つかりませ�
 export const prettyOrderFailed = representativeError(internalError("OrderデータをPretty化できませんでした", "PRETTY_ORDER_FAILED"))
 
 export const dummyError = internalError("Dummy", "DUMMY_ERROR")
+
+export const paymentIdNotFoundError = inputWrongError("PaymentId|Barcode", "決済データが指定されていません")
