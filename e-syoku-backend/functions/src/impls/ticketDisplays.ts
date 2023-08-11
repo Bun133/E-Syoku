@@ -25,7 +25,7 @@ export async function updateTicketDisplayDataForTicket(ref: DBRefs, ticket: Tick
     return mergeData(ticketDisplaySchema, ref.ticketDisplays(ticket.shopId).doc(ticket.uniqueId), {
         status: ticket.status,
         ticketId: ticket.uniqueId,
-        ticketDataRef: ref.tickets(ticket.customerId).doc(ticket.uniqueId),
+        ticketDataRef: ref.tickets.doc(ticket.uniqueId),
         ticketNum: ticket.ticketNum,
         uid:ticket.customerId,
         lastUpdated: Timestamp.now()

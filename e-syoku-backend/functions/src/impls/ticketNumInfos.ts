@@ -26,7 +26,7 @@ export async function createNewTicket(ref: DBRefs, shopId: string, uid: string, 
     return await ref.db.runTransaction(async (transaction) => {
         // ランダムに新しいRefを取得してチケットを登録
         // さすがに被らないと信じてるぞUUID
-        const toWriteRef = await newRandomRef(ref.tickets(uid))
+        const toWriteRef = await newRandomRef(ref.tickets)
         const info = await ticketNumInfoById(ref, shopId, transaction)
         if (!info.isSuccess) {
             return info
