@@ -16,7 +16,7 @@ import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
 import {ticketDisplayDataByShopId, updateTicketDisplayDataForTicket} from "./ticketDisplays";
-import {getBarcodeBindData} from "./barcode";
+import {getTicketBarcodeBindData} from "./barcode";
 import {NotificationData, sendMessage} from "./notification";
 import {Messaging} from "firebase-admin/lib/messaging";
 import {TicketDisplayData} from "../types/ticketDisplays";
@@ -100,7 +100,7 @@ export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array
  * @param transaction
  */
 export async function updateTicketStatusByBarcode(ref: DBRefs, messaging: Messaging, barcode: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
-    const barcodeData = await getBarcodeBindData(ref, barcode)
+    const barcodeData = await getTicketBarcodeBindData(ref, barcode)
     if (!barcodeData.isSuccess) {
         const err: Error = barcodeData
         return err

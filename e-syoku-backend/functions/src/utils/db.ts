@@ -5,7 +5,8 @@ import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
 import {Error, Result, SingleError, Success, TypedSuccess} from "../types/errors";
 import {
-    createDataFailedError, dummyError,
+    createDataFailedError,
+    dummyError,
     ErrorType,
     injectError,
     mergeDataFailedError,
@@ -32,7 +33,7 @@ export type DBRefs = {
     payments: DynamicCollectionReference<UserIdDBKey>,
     ticketDisplays: DynamicCollectionReference<ShopIdDBKey>,
     ticketNumInfo: DynamicDocumentReference<ShopIdDBKey>,
-    binds: DynamicDocumentReference<BarcodeKey>,
+    ticketBarcode: DynamicDocumentReference<BarcodeKey>,
     barcodeInfos: DynamicDocumentReference<ShopIdDBKey>,
     messageTokens: DynamicDocumentReference<UserIdDBKey>
 }
@@ -52,7 +53,7 @@ export function dbrefs(db: Firestore): DBRefs {
         payments: (uid) => db.collection("payments").doc(uid).collection("payments"),
         ticketDisplays: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketDisplays"),
         ticketNumInfo: (sid) => db.collection("ticketRefs").doc(sid).collection("ticketNumInfos").doc("ticketNumInfo"),
-        binds: (barcode) => db.collection("barcodeBind").doc(barcode),
+        ticketBarcode: (barcode) => db.collection("barcodeBind").doc(barcode),
         barcodeInfos: (sid) => db.collection("ticketRefs").doc(sid).collection("barcodeInfos").doc("barcodeInfo"),
         messageTokens: (uid) => db.collection("messageTokens").doc(uid)
     };

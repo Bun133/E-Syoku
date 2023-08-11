@@ -26,7 +26,7 @@ import {PaidDetail} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
-import {bindBarcodeToTicket, getBarcodeBindData} from "./impls/barcode";
+import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
@@ -183,7 +183,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
                 if (barcode.param) {
                     // チケットのデータからUID,TicketIdを取得します
-                    const barcodeData = await getBarcodeBindData(refs, barcode.param)
+                    const barcodeData = await getTicketBarcodeBindData(refs, barcode.param)
                     if (!barcodeData.isSuccess) {
                         const err: Error = barcodeData
                         return {
