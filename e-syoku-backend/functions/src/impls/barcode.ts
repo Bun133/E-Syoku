@@ -10,8 +10,7 @@ export async function getTicketBarcodeBindData(ref: DBRefs, barcode: string): Pr
     return parseData(dbNotFoundError("TicketBarcodeBindData"), ticketBarcodeBindDataSchema, ref.ticketBarcode(barcode), (data) => {
         return {
             barcode: barcode,
-            ticketId: data.ticketId,
-            uid: data.uid
+            ticketId: data.ticketId
         }
     })
 }
@@ -20,7 +19,6 @@ export async function getTicketBarcodeBindData(ref: DBRefs, barcode: string): Pr
  * バーコードと食券IDを紐づけます
  * @param ref
  * @param barcode
- * @param uid
  * @param ticketId
  */
 export async function setTicketBarcodeBindData(ref: DBRefs, barcode: string, ticketId: string): Promise<Result> {

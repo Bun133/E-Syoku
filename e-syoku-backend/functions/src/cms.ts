@@ -3,7 +3,7 @@ import {authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {Auth} from "firebase-admin/lib/auth";
 import {DBRefs} from "./utils/db";
-import {Error, Result, Success, TypedResult} from "./types/errors";
+import {Error, Result, Success, TypedSingleResult} from "./types/errors";
 import {Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {z} from "zod";
@@ -11,6 +11,7 @@ import {cmsTicketNotSatisfyCondition, injectError, ticketNotFoundError} from "./
 import {ticketByBarcode} from "./impls/barcode";
 import {Ticket} from "./types/ticket";
 import {ticketById} from "./impls/ticket";
+import {prettyTicket} from "./impls/prettyPrint";
 
 
 export function cmsFunction(auth: Auth, refs: DBRefs, f: (authInstance: AuthInstance, req: Request, res: Response) => Promise<{
@@ -29,7 +30,7 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
     const ticketId = requireOptionalParameter("ticketId", z.string().optional(), req).param
     const barcode = requireOptionalParameter("barcode", z.string().optional(), req).param
 
-    let ticket: TypedResult<Ticket> | undefined = undefined
+    let ticket: TypedSingleResult<Ticket> | undefined = undefined
     let satisfyCondition = false
     if (barcode) {
         satisfyCondition = true
@@ -52,15 +53,7 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
         }
     }
 
-    if (ticket!!.isSuccess) {
-        const suc: Success = {
-            isSuccess: true,
-            ticket: ticket!!.data
-        }
-        return {
-            result: suc
-        }
-    } else {
+    if (!ticket || !ticket.isSuccess) {
         const err: Error = {
             isSuccess: false,
             ...injectError(ticketNotFoundError)
@@ -69,5 +62,21 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
         return {
             result: err
         }
+    }
+
+    const pTicket = await prettyTicket(refs, ticket.data)
+    if (!pTicket.isSuccess) {
+        return {
+            result: pTicket
+        }
+    }
+
+    const suc: Success = {
+        isSuccess: true,
+        ticket: pTicket.data
+    }
+
+    return {
+        result: suc
     }
 }
