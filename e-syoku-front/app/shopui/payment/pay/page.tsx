@@ -23,8 +23,8 @@ import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
 export default function Page() {
     const params = useSearchParams()
-    const uid = params.get("uid")
-    const paymentId = params.get("paymentId")
+    const paymentId = params.get("paymentId") ?? undefined
+    const barcode = params.get("barcode") ?? undefined
 
     const [amount, setAmount] = useState(0)
     const isAmountError = amount <= 0
@@ -38,12 +38,12 @@ export default function Page() {
 
     const router = useRouter()
 
-    if (!uid || !paymentId) {
+    if(!(paymentId || barcode)){
         return (
             <>
                 <PageTitle title={""}/>
                 <Center>
-                    <Heading>uid,paymentIdを指定してください</Heading>
+                    <Heading>uid,paymentId,barcodeを指定してください</Heading>
                 </Center>
             </>
         )
@@ -51,7 +51,7 @@ export default function Page() {
 
     return (
         <>
-            <PageTitle title={`決済取扱い:${uid}:${paymentId}`}/>
+            <PageTitle title={`決済取扱い:${paymentId}`}/>
             <Container>
                 <VStack>
                     <FormControl>
@@ -79,19 +79,17 @@ export default function Page() {
                             const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
                                 paidAmount: amount,
                                 paidMeans: paidMeans,
-                                userId: uid,
                                 paymentId: paymentId,
+                                paymentBarcode: barcode,
                                 // TODO remarkを簡単に入力できるように
                                 remark: "テストです！"
                             })
 
                             if (res.isSuccess) {
                                 const param = new URLSearchParams()
-                                param.set("uid", uid)
                                 res.data.ticketsId.forEach((ticketId) => {
                                     param.append("ticketId", ticketId)
                                 })
-
 
                                 router.push(`/shopui/payment/barcode?${param.toString()}`)
                             } else {

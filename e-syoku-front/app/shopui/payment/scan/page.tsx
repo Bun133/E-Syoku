@@ -5,6 +5,7 @@ import {Container} from "@chakra-ui/react";
 import {Html5QrcodeResult} from "html5-qrcode/es2015/core";
 import {VStack} from "@chakra-ui/layout";
 import {useRouter} from "next/navigation";
+import {BarcodeReader} from "@/components/reader/BarcodeReader";
 
 export default function Page() {
     const router = useRouter()
@@ -12,6 +13,9 @@ export default function Page() {
         <>
             <PageTitle title={"QR Code Reader"}/>
             <VStack>
+                <BarcodeReader onRead={(barcode) => {
+                    router.push("/shopui/payment/lookup?barcode=" + barcode)
+                }} autoSelect={true}/>
                 <Container maxHeight={500}>
                     <QRCodeReader fps={10} onScan={(decodedText, result) => {
                         const parsed = onScan(decodedText, result)
