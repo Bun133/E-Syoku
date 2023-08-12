@@ -25,7 +25,7 @@ export default function Page() {
                         <VStack>
                             <Card>
                                 <CardHeader><Center>
-                                    {id && <Barcode value={response.data.payment.barcode}/>}
+                                    <Barcode value={response.data.payment.barcode}/>
                                 </Center></CardHeader>
                                 <CardBody>
                                     <VStack>
