@@ -56,10 +56,9 @@ export const ticketStatus = standardFunction(async (request, response) => {
         return authedWithType(["ADMIN", "CASHIER", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
-            let uid = requireOptionalParameter("uid", z.string().optional(), request).param ?? authInstance.uid
 
             // チケットデータ取得
-            let ticket = await ticketById(refs, uid, ticketId.param);
+            let ticket = await ticketById(refs, ticketId.param);
             if (!ticket.isSuccess) {
                 return {result: ticket}
             }

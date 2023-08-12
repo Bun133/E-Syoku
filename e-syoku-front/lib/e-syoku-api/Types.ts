@@ -265,7 +265,6 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 
 export const ticketIdRequest = z.object({
     ticketId: uniqueId,
-    uid: uniqueId.optional()
 })
 export const ticketSpecifyRequest = z.object({
     barcode: z.string()
