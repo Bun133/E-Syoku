@@ -16,16 +16,19 @@ export function BarcodeReader(params: {
     const [str, setStr] = useState<string>()
     const [isDisabled, setDisabled] = useState(true)
     const toClear = params.autoClear ?? true
+    const [isLoading, setLoading] = useState(false)
 
 
     async function onRead() {
         if (str !== undefined) {
             setDisabled(true)
+            setLoading(true)
             await params.onRead(str)
             if (toClear) {
                 setStr("")
             }
             setDisabled(false)
+            setLoading(false)
         }
     }
 
@@ -56,7 +59,7 @@ export function BarcodeReader(params: {
                 />
             </InputGroup>
 
-            <Btn onClick={onRead} disabled={isDisabled}>
+            <Btn onClick={onRead} disabled={isDisabled} loading={isLoading}>
                 <ArrowRight color={"white"}/>
             </Btn>
         </Flex>
