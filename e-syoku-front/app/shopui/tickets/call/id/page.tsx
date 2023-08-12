@@ -73,6 +73,7 @@ export default function Page() {
                 }}
                 onBarcodeRead={async (barcode: string) => {
                     const r = await resolveTicket({barcode: barcode})
+                    // TODO ましに出来るはず
                     if (r) {
                         if (r.isSuccess) {
                             if (reloadFunc.current) {

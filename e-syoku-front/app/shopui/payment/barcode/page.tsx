@@ -1,8 +1,8 @@
 "use client"
 import {useSearchParams} from "next/navigation";
-import {Flex, Grid, GridItem, Spacer, Text} from "@chakra-ui/react";
-import {callEndpoint, EndPointErrorResponse, useEndpoint} from "@/lib/e-syoku-api/Axios";
-import {bindBarcodeEndpoint, ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
+import {Flex, Spacer, Text} from "@chakra-ui/react";
+import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
+import {bindBarcodeEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import {HStack, VStack} from "@chakra-ui/layout";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import React, {useState} from "react";
