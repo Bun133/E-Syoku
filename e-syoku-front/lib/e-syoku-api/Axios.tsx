@@ -44,16 +44,6 @@ export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
 
 export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessResponse<R> | EndPointErrorResponse<R>
 
-// Fetchのタイミング
-export type TimingOption = {
-    // 最大試行回数
-    retryMaximum: number,
-    // 再試行まで開ける時間(ms)
-    retryDelay: number,
-    // 再試行するかどうか
-    determineRetry: (response: EndPointResponse<any>) => boolean
-}
-
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpointPrefix
 let apiEndpointSuffix = process.env.NEXT_PUBLIC_apiEndpointSuffix
 
@@ -67,7 +57,6 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
 
 async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     let fullPath = (apiEndpointPrefix ?? "") + endPoint.endpointPath + (apiEndpointSuffix ?? "")
-    console.log("full path", fullPath)
     if (user == undefined) {
         return {
             data: undefined,
@@ -80,7 +69,6 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
         }
     }
     const tokenString = await (user.getIdToken(true))
-    console.log("token", tokenString)
     let data: Response
     try {
         data = await fetch(fullPath, {
