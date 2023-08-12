@@ -12,17 +12,15 @@ import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionByBarcode, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
-import {error} from "./utils/logger";
 import {
     authFailedError,
     injectError, paymentIdNotFoundError,
     paymentNotFoundError,
-    requestNotContainUserIdError,
     ticketNotSpecifiedError
 } from "./impls/errors";
 import {Error, Success} from "./types/errors";
 import {listAllShop} from "./impls/shop";
-import {PaidDetail} from "./types/payment";
+import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
@@ -343,43 +341,44 @@ export const paymentStatus = standardFunction(async (request, response) => {
     await onPost(request, response, async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // id
-            const id = requireParameter("paymentId", z.string(), request)
-            if (id.param == undefined) return {result: id.error}
-            let userId: string | undefined
-            if (authInstance.authType == "ANONYMOUS") {
-                // 匿名アカウントの場合はそのアカウントのUID
-                userId = authInstance.uid
-            } else if (authInstance.authType == "ADMIN" || authInstance.authType == "SHOP") {
-                // 管理者アカウントや店舗アカウントの場合は他人の決済セッションを参照できるように
-                userId = requireOptionalParameter("userId", z.string().optional(), request).param
-                if (!userId) {
-                    // userIdの指定がない場合は、自分のUIDに
-                    userId = authInstance.uid
-                }
-            }
-            if (!userId) {
-                // UIDがなぜか指定されなかった
-                error("in paymentStatus Endpoint,failed to get User Id")
-                const err: Error = {"isSuccess": false, ...injectError(requestNotContainUserIdError)}
-                return {
-                    statusCode: 500,
-                    result: err
-                }
-            }
+            const id = requireOptionalParameter("paymentId", z.string().optional(), request)
+            const barcode = requireOptionalParameter("barcode", z.string().optional(), request)
 
-            // UserIdとPaymentIdから決済セッションデータを取得
-            const payment = await getPaymentSessionById(refs, id.param)
-            if (!payment.isSuccess) {
+            if (id.param == undefined && barcode.param == undefined) {
                 const err: Error = {
                     "isSuccess": false,
-                    ...injectError(paymentNotFoundError)
+                    ...injectError(paymentIdNotFoundError)
                 }
                 return {
                     result: err
                 }
             }
 
-            const pPayment = await prettyPayment(refs, payment.data)
+            // 決済セッションデータを取得
+            let payment: PaymentSession | undefined
+            if (id.param != undefined) {
+                const r = await getPaymentSessionById(refs, id.param)
+                if (r.isSuccess) {
+                    payment = r.data
+                }else{
+                    return {result: r}
+                }
+            } else if (barcode.param != undefined) {
+                payment = await getPaymentSessionByBarcode(refs, barcode.param)
+            }
+
+            if (!payment) {
+                const err: Error = {
+                    isSuccess: false,
+                    ...injectError(paymentNotFoundError)
+                }
+
+                return {
+                    result: err
+                }
+            }
+
+            const pPayment = await prettyPayment(refs, payment)
             if (!pPayment.isSuccess) {
                 return {result: pPayment}
             }
@@ -425,7 +424,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
 
             let pId: string | undefined
             if (paymentId.param != undefined) pId = paymentId.param
-            if (paymentBarcode.param != undefined) pId = (await getPaymentSessionByBarcode(refs, paymentBarcode.param))[0]?.sessionId
+            if (paymentBarcode.param != undefined) pId = (await getPaymentSessionByBarcode(refs, paymentBarcode.param))?.sessionId
             if (pId == undefined) {
                 const err: Error = {
                     isSuccess: false,

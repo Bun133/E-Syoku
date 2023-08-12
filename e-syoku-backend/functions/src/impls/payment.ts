@@ -129,8 +129,8 @@ export async function getPaymentSessionByRef(ref: DBRefs, paymentRef: DocumentRe
     return parseData<PaymentSession>(dbNotFoundError("paymentSession"), paymentSessionSchema, paymentRef, (data) => transformPaymentSession(paymentRef.id, data))
 }
 
-export async function getPaymentSessionByBarcode(ref: DBRefs, barcode: string): Promise<PaymentSession[]> {
-    return parseQueryDataAll<PaymentSession>(paymentSessionSchema, ref.payments.where("barcode", "==", barcode), (doc, data) => transformPaymentSession(doc.id, data))
+export async function getPaymentSessionByBarcode(ref: DBRefs, barcode: string): Promise<PaymentSession> {
+    return (await parseQueryDataAll<PaymentSession>(paymentSessionSchema, ref.payments.where("barcode", "==", barcode), (doc, data) => transformPaymentSession(doc.id, data)))[0]
 }
 
 export async function getAllPayments(ref: DBRefs, userid: string): Promise<PaymentSession[]> {
