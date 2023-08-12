@@ -3,7 +3,6 @@ import {uniqueId} from "./types";
 
 export const ticketBarcodeBindDataSchema = z.object({
     barcode: z.string(),
-    uid: uniqueId,
     ticketId: uniqueId
 })
 

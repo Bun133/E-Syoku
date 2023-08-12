@@ -23,12 +23,12 @@ import {TicketDisplayData} from "../types/ticketDisplays";
 import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
-function ticketParser(uniqueId: string, uid: string, data: firestore.DocumentData): Ticket {
+function ticketParser(uniqueId: string, data: firestore.DocumentData): Ticket {
     return {
         uniqueId: uniqueId,
         ticketNum: data.ticketNum,
         shopId: data.shopId,
-        customerId: uid,
+        customerId: data.customerId,
         issueTime: data.issueTime,
         status: data.status,
         paymentSessionId: data.paymentSessionId,
@@ -39,27 +39,25 @@ function ticketParser(uniqueId: string, uid: string, data: firestore.DocumentDat
 /**
  * チケットデータを[uid]と[ticketId]から取得します
  * @param ref
- * @param uid
  * @param ticketId
  * @param transaction
  */
-export async function ticketById(ref: DBRefs, uid: string, ticketId: string, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
-    return ticketByRef(ref, uid, ref.tickets.doc(ticketId), transaction);
+export async function ticketById(ref: DBRefs, ticketId: string, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
+    return ticketByRef(ref, ref.tickets.doc(ticketId), transaction);
 }
 
 /**
  * チケットデータをFirestoreのDocumentReferenceから取得します
  * @param ref
- * @param uid
  * @param ticketRef
  * @param transaction
  */
-export async function ticketByRef(ref: DBRefs, uid: string, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
-    return await parseData<Ticket>(dbNotFoundError("ticket"), ticketSchema, ticketRef, (data) => ticketParser(ticketRef.id, uid, data), transaction);
+export async function ticketByRef(ref: DBRefs, ticketRef: DocumentReference<firestore.DocumentData>, transaction?: Transaction): Promise<TypedSingleResult<Ticket>> {
+    return await parseData<Ticket>(dbNotFoundError("ticket"), ticketSchema, ticketRef, (data) => ticketParser(ticketRef.id, data), transaction);
 }
 
-export async function getTickets(ref: DBRefs, uid: string, ticketIds: string[]) {
-    return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("customerId", "==", uid).where("uniqueId", "in", ticketIds), (ref, data) => ticketParser(ref.id, uid, data))
+export async function getTickets(ref: DBRefs, ticketIds: string[]) {
+    return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("uniqueId", "in", ticketIds), (ref, data) => ticketParser(ref.id, data))
 }
 
 /**
@@ -68,7 +66,7 @@ export async function getTickets(ref: DBRefs, uid: string, ticketIds: string[]) 
  * @param uid
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
-    return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("customerId", "==", uid), (ref, data) => ticketParser(ref.id, uid, data))
+    return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("customerId", "==", uid), (ref, data) => ticketParser(ref.id, data))
 }
 
 /**
@@ -87,28 +85,27 @@ export async function updateTicketStatusByBarcode(ref: DBRefs, messaging: Messag
         return err
     }
 
-    return await updateTicketStatusByIds(ref, messaging, barcodeData.data.uid, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
+    return await updateTicketStatusByIds(ref, messaging, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
 }
 
-export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, uid: string, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
-    return await internalUpdateTicketStatus(ref, messaging, uid, ref.tickets.doc(ticketId), fromStatus, toStatus, transaction, sendNotification)
+export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
+    return await internalUpdateTicketStatus(ref, messaging, ref.tickets.doc(ticketId), fromStatus, toStatus, transaction, sendNotification)
 }
 
 /**
  * チケットのステータスを[fromStatus]から[toStatus]に変更します
  * @param ref
  * @param messaging
- * @param uid
  * @param ticketRef
  * @param fromStatus
  * @param toStatus
  * @param transaction
  * @param sendNotification
  */
-async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, uid: string, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
+async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
 
     // チケットの存在を確認する
-    const ticket = await ticketByRef(ref, uid, ticketRef)
+    const ticket = await ticketByRef(ref, ticketRef)
     if (!ticket.isSuccess) {
         const err: Error = ticket
         return err
@@ -146,7 +143,7 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, uid
         await updateTicketDisplayDataForTicket(ref, toWriteTicket)
         // 通知を送信する場合は送信処理を行います
         if (sendNotification) {
-            await sendMessage(ref, messaging, uid, sendNotification)
+            await sendMessage(ref, messaging, ticket.data.customerId, sendNotification)
         }
         const suc: Success = {
             isSuccess: true,
@@ -375,7 +372,7 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
         }
 
         const res = await Promise.all(toCallTicketIds.map(async e => {
-            const result = await updateTicketStatusByIds(ref, messaging, e.uid, e.ticketId, "PROCESSING", "CALLED")
+            const result = await updateTicketStatusByIds(ref, messaging, e.ticketId, "PROCESSING", "CALLED")
             return {
                 ticketId: e.ticketId,
                 result: result
