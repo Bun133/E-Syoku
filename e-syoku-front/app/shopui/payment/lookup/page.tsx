@@ -12,18 +12,17 @@ import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
 
 export default function Page() {
     const params = useSearchParams()
-    const uid = params.get("uid") ?? undefined
     const paymentId = params.get("paymentId") ?? undefined
     const router = useRouter()
 
     return (
         <>
-            <APIEndpoint endpoint={paymentStatusEndPoint} query={{userId: uid, paymentId: paymentId}}
+            <APIEndpoint endpoint={paymentStatusEndPoint} query={{paymentId: paymentId}}
                          onEnd={(response, reload) => {
                              const payment = response.data.payment
                              return (
                                  <>
-                                     <PageTitle title={"決済セッション:" + uid + ":" + paymentId}/>
+                                     <PageTitle title={`決済セッション:${paymentId}`}/>
                                      <Center>
                                          <VStack>
                                              <Card>
@@ -48,7 +47,7 @@ export default function Page() {
                                                  </CardFooter>
                                              </Card>
                                              <Btn onClick={() => {
-                                                 router.push(`/shopui/payment/pay?uid=${uid}&paymentId=${paymentId}`)
+                                                 router.push(`/shopui/payment/pay?paymentId=${paymentId}`)
                                              }}>決済取扱い</Btn>
                                              <Btn onClick={reload}>再読み込み</Btn>
                                          </VStack>
