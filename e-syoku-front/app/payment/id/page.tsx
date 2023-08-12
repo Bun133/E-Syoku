@@ -6,10 +6,10 @@ import {paymentStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Text, UnorderedList} from "@chakra-ui/react";
-import QRCode from "react-qr-code"
 import React from "react";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
+import Barcode from "react-barcode";
 
 export default function Page() {
     const params = useSearchParams()
@@ -24,8 +24,9 @@ export default function Page() {
                     <Center>
                         <VStack>
                             <Card>
-                                <CardHeader><Center><QRCode
-                                    value={payment.customerId + ":" + payment.sessionId}/></Center></CardHeader>
+                                <CardHeader><Center>
+                                    {id && <Barcode value={response.data.payment.barcode}/>}
+                                </Center></CardHeader>
                                 <CardBody>
                                     <VStack>
                                         <Text>

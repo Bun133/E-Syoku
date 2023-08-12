@@ -211,6 +211,7 @@ export const prettyPaymentSessionSchema = z.object({
     totalAmount: z.number(),
     state: prettyPaymentStateSchema,
     paidDetail: paidDetailSchema.optional(),
+    barcode:z.string()
 })
 
 export type PrettyPaymentSession = z.infer<typeof prettyPaymentSessionSchema>
