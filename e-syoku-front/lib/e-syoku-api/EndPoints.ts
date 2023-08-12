@@ -50,7 +50,6 @@ export const grantPermissionEndpoint = endpoint("grantPermission", grantPermissi
 
 export const bindBarcodeEndpoint = endpoint("bindBarcode", z.object({
     ticketId: uniqueId.array().nonempty(),
-    uid: uniqueId,
     barcode: z.string()
 }), bindTicketResponse)
 

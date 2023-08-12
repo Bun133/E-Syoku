@@ -565,7 +565,7 @@ export const bindBarcode = standardFunction(async (req, res) => {
             const barcode = requireParameter("barcode", z.string(), req)
             if (barcode.param == undefined) return {result: barcode.error}
 
-            const result = await bindBarcodeToTicket(refs, barcode.param, uid.param, ticketId.param)
+            const result = await bindBarcodeToTicket(refs, barcode.param, ticketId.param)
             return {
                 result: result
             }
