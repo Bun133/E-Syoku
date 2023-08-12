@@ -1,7 +1,7 @@
 import {Flex} from "@chakra-ui/layout";
 import {Input, InputGroup} from "@chakra-ui/react";
 import {ArrowRight} from "react-feather";
-import {useRef, useState} from "react";
+import {useState} from "react";
 import Btn from "@/components/btn";
 
 
@@ -15,9 +15,6 @@ export function BarcodeReader(params: {
     const placeHolderString = params.placeholder ?? "バーコード読み取り"
     const [str, setStr] = useState<string>()
     const [isDisabled, setDisabled] = useState(true)
-    // TODO もっと短くしないと連続で読み取れない
-    const timeout = params.timeout ?? 1000
-    const timer = useRef<NodeJS.Timeout>()
     const toClear = params.autoClear ?? true
 
 
@@ -32,23 +29,18 @@ export function BarcodeReader(params: {
         }
     }
 
-    function resetTimer() {
-        clearTimeout(timer.current)
-        timer.current = setTimeout(async () => {
-            // 時間が切れたので自動で入力扱い
-            await onRead()
-        }, timeout)
-    }
-
     function updateValue(value: string | undefined) {
         const disabled = value === undefined || value === ""
         if (disabled !== isDisabled) {
             setDisabled(disabled)
         }
-        if (str !== value && !disabled) {
-            resetTimer()
-        }
         setStr(value)
+    }
+
+    function onEnterKey(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === "Enter" && !isDisabled) {
+            onRead()
+        }
     }
 
     return (
@@ -60,10 +52,11 @@ export function BarcodeReader(params: {
                     onChange={(e) => updateValue(e.target.value)}
                     value={str}
                     autoFocus={params.autoSelect}
+                    onKeyDown={onEnterKey}
                 />
             </InputGroup>
 
-            <Btn onClick={onRead} disabled={isDisabled} >
+            <Btn onClick={onRead} disabled={isDisabled}>
                 <ArrowRight color={"white"}/>
             </Btn>
         </Flex>
