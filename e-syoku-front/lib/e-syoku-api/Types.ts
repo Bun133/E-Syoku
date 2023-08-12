@@ -295,9 +295,8 @@ export const paymentStatusResponse = defaultResponseFormat.and(z.object({
 }))
 
 export const paymentIdRequest = z.object({
-    // shopなどがお客さんの決済履歴を調べるときに使用
-    userId: uniqueId.optional(),
-    paymentId: uniqueId
+    paymentId: uniqueId.optional(),
+    barcode: z.string().optional()
 })
 
 export type PaymentIdRequest = z.infer<typeof paymentIdRequest>
