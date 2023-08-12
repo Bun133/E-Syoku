@@ -414,8 +414,6 @@ export const paymentStatus = standardFunction(async (request, response) => {
 export const markPaymentPaid = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
         return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
-            let userId = requireParameter("userId", z.string(), req)
-            if (userId.param == undefined) return {result: userId.error}
             let paidAmount = requireParameter("paidAmount", z.number(), req)
             if (paidAmount.param == undefined) return {result: paidAmount.error}
             let paidMeans = requireParameter("paidMeans", z.string(), req)
@@ -439,7 +437,6 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             // 要求データから生成された決済詳細データ
             const paidDetail: PaidDetail = {
                 paymentId: pId,
-                customerId: userId.param,
                 paymentStaffId: authInstance.uid,
                 paidTime: Timestamp.now(),
                 paidAmount: paidAmount.param,
@@ -448,7 +445,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             }
 
             // 決済セッションのステータスをPAIDに変更
-            const result = await markPaymentAsPaid(refs, userId.param, pId, paidDetail)
+            const result = await markPaymentAsPaid(refs, pId, paidDetail)
             return {
                 result: result
             }

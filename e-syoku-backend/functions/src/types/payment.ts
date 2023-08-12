@@ -12,8 +12,6 @@ export const paidDetailSchema = z.object({
     paymentId: uniqueId,
     // 決済取扱者ID
     paymentStaffId: uniqueId,
-    // 購入者UserID
-    customerId: uniqueId,
     // 決済完了時刻
     paidTime: timeStampSchema,
     // 決済完了金額

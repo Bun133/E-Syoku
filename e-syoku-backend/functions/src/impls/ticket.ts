@@ -162,10 +162,9 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, uid
  * ***支払いが完了したかどうかは確認しません***
  * ***店舗ごとに発行されます***
  * @param ref
- * @param uid
  * @param payment
  */
-export async function registerTicketsForPayment(ref: DBRefs, uid: string, payment: PaymentSession): Promise<Error & {
+export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSession): Promise<Error & {
     registered: {
         ticketIds: string[]
     }
@@ -202,7 +201,7 @@ export async function registerTicketsForPayment(ref: DBRefs, uid: string, paymen
     let order: Order
     // 店舗ごとに分けたOrderから食券登録
     for ([shopId, order] of shopMap.toArray()) {
-        const r = await registerTicket(ref, uid, shopId, order, payment)
+        const r = await registerTicket(ref, payment.customerId, shopId, order, payment)
         if (r.isSuccess) {
             registered.push(r.ticketId)
         } else {

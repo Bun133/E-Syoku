@@ -145,17 +145,16 @@ export async function getAllPayments(ref: DBRefs, userid: string): Promise<Payme
  * ***決済セッションが存在することを確認します***
  * ***商品の在庫を減らします***
  * @param refs
- * @param uid
  * @param sessionId
  * @param paidDetail
  */
-export async function markPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
+export async function markPaymentAsPaid(refs: DBRefs, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
-    return await internalMarkPaymentAsPaid(refs, uid, sessionId, paidDetail)
+    return await internalMarkPaymentAsPaid(refs, sessionId, paidDetail)
 }
 
-async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
+async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
     ticketsId: string[]
 }> {
     const assert = await assertPaymentStatus(refs, sessionId, paidDetail)
@@ -184,7 +183,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, uid: string, sessionId: s
     }
 
     // 決済セッションのデータからチケットを登録
-    const ticketRes = await registerTicketsForPayment(refs, uid, payment)
+    const ticketRes = await registerTicketsForPayment(refs, payment)
 
     async function rollBackTickets() {
         error("in internalMarkPaymentAsPaid,rollBacking Tickets Registration")
