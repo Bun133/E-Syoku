@@ -1,10 +1,4 @@
-import {
-    EndPoint,
-    EndPointErrorResponse,
-    EndPointResponse,
-    EndPointSuccessResponse,
-    useLazyEndpoint
-} from "@/lib/e-syoku-api/Axios";
+import {EndPoint, EndPointErrorResponse, EndPointSuccessResponse, useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
 import {DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
 import React, {useEffect, useRef} from "react";
 import {Box, Container, Spinner, Text} from "@chakra-ui/react";
@@ -28,18 +22,14 @@ export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
     const loadingFunc = param.loading ?? defaultLoading;
     const queryErrorFunc = param.queryNotSatisfied ?? defaultQueryError;
 
-    const {fetch: reload} = useLazyEndpoint(param.endpoint)
-    const cached = useRef<EndPointResponse<R>>()
+    const {response, isLoaded, fetch: fetch} = useLazyEndpoint(param.endpoint)
     const isQueryNotSatisfied = useRef(false)
 
     async function reloadFunc() {
-        cached.current = undefined
         const req = param.endpoint.requestType.safeParse(param.query)
+        isQueryNotSatisfied.current = !req.success;
         if (req.success) {
-            isQueryNotSatisfied.current = false
-            cached.current = await reload(req.data)
-        } else {
-            isQueryNotSatisfied.current = true
+            await fetch(req.data)
         }
     }
 
@@ -54,21 +44,21 @@ export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
                 clearInterval(interval)
             }
         }
-    }, []);
+    }, [param.refetch]);
 
     if (isQueryNotSatisfied.current) {
         return queryErrorFunc()
     }
 
-    if (cached.current === undefined) {
+    if (!isLoaded) {
         return loadingFunc()
     } else {
-        if (cached.current.data === undefined) {
+        if (response!!.data === undefined) {
             return (
-                <APIErrorModal error={cached.current as EndPointErrorResponse<R>}/>
+                <APIErrorModal error={response!! as EndPointErrorResponse<R>}/>
             )
         } else {
-            return param.onEnd(cached.current as EndPointSuccessResponse<R>, () => {
+            return param.onEnd(response!! as EndPointSuccessResponse<R>, () => {
                 reloadFunc()
             })
         }

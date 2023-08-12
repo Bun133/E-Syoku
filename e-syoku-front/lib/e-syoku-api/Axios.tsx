@@ -182,118 +182,18 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
     }
 }
 
-export type useEndPointOption = {
-    // if true, call the endpoint on mount
-    callOnMount?: boolean,
-}
-
-export function useEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, requestData: Q, option?: useEndPointOption): {
-    response: EndPointResponse<R> | undefined;
-    fetch: () => void;
-    isLoaded: boolean
-} {
-    const token = useFirebaseAuth()
-
-    const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
-    const isRequestPending = useRef(false)
-    const [isLoaded, setLoaded] = useState(false)
-    const isHandledFirstReq = useRef(false)
-
-    const call = () => {
-        if (token.user == undefined) {
-            // 見なかったことにする
-            return
-        }
-        isRequestPending.current = true
-        callEndpoint(endPoint, token.user, requestData).then(data => {
-            console.log("SET", data)
-            setResponse(data)
-            setLoaded(true)
-            isRequestPending.current = false
-        })
-    }
-
-    const fetch = () => {
-        if (isRequestPending.current) {
-            // ignore new request
-            console.log("Ignore new request")
-        }
-        setLoaded(false)
-        call()
-    }
-
-
-    useEffect(() => {
-        if (!isHandledFirstReq && (option === undefined || option?.callOnMount)) {
-            // first fetch
-            fetch()
-        } else if (isHandledFirstReq) {
-            // re-fetch
-            fetch()
-        }
-        isHandledFirstReq.current = true
-    }, [token.user])
-
-    return {response, isLoaded, fetch: fetch}
-}
-
 export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>) {
     const token = useFirebaseAuth()
     const [response, setResponse] = useState<EndPointResponse<R> | undefined>(undefined)
     const [isLoaded, setLoaded] = useState(false)
-    const abort = useRef(new AbortController())
-    const isRequestPending = useRef(false)
-    const isFirstReqSent = useRef(false)
 
-    const call: ((q: Q) => Promise<EndPointResponse<R> | undefined>) = async (requestData: Q) => {
-        if (token.user == undefined) {
-            // 見なかったことにする
-            return undefined
-        }
-        isRequestPending.current = true
-        try {
-            const data = await callEndpoint(endPoint, token.user, requestData, abort.current)
-            console.log("SET", data)
-            setResponse(data)
-            setLoaded(true)
-            isRequestPending.current = false
-            return data
-        } catch (e: unknown) {
-            console.log("ERROR", e)
-            isRequestPending.current = false
-            const err: EndPointErrorResponse<R> = {
-                data: undefined,
-                error: "接続が中断されました",
-                errorCode: "[Client]CONNECTION_LOST",
-                fetchFailed: true,
-                isSuccess: false,
-                parseFailed: false,
-                // @ts-ignore
-                rawError: e
-            }
-            return err
-        }
-    }
-
-    const fetch: ((q: Q) => Promise<EndPointResponse<R> | undefined>) = async (requestData: Q) => {
-        if (isRequestPending.current) {
-            // abort previous request
-            abort.current.abort()
-            console.log("Aborting previous request")
-        }
+    async function fetch(q: Q): Promise<EndPointResponse<R>> {
         setLoaded(false)
-        return call(requestData)
+        const r = await callEndpoint(endPoint, token.user, q)
+        setLoaded(true)
+        setResponse(r)
+        return r
     }
 
-    const firstCall: ((q: Q) => Promise<EndPointResponse<R> | undefined>) = async (requestData: Q) => {
-        if (!isFirstReqSent.current) {
-            // Send first request
-            const data = await fetch(requestData)
-            isFirstReqSent.current = true
-            return data
-        }
-        return undefined
-    }
-
-    return {response, isLoaded, fetch: fetch, firstCall}
+    return {response, isLoaded, fetch: fetch}
 }
