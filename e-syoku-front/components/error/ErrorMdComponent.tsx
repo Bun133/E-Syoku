@@ -35,6 +35,7 @@ function mdName(errorCode: string): string | undefined {
         case "ITEM_GONE":
         case "INPUT_WRONG_PAIDAMOUNT":
         case "INPUT_WRONG_BARCODE":
+        case "TICKET_STATUS_INVALID":
             return `${errorCode}.md`
         default:
             return "default.md"
