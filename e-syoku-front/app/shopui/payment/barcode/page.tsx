@@ -81,33 +81,3 @@ export default function Page() {
         )
     }
 }
-
-function TicketEntry(params: {
-    uid: string,
-    ticketId: string
-}) {
-    const {response: data} = useEndpoint(ticketStatusEndPoint, {uid: params.uid, ticketId: params.ticketId})
-    if (data) {
-        if (data.isSuccess) {
-            if (data.data.ticket) {
-                return (
-                    <Grid templateColumns="repeat(5,1fr)">
-                        <GridItem>
-                            {data.data.ticket.ticketNum}
-                        </GridItem>
-                        <GridItem>
-                            {data.data.ticket.shop.shopId}
-                        </GridItem>
-                        <GridItem>
-                            {data.data.ticket.uniqueId}
-                        </GridItem>
-                    </Grid>
-                )
-            } else {
-                return (
-                    <Text>該当するチケットが見つかりませんでした</Text>
-                )
-            }
-        }
-    }
-}
