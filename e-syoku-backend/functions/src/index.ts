@@ -173,10 +173,8 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
         await onPost(request, response, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
                 let barcode = requireOptionalParameter("barcode", z.string(), request);
-                let uidParam = requireOptionalParameter("uid", z.string(), request);
                 let ticketIdParam = requireOptionalParameter("ticketId", z.string(), request);
 
-                let uid: string | undefined
                 let ticketId: string | undefined
 
                 if (barcode.param) {
@@ -189,16 +187,14 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                             result: err
                         }
                     }
-                    uid = barcodeData.data.uid
                     ticketId = barcodeData.data.ticketId
-                } else if (uidParam.param && ticketIdParam.param) {
-                    uid = uidParam.param
+                } else if (ticketIdParam.param) {
                     ticketId = ticketIdParam.param
                 }
 
-                if (uid && ticketId) {
+                if (ticketId) {
                     // チケットのステータスを変更します
-                    let called = await updateTicketStatusByIds(refs, messaging, uid, ticketId, fromStatus, toStatus, undefined, sendNotification)
+                    let called = await updateTicketStatusByIds(refs, messaging, ticketId, fromStatus, toStatus, undefined, sendNotification)
                     if (!called.isSuccess) {
                         const err: Error = called
                         return {
@@ -565,8 +561,6 @@ export const grantPermission = standardFunction(async (req, res) => {
 export const bindBarcode = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
         return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
-            const uid = requireParameter("uid", z.string(), req)
-            if (uid.param == undefined) return {result: uid.error}
             const ticketId = requireParameter("ticketId", z.string().array().nonempty(), req)
             if (ticketId.param == undefined) return {result: ticketId.error}
             const barcode = requireParameter("barcode", z.string(), req)

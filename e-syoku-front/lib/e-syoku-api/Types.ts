@@ -269,9 +269,7 @@ export const ticketIdRequest = z.object({
 })
 export const ticketSpecifyRequest = z.object({
     barcode: z.string()
-}).or(ticketIdRequest.and(z.object({
-    uid: uniqueId
-})))
+}).or(ticketIdRequest)
 
 export const goodsWithRemainDataSchema = z.object({goods: prettyGoodsSchema, remainData: goodsRemainDataSchema})
 
