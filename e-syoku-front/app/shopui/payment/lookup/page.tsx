@@ -50,7 +50,7 @@ export default function Page() {
                                                  </CardFooter>
                                              </Card>
                                              <Btn onClick={() => {
-                                                 router.push(`/shopui/payment/pay?paymentId=${paymentId}`)
+                                                 router.push(`/shopui/payment/pay?paymentId=${payment.sessionId}`)
                                              }}>決済取扱い</Btn>
                                              <Btn onClick={reload}>再読み込み</Btn>
                                          </VStack>
