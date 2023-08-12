@@ -34,9 +34,9 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
     if (barcode) {
         satisfyCondition = true
         ticket = await ticketByBarcode(refs, barcode)
-    } else if (uid && ticketId) {
+    } else if (ticketId) {
         satisfyCondition = true
-        ticket = await ticketById(refs, uid, ticketId)
+        ticket = await ticketById(refs, ticketId)
     } else if (uid) {
         // TODO impl
     }
