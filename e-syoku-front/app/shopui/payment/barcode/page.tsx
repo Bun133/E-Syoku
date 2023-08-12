@@ -17,7 +17,6 @@ type BindStatus = {
 
 export default function Page() {
     const params = useSearchParams()
-    const uid = params.get("uid")
     const ticketsId = params.getAll("ticketId")
 
     const token = useFirebaseAuth()
@@ -27,10 +26,10 @@ export default function Page() {
 
     const [error, setError] = useState<EndPointErrorResponse<any>>()
 
-    if (uid === null || ticketsId.length == 0) {
+    if (ticketsId.length == 0) {
         return (
             <Text>
-                uid,ticketIdを正しく指定してください
+                ticketIdを正しく指定してください
             </Text>
         )
     } else {
@@ -42,7 +41,6 @@ export default function Page() {
                     <BarcodeReader onRead={async (e) => {
                         const res = await callEndpoint(bindBarcodeEndpoint, token.user, {
                             barcode: e,
-                            uid: uid,
                             ticketId: status.filter(s => !s.isBound).map(s => s.ticketId)
                         })
 
