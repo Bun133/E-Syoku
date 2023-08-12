@@ -6083,6 +6083,11 @@
   dependencies:
     "argparse" "^2.0.1"
 
+"jsbarcode@^3.8.0":
+  "integrity" "sha512-zv3KsH51zD00I/LrFzFSM6dst7rDn0vIMzaiZFL7qusTjPZiPtxg3zxetp0RR7obmjTw4f6NyGgbdkBCgZUIrA=="
+  "resolved" "https://registry.npmjs.org/jsbarcode/-/jsbarcode-3.11.5.tgz"
+  "version" "3.11.5"
+
 "jsc-android@^250231.0.0":
   "integrity" "sha512-rS46PvsjYmdmuz1OAWXY/1kCYG7pnf1TBqeTiOJr1iDz7s5DLxxC9n/ZMknLDxzYzNVfI7R95MH10emSSG1Wuw=="
   "resolved" "https://registry.npmjs.org/jsc-android/-/jsc-android-250231.0.0.tgz"
@@ -7647,6 +7652,14 @@
   "integrity" "sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg=="
   "resolved" "https://registry.npmjs.org/range-parser/-/range-parser-1.2.1.tgz"
   "version" "1.2.1"
+
+"react-barcode@^1.4.6":
+  "integrity" "sha512-56WCPqjgpExPVi5LgKOfxM6uSCB4Wd1r94jY2VEwkIdigPjLp8P9RyIBIyQmDraxtYGOHE0e4Uer4+QrmOIy7Q=="
+  "resolved" "https://registry.npmjs.org/react-barcode/-/react-barcode-1.4.6.tgz"
+  "version" "1.4.6"
+  dependencies:
+    "jsbarcode" "^3.8.0"
+    "prop-types" "^15.6.2"
 
 "react-clientside-effect@^1.2.6":
   "integrity" "sha512-XGGGRQAKY+q25Lz9a/4EPqom7WRjz3z9R2k4jhVKA/puQFH/5Nt27vFZYql4m4NVNdUvX8PS3O7r/Zzm7cjUlg=="
