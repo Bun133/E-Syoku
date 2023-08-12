@@ -59,10 +59,11 @@ export function BarcodeReader(params: {
                     placeholder={placeHolderString}
                     onChange={(e) => updateValue(e.target.value)}
                     value={str}
+                    autoFocus={params.autoSelect}
                 />
             </InputGroup>
 
-            <Btn onClick={onRead} disabled={isDisabled} autoFocus={params.autoSelect}>
+            <Btn onClick={onRead} disabled={isDisabled} >
                 <ArrowRight color={"white"}/>
             </Btn>
         </Flex>
