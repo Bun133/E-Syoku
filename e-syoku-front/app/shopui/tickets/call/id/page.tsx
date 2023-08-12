@@ -4,12 +4,13 @@ import {useSearchParams} from "next/navigation";
 import {Box, Spacer, Text} from "@chakra-ui/react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
-import {callTicketStackEndpoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
+import {callTicketStackEndpoint, resolveTicketEndPoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import {TicketDisplay} from "@/components/TicketDisplay";
 import Btn from "@/components/btn";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import {useRef, useState} from "react";
-import {useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
+import {EndPointErrorResponse, useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
+import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
 const initialCount = 10
 
@@ -17,13 +18,16 @@ export default function Page() {
     const params = useSearchParams()
     const shopId = params.get("shopId") ?? undefined
     const callCount = useRef(initialCount)
-    const {fetch} = useLazyEndpoint(callTicketStackEndpoint)
+    const {fetch: callTicketStack} = useLazyEndpoint(callTicketStackEndpoint)
+    const {fetch: resolveTicket} = useLazyEndpoint(resolveTicketEndPoint)
+    const reloadFunc = useRef<() => void | null>()
+    const apiError = useRef<EndPointErrorResponse<any>>()
 
     async function autoCall() {
         if (shopId == undefined) {
             return
         }
-        const r = await fetch({
+        const r = await callTicketStack({
             shopId: shopId,
             count: callCount.current
         })
@@ -37,6 +41,8 @@ export default function Page() {
                 <Box h={"full"} w={"calc(100vw - 20rem)"}>
                     <APIEndpoint endpoint={ticketDisplayEndpoint} query={{shopId: shopId}}
                                  onEnd={(res, reload) => {
+                                     reloadFunc.current = reload
+
                                      return (
                                          <VStack w={"full"} h={"full"}>
                                              <TicketDisplay data={res.data.displays} displaySelection={{
@@ -64,14 +70,29 @@ export default function Page() {
                 onCountChange={(toChange) => {
                     callCount.current = toChange
                     autoCall()
-                }}/>
+                }}
+                onBarcodeRead={async (barcode: string) => {
+                    const r = await resolveTicket({barcode: barcode})
+                    if (r) {
+                        if (r.isSuccess) {
+                            if (reloadFunc.current) {
+                                reloadFunc.current()
+                            }
+                        } else {
+                            apiError.current = r
+                        }
+                    }
+                }}
+            />
+            <APIErrorModal error={apiError.current}/>
         </HStack>
     )
 }
 
 function CallRight(params: {
     initial: number,
-    onCountChange: (callCount: number) => void
+    onCountChange: (callCount: number) => void,
+    onBarcodeRead: (barcode: string) => Promise<void>
 }) {
 
     const [callCount, setCallCount] = useState(params.initial)
@@ -104,9 +125,7 @@ function CallRight(params: {
             <VStack>
                 <Text>バーコード読み取り</Text>
                 <Spacer/>
-                <BarcodeReader onRead={(barcode: string) => {
-
-                }} autoSelect={true}/>
+                <BarcodeReader onRead={params.onBarcodeRead} autoSelect={true}/>
             </VStack>
             <Spacer/>
         </VStack>
