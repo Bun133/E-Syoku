@@ -38,7 +38,7 @@ export default function Page() {
 
     const router = useRouter()
 
-    if(!(paymentId || barcode)){
+    if (!(paymentId || barcode)) {
         return (
             <>
                 <PageTitle title={""}/>
@@ -74,29 +74,26 @@ export default function Page() {
                             金額を入力してください
                         </FormErrorMessage>) : null}
                     </FormControl>
-                    <Btn onClick={() => {
-                        const f = async () => {
-                            const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
-                                paidAmount: amount,
-                                paidMeans: paidMeans,
-                                paymentId: paymentId,
-                                paymentBarcode: barcode,
-                                // TODO remarkを簡単に入力できるように
-                                remark: "テストです！"
+                    <Btn onClick={async () => {
+                        const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
+                            paidAmount: amount,
+                            paidMeans: paidMeans,
+                            paymentId: paymentId,
+                            paymentBarcode: barcode,
+                            // TODO remarkを簡単に入力できるように
+                            remark: "テストです！"
+                        })
+
+                        if (res.isSuccess) {
+                            const param = new URLSearchParams()
+                            res.data.ticketsId.forEach((ticketId) => {
+                                param.append("ticketId", ticketId)
                             })
 
-                            if (res.isSuccess) {
-                                const param = new URLSearchParams()
-                                res.data.ticketsId.forEach((ticketId) => {
-                                    param.append("ticketId", ticketId)
-                                })
-
-                                router.push(`/shopui/payment/barcode?${param.toString()}`)
-                            } else {
-                                setError(res)
-                            }
+                            router.push(`/shopui/payment/barcode?${param.toString()}`)
+                        } else {
+                            setError(res)
                         }
-                        f()
                     }} disabled={isAmountError || isPaidMeansError}>決済処理</Btn>
                     <APIErrorModal error={error}/>
                 </VStack>
