@@ -178,8 +178,8 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
     return standardFunction(async (request, response) => {
         await onPost(request, response, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
-                let barcode = requireOptionalParameter("barcode", z.string(), request);
-                let ticketIdParam = requireOptionalParameter("ticketId", z.string(), request);
+                let barcode = requireOptionalParameter("barcode", z.string().optional(), request);
+                let ticketIdParam = requireOptionalParameter("ticketId", z.string().optional(), request);
 
                 let ticketId: string | undefined
 
