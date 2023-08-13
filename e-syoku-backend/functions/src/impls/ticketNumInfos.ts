@@ -4,7 +4,6 @@ import {Error, Success, TypedSingleResult} from "../types/errors";
 import {injectError, dbNotFoundError, ticketNumGenerateFailedError} from "./errors";
 import {TicketNumInfo, ticketNumInfoSchema} from "../types/ticketNumInfos";
 import {firestore} from "firebase-admin";
-import {updateTicketDisplayDataForTicket} from "./ticketDisplays";
 import Transaction = firestore.Transaction;
 
 export async function ticketNumInfoById(ref: DBRefs, shopId: string, transaction?: Transaction):Promise<TypedSingleResult<TicketNumInfo>> {
@@ -19,10 +18,9 @@ export async function updateLastTicketNum(ref: DBRefs, ticket: Ticket, transacti
  * ticketNum以外のデータがそろっているチケットを登録します
  * @param ref
  * @param shopId
- * @param uid
  * @param ticket
  */
-export async function createNewTicket(ref: DBRefs, shopId: string, uid: string, ticket: (ticketId:string,ticketNum: string) => Ticket): Promise<Success & { ticket: Ticket } | Error> {
+export async function createNewTicket(ref: DBRefs, shopId: string, ticket: (ticketId:string,ticketNum: string) => Ticket): Promise<Success & { ticket: Ticket } | Error> {
     return await ref.db.runTransaction(async (transaction) => {
         // ランダムに新しいRefを取得してチケットを登録
         // さすがに被らないと信じてるぞUUID
@@ -44,9 +42,6 @@ export async function createNewTicket(ref: DBRefs, shopId: string, uid: string, 
         // LastTicketNumを更新
         const last = await updateLastTicketNum(ref, ticketData, transaction)
         if (!last.isSuccess) return last
-        // TicketDisplayDataを更新
-        const display = await updateTicketDisplayDataForTicket(ref, ticketData)
-        if (!display.isSuccess) return display
 
         const suc: Success & { ticket: Ticket } = {
             isSuccess: true,

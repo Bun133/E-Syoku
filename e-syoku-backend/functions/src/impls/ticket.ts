@@ -15,7 +15,7 @@ import {
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
-import {ticketDisplayDataByShopId, updateTicketDisplayDataForTicket} from "./ticketDisplays";
+import {ticketDisplayDataByShopId} from "./ticketDisplays";
 import {getTicketBarcodeBindData} from "./barcode";
 import {NotificationData, sendMessage} from "./notification";
 import {Messaging} from "firebase-admin/lib/messaging";
@@ -120,12 +120,6 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
         return err
     }
 
-    // 変更後のチケットのデータ
-    const toWriteTicket: Ticket = {
-        ...ticket.data,
-        status: toStatus
-    }
-
     // チケットのデータをもとに、DBを更新
     let writeResult: Result = await mergeData(ticketSchema.omit({
         ticketNum: true,
@@ -138,9 +132,6 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
     }), ticketRef, {status: toStatus}, transaction)
 
     if (writeResult.isSuccess) {
-        // チケットのDisplayDataも変更
-        // TODO エラーハンドリングをどうするのか
-        await updateTicketDisplayDataForTicket(ref, toWriteTicket)
         // 通知を送信する場合は送信処理を行います
         if (sendNotification) {
             await sendMessage(ref, messaging, ticket.data.customerId, sendNotification)
@@ -243,7 +234,7 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
 async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: Order, associatedPayment: PaymentSession): Promise<Success & {
     ticketId: string
 } | Error> {
-    const newTicket = await createNewTicket(ref, shopId, uid, (ticketId: string, ticketNum: string) => {
+    const newTicket = await createNewTicket(ref, shopId, (ticketId: string, ticketNum: string) => {
         const ticketData: Ticket = {
             uniqueId: ticketId,
             customerId: uid,
