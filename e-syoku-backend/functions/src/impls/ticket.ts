@@ -15,11 +15,9 @@ import {
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
-import {ticketDisplayDataByShopId} from "./ticketDisplays";
 import {getTicketBarcodeBindData} from "./barcode";
 import {NotificationData, sendMessage} from "./notification";
 import {Messaging} from "firebase-admin/lib/messaging";
-import {TicketDisplayData} from "../types/ticketDisplays";
 import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
@@ -31,6 +29,7 @@ function ticketParser(uniqueId: string, data: firestore.DocumentData): Ticket {
         customerId: data.customerId,
         issueTime: data.issueTime,
         status: data.status,
+        lastStatusUpdated: data.lastStatusUpdated,
         paymentSessionId: data.paymentSessionId,
         orderData: data.orderData
     }
@@ -67,6 +66,10 @@ export async function getTickets(ref: DBRefs, ticketIds: string[]) {
  */
 export async function listTicketForUser(ref: DBRefs, uid: string): Promise<Array<Ticket>> {
     return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("customerId", "==", uid), (ref, data) => ticketParser(ref.id, data))
+}
+
+export async function listTicketForShop(ref: DBRefs, shopId: string): Promise<Array<Ticket>> {
+    return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("shopId", "==", shopId), (ref, data) => ticketParser(ref.id, data))
 }
 
 /**
@@ -129,7 +132,7 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
         paymentSessionId: true,
         shopId: true,
         uniqueId: true
-    }), ticketRef, {status: toStatus}, transaction)
+    }), ticketRef, {status: toStatus, lastStatusUpdated: Timestamp.now()}, transaction)
 
     if (writeResult.isSuccess) {
         // 通知を送信する場合は送信処理を行います
@@ -241,6 +244,7 @@ async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: O
             shopId: shopId,
             orderData: order,
             status: "PROCESSING",
+            lastStatusUpdated: Timestamp.now(),
             issueTime: Timestamp.now(),
             paymentSessionId: associatedPayment.sessionId,
             ticketNum: ticketNum
@@ -333,8 +337,9 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
 export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, shopId: string, count: number): Promise<Success & {
     calledTicketIds: string[]
 }> {
-    const ticketData = (await ticketDisplayDataByShopId(ref, shopId)).sort((a, b) => {
-        return a.lastUpdated.seconds - b.lastUpdated.seconds
+    const ticketData: Ticket[] = (await listTicketForShop(ref, shopId)).sort((a, b) => {
+        // TODO nanoSecs
+        return a.lastStatusUpdated.seconds - b.lastStatusUpdated.seconds
     })
 
     let calledTicketCount: number = 0
@@ -354,7 +359,7 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
 
         return suc
     } else {
-        const toCallTicketIds: TicketDisplayData[] = []
+        const toCallTicketIds: Ticket[] = []
         const processing = ticketData.filter(e => e.status === "PROCESSING")
         for (let i = 0; i < toCallCount; i++) {
             if (i < processing.length) {
@@ -363,9 +368,9 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
         }
 
         const res = await Promise.all(toCallTicketIds.map(async e => {
-            const result = await updateTicketStatusByIds(ref, messaging, e.ticketId, "PROCESSING", "CALLED")
+            const result = await updateTicketStatusByIds(ref, messaging, e.uniqueId, "PROCESSING", "CALLED")
             return {
-                ticketId: e.ticketId,
+                ticketId: e.uniqueId,
                 result: result
             }
         }))

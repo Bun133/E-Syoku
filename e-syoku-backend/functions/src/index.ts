@@ -6,7 +6,13 @@ import {HttpsFunction} from "firebase-functions/v2/https";
 import {TicketStatus} from "./types/ticket";
 import {authed, authedWithType} from "./utils/auth";
 import {AuthInstance, AuthTypeSchema} from "./types/auth";
-import {callTicketStackFunc, listTicketForUser, ticketById, updateTicketStatusByIds} from "./impls/ticket";
+import {
+    callTicketStackFunc,
+    listTicketForShop,
+    listTicketForUser,
+    ticketById,
+    updateTicketStatusByIds
+} from "./impls/ticket";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
@@ -14,7 +20,8 @@ import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionByBarcode, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {
     authFailedError,
-    injectError, paymentIdNotFoundError,
+    injectError,
+    paymentIdNotFoundError,
     paymentNotFoundError,
     ticketNotSpecifiedError
 } from "./impls/errors";
@@ -22,7 +29,6 @@ import {Error, Success} from "./types/errors";
 import {listAllShop} from "./impls/shop";
 import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
-import {ticketDisplayDataByShopId} from "./impls/ticketDisplays";
 import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
@@ -355,7 +361,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
                 const r = await getPaymentSessionById(refs, id.param)
                 if (r.isSuccess) {
                     payment = r.data
-                }else{
+                } else {
                     return {result: r}
                 }
             } else if (barcode.param != undefined) {
@@ -466,13 +472,14 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             if (param.param == undefined) return {result: param.error}
             const shopId = param.param
 
-            const data = (await ticketDisplayDataByShopId(refs, shopId)).map((data) => {
+            // TODO Ticketをそのまま返すように
+            const data = (await listTicketForShop(refs, shopId)).map((data) => {
                 // Remove unnecessary DBRef field
                 return {
                     status: data.status,
-                    ticketId: data.ticketId,
+                    ticketId: data.uniqueId,
                     ticketNum: data.ticketNum,
-                    lastUpdated: data.lastUpdated
+                    lastUpdated: data.lastStatusUpdated
                 }
             })
             const suc: Success = {

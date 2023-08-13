@@ -41,7 +41,9 @@ export const ticketSchema = z.object({
     // 決済セッションID
     paymentSessionId: uniqueId,
     // 食券ステータスデータ
-    status: ticketStatusSchema
+    status: ticketStatusSchema,
+    // 最後にステータスが変更された時刻
+    lastStatusUpdated: timeStampSchema
 });
 
 export type Ticket = z.infer<typeof ticketSchema>
