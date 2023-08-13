@@ -209,7 +209,19 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                         }
                     }
 
-                    const suc: Success = {"isSuccess": true, "success": successMessage}
+                    const pTicket = await prettyTicket(refs, called.targetTicket)
+                    if (!pTicket.isSuccess) {
+                        const err: Error = pTicket
+                        return {
+                            result: err
+                        }
+                    }
+
+                    const suc: Success & { ticket: PrettyTicket } = {
+                        "isSuccess": true,
+                        "success": successMessage,
+                        ticket: pTicket.data
+                    }
                     return {result: suc}
                 } else {
                     const err: Error = {

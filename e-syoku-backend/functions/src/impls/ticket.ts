@@ -91,7 +91,9 @@ export async function updateTicketStatusByBarcode(ref: DBRefs, messaging: Messag
     return await updateTicketStatusByIds(ref, messaging, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
 }
 
-export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
+export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Success & {
+    targetTicket: Ticket
+} | Error> {
     return await internalUpdateTicketStatus(ref, messaging, ref.tickets.doc(ticketId), fromStatus, toStatus, transaction, sendNotification)
 }
 
@@ -105,7 +107,8 @@ export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging,
  * @param transaction
  * @param sendNotification
  */
-async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Result> {
+async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData)
+    : Promise<Success & { targetTicket: Ticket } | Error> {
 
     // チケットの存在を確認する
     const ticket = await ticketByRef(ref, ticketRef)
@@ -139,8 +142,9 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
         if (sendNotification) {
             await sendMessage(ref, messaging, ticket.data.customerId, sendNotification)
         }
-        const suc: Success = {
+        const suc: Success & { targetTicket: Ticket } = {
             isSuccess: true,
+            targetTicket: ticket.data
         }
         return suc
     } else {
