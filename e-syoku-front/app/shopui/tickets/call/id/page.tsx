@@ -20,7 +20,7 @@ export default function Page() {
     const callCount = useRef(initialCount)
     const {fetch: callTicketStack} = useLazyEndpoint(callTicketStackEndpoint)
     const {fetch: resolveTicket} = useLazyEndpoint(resolveTicketEndPoint)
-    const reloadFunc = useRef<() => void | null>()
+    const reloadFunc = useRef<() => Promise<void> | null>()
     const apiError = useRef<EndPointErrorResponse<any>>()
 
     async function autoCall() {
@@ -40,6 +40,7 @@ export default function Page() {
                 <Heading>食券一覧</Heading>
                 <Box h={"full"} w={"calc(100vw - 20rem)"}>
                     <APIEndpoint endpoint={ticketDisplayEndpoint} query={{shopId: shopId}}
+                                 disableLoading={true}
                                  onEnd={(res, reload) => {
                                      reloadFunc.current = reload
 

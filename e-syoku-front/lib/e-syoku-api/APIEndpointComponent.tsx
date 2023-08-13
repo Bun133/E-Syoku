@@ -13,11 +13,13 @@ export type RefetchOption = {
 export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
     endpoint: EndPoint<Q, R>,
     query: Partial<Q>,
-    onEnd: (response: EndPointSuccessResponse<R>, reload: () => void) => React.JSX.Element,
+    onEnd: (response: EndPointSuccessResponse<R>, reload: () => Promise<void>) => React.JSX.Element,
     loading?: () => React.JSX.Element,
     // QueryがQに合わない時に表示するやつ(普通は一瞬しか表示されない・そもそも表示されないはずので、エラー画面にするのがいい)
     queryNotSatisfied?: () => React.JSX.Element,
-    refetch?: RefetchOption
+    refetch?: RefetchOption,
+    // 前回のFetch結果が残ってる時にloadingで表示を更新しないフラグ
+    disableLoading?: boolean
 }) {
     const loadingFunc = param.loading ?? defaultLoading;
     const queryErrorFunc = param.queryNotSatisfied ?? defaultQueryError;
@@ -46,23 +48,29 @@ export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
         }
     }, [param.refetch]);
 
-    if (isQueryNotSatisfied.current) {
-        return queryErrorFunc()
-    }
-
-    if (!isLoaded) {
-        return loadingFunc()
-    } else {
+    function displayResponse() {
         if (response!!.data === undefined) {
             return (
                 <APIErrorModal error={response!! as EndPointErrorResponse<R>}/>
             )
         } else {
-            return param.onEnd(response!! as EndPointSuccessResponse<R>, () => {
-                reloadFunc()
+            return param.onEnd(response!! as EndPointSuccessResponse<R>, async () => {
+                await reloadFunc()
             })
         }
     }
+
+    if (isQueryNotSatisfied.current) {
+        return queryErrorFunc()
+    }
+
+    if (!isLoaded) {
+        if (!(param.disableLoading ?? false) || !response) {
+            return loadingFunc()
+        }
+    }
+
+    return displayResponse()
 }
 
 function defaultLoading(): React.JSX.Element {

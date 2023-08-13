@@ -19,7 +19,7 @@ export default function Page() {
 
                              return (
                                  <VStack>
-                                     <TicketDisplay data={response.data.displays}/>
+                                     <TicketDisplay data={response.data.tickets}/>
                                      <Btn onClick={reload}>再読み込み</Btn>
                                  </VStack>
                              )
