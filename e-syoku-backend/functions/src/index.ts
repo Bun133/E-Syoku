@@ -25,7 +25,7 @@ import {
     paymentNotFoundError,
     ticketNotSpecifiedError
 } from "./impls/errors";
-import {Error, Success} from "./types/errors";
+import {Error, Success, TypedResult} from "./types/errors";
 import {listAllShop} from "./impls/shop";
 import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
@@ -34,6 +34,7 @@ import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
+import {PrettyTicket} from "./types/prettyPrint";
 
 
 admin.initializeApp()
@@ -472,19 +473,13 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             if (param.param == undefined) return {result: param.error}
             const shopId = param.param
 
-            // TODO Ticketをそのまま返すように
-            const data = (await listTicketForShop(refs, shopId)).map((data) => {
-                // Remove unnecessary DBRef field
-                return {
-                    status: data.status,
-                    ticketId: data.uniqueId,
-                    ticketNum: data.ticketNum,
-                    lastUpdated: data.lastStatusUpdated
-                }
-            })
+            const pTickets: TypedResult<PrettyTicket>[] = await Promise.all((await listTicketForShop(refs, shopId)).map(async e => prettyTicket(refs, e)))
+
+            const data = pTickets.filter(e => e.isSuccess).map(e => e.data as PrettyTicket)
+
             const suc: Success = {
                 isSuccess: true,
-                displays: data
+                tickets: data
             }
             return {
                 result: suc

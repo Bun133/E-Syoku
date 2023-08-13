@@ -40,8 +40,6 @@ export function NotificationEnsure(params: {
 
     async function requestPermission() {
         if (Notification.permission !== "granted") {
-            // TODO popupが出ない環境がある
-            // PWAなら出るのでPWAさせる
             await Notification.requestPermission()
 
             // auto re-run main

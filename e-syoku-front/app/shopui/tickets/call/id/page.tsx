@@ -45,7 +45,7 @@ export default function Page() {
 
                                      return (
                                          <VStack w={"full"} h={"full"}>
-                                             <TicketDisplay data={res.data.displays} displaySelection={{
+                                             <TicketDisplay data={res.data.tickets} displaySelection={{
                                                  processing: true,
                                                  called: true,
                                                  resolved: true,

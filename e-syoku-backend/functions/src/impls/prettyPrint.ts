@@ -2,7 +2,9 @@ import {Ticket, TicketStatus} from "../types/ticket";
 import {DBRefs} from "../utils/db";
 import {
     PrettyGoods,
-    PrettyOrder, PrettyPaymentSession, PrettyPaymentState,
+    PrettyOrder,
+    PrettyPaymentSession,
+    PrettyPaymentState,
     PrettySingleOrder,
     PrettyTicket,
     PrettyTicketStatus,
@@ -109,7 +111,8 @@ export function prettyStatus(status: TicketStatus): PrettyTicketStatus {
 }
 
 export async function prettyTicket(refs: DBRefs, ticket: Ticket): Promise<TypedResult<PrettyTicket>> {
-    const timeStamp = prettyTimeStamp(ticket.issueTime)
+    const issueTime = prettyTimeStamp(ticket.issueTime)
+    const lastUpdatedTime = prettyTimeStamp(ticket.lastStatusUpdated)
     const order = await prettyOrder(refs, ticket.orderData)
     if (!order.isSuccess) {
         return order
@@ -120,8 +123,9 @@ export async function prettyTicket(refs: DBRefs, ticket: Ticket): Promise<TypedR
         return shop
     }
     const prettyTicket: PrettyTicket = {
-        issueTime: timeStamp,
+        issueTime: issueTime,
         status: status,
+        lastStatusUpdated: lastUpdatedTime,
         orderData: order.data,
         uniqueId: ticket.uniqueId,
         shop: shop.data,
@@ -138,8 +142,8 @@ export async function prettyTicket(refs: DBRefs, ticket: Ticket): Promise<TypedR
     return suc
 }
 
-function prettyPaymentStatus(state:PaymentState):PrettyPaymentState{
-    switch (state){
+function prettyPaymentStatus(state: PaymentState): PrettyPaymentState {
+    switch (state) {
         case "PAID":
             return "支払い済み"
         case "UNPAID":
@@ -155,7 +159,7 @@ export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Prom
 
     const pStatus = prettyPaymentStatus(payment.state)
 
-    const session:PrettyPaymentSession ={
+    const session: PrettyPaymentSession = {
         sessionId: payment.sessionId,
         barcode: payment.barcode,
         paidDetail: payment.paidDetail,

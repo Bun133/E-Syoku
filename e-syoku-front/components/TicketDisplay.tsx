@@ -1,5 +1,5 @@
-import {TicketDisplayData} from "@/lib/e-syoku-api/Types";
-import {Center, Flex, Heading, HStack, VStack} from "@chakra-ui/layout";
+import {PrettyTicket} from "@/lib/e-syoku-api/Types";
+import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {useEffect, useRef} from "react";
 import {Box} from "@chakra-ui/react";
 import {ticketColor} from "@/components/Ticket";
@@ -19,16 +19,15 @@ const defaultDisplaySelection: DisplaySelection = {
 }
 
 export function TicketDisplay(params: {
-    data: TicketDisplayData[],
+    data: PrettyTicket[],
     displaySelection?: DisplaySelection
 }) {
     const selection = params.displaySelection ?? defaultDisplaySelection
-    // TODO sortされてない(nanosecondsが考慮されてない)
-    const sorted = params.data.sort((a, b) => a.lastUpdated._seconds - b.lastUpdated._seconds)
-    const processing = sorted.filter(e => e.status === "PROCESSING")
-    const called = sorted.filter(e => e.status === "CALLED")
-    const informed = sorted.filter(e => e.status === "INFORMED")
-    const resolved = sorted.filter(e => e.status === "RESOLVED")
+    const sorted = params.data.sort((a, b) => a.lastStatusUpdated.utcSeconds - b.lastStatusUpdated.utcSeconds)
+    const processing = sorted.filter(e => e.status === "注文済み")
+    const called = sorted.filter(e => e.status === "受け取り待ち")
+    const informed = sorted.filter(e => e.status === "お知らせ")
+    const resolved = sorted.filter(e => e.status === "完了")
 
     return (
         <VStack w={"full"} h={"full"} flexShrink={1}>
@@ -44,7 +43,7 @@ export function TicketDisplay(params: {
     )
 }
 
-function TicketDisplayRow(props: { title: string, displays: TicketDisplayData[], ticketColor: string }) {
+function TicketDisplayRow(props: { title: string, displays: PrettyTicket[], ticketColor: string }) {
     const duration = 2000
     const currentIndex = useRef(0)
     const listElement = useRef<HTMLDivElement>(null)
@@ -83,7 +82,7 @@ function TicketDisplayRow(props: { title: string, displays: TicketDisplayData[],
             <HStack spacing={"2rem"} overflowX={"scroll"} w={"full"} px={2} ref={listElement}>
                 {props.displays.map((display) => {
                     return (
-                        <Box key={display.ticketId} backgroundColor={props.ticketColor} w={"8rem"} p={2}
+                        <Box key={display.uniqueId} backgroundColor={props.ticketColor} w={"8rem"} p={2}
                              borderRadius={5} flexShrink={0} flexGrow={0}>
                             <Center>
                                 <Heading>{display.ticketNum}</Heading>

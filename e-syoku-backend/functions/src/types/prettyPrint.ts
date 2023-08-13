@@ -53,7 +53,8 @@ export const prettyTicketSchema = z.object({
     issueTime: prettyTimeStampSchema,
     orderData: prettyOrderSchema,
     paymentSessionId: uniqueId,
-    status: prettyTicketStatusSchema
+    status: prettyTicketStatusSchema,
+    lastStatusUpdated: prettyTimeStampSchema,
 })
 
 export type PrettyTicket = z.infer<typeof prettyTicketSchema>

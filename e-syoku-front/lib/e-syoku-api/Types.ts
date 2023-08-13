@@ -127,7 +127,7 @@ export type PaymentState = z.infer<typeof paymentStateSchema>
 export const paymentSessionSchema = z.object({
     // 決済セッションID
     sessionId: uniqueId,
-    barcode:z.string(),
+    barcode: z.string(),
     // 購入者UserID
     customerId: uniqueId,
     // 注文内容
@@ -164,19 +164,19 @@ export const prettyTimeStampSchema = z.object({
 export type PrettyTimeStamp = z.infer<typeof prettyTimeStampSchema>
 
 export const prettyGoodsSchema = z.object({
-    goodsId:uniqueId,
-    shop:shopDetailType,
-    name:z.string(),
-    price:z.number(),
-    description:z.string().optional(),
-    imageUrl:z.string().optional(),
+    goodsId: uniqueId,
+    shop: shopDetailType,
+    name: z.string(),
+    price: z.number(),
+    description: z.string().optional(),
+    imageUrl: z.string().optional(),
 })
 
 export type PrettyGoods = z.infer<typeof prettyGoodsSchema>
 
 export const prettySingleOrderSchema = z.object({
-    goods:prettyGoodsSchema,
-    count:z.number()
+    goods: prettyGoodsSchema,
+    count: z.number()
 })
 
 export type PrettySingleOrder = z.infer<typeof prettySingleOrderSchema>
@@ -192,7 +192,8 @@ export const prettyTicketSchema = z.object({
     issueTime: prettyTimeStampSchema,
     orderData: prettyOrderSchema,
     paymentSessionId: uniqueId,
-    status: prettyTicketStatusSchema
+    status: prettyTicketStatusSchema,
+    lastStatusUpdated: prettyTimeStampSchema,
 })
 
 export type PrettyTicket = z.infer<typeof prettyTicketSchema>
@@ -211,7 +212,7 @@ export const prettyPaymentSessionSchema = z.object({
     totalAmount: z.number(),
     state: prettyPaymentStateSchema,
     paidDetail: paidDetailSchema.optional(),
-    barcode:z.string()
+    barcode: z.string()
 })
 
 export type PrettyPaymentSession = z.infer<typeof prettyPaymentSessionSchema>
@@ -316,7 +317,7 @@ export const ticketDisplayData = z.object({
 
 export type TicketDisplayData = z.infer<typeof ticketDisplayData>
 export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
-    displays: z.array(ticketDisplayData)
+    tickets: z.array(prettyTicketSchema)
 }))
 
 export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS", "CASHIER"])
