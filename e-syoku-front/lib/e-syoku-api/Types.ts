@@ -250,14 +250,6 @@ export const listShopResponse = defaultResponseFormat.and(z.object({
     shops: z.array(shopDetailType)
 }))
 
-
-export const callTicketResponse = defaultResponseFormat.and(z.object({}))
-
-export const cancelCallingResponse = defaultResponseFormat.and(z.object({}))
-
-export const resolveTicketResponse = defaultResponseFormat.and(z.object({}))
-
-
 export const registerTicketResponse = defaultResponseFormat.and(z.object({
     ticket: ticketType.optional()
 }))

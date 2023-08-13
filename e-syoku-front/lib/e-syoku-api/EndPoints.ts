@@ -3,8 +3,6 @@ import {z} from "zod";
 import {
     authStateResponse,
     bindTicketResponse,
-    callTicketResponse,
-    cancelCallingResponse,
     defaultResponseFormat,
     grantPermissionRequest,
     listGoodsResponse,
@@ -16,7 +14,6 @@ import {
     paidResponse,
     paymentIdRequest,
     paymentStatusResponse,
-    resolveTicketResponse,
     submitOrderResponse,
     ticketDisplayResponse,
     ticketIdRequest,
@@ -28,9 +25,9 @@ import {
 export const ticketStatusEndPoint = endpoint("ticketStatus", ticketIdRequest, ticketResponse)
 export const listTicketsEndPoint = endpoint("listTickets", z.object({}), listTicketResponse)
 export const listShopsEndPoint = endpoint("listShops", z.object({}), listShopResponse)
-export const callTicketEndPoint = endpoint("callTicket", ticketSpecifyRequest, callTicketResponse)
-export const cancelCallingEndPoint = endpoint("cancelCalling", ticketSpecifyRequest, cancelCallingResponse)
-export const resolveTicketEndPoint = endpoint("resolveTicket", ticketSpecifyRequest, resolveTicketResponse)
+export const callTicketEndPoint = endpoint("callTicket", ticketSpecifyRequest, ticketResponse)
+export const cancelCallingEndPoint = endpoint("cancelCalling", ticketSpecifyRequest, ticketResponse)
+export const resolveTicketEndPoint = endpoint("resolveTicket", ticketSpecifyRequest, ticketResponse)
 
 export const listGoodsEndPoint = endpoint("listGoods", z.object({}), listGoodsResponse)
 
