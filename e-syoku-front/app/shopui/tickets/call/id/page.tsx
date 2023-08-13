@@ -1,16 +1,20 @@
 "use client"
 
 import {useSearchParams} from "next/navigation";
-import {Box, Spacer, Text} from "@chakra-ui/react";
+import {Box, ModalContent, Spacer, Text} from "@chakra-ui/react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {callTicketStackEndpoint, resolveTicketEndPoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import {TicketDisplay} from "@/components/TicketDisplay";
 import Btn from "@/components/btn";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {EndPointErrorResponse, useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
 import {APIErrorModal} from "@/components/modal/APIErrorModal";
+import {PrettyTicket} from "@/lib/e-syoku-api/Types";
+import {useDisclosure} from "@chakra-ui/hooks";
+import {Modal, ModalBody, ModalCloseButton, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
+import {TicketComponent} from "@/components/Ticket";
 
 const initialCount = 10
 
@@ -22,6 +26,7 @@ export default function Page() {
     const {fetch: resolveTicket} = useLazyEndpoint(resolveTicketEndPoint)
     const reloadFunc = useRef<() => Promise<void> | null>()
     const apiError = useRef<EndPointErrorResponse<any>>()
+    const readTicket = useRef<PrettyTicket>()
 
     async function autoCall() {
         if (shopId == undefined) {
@@ -77,15 +82,15 @@ export default function Page() {
                     // TODO ましに出来るはず
                     if (r) {
                         if (r.isSuccess) {
-                            if (reloadFunc.current) {
-                                reloadFunc.current()
-                            }
+                            reloadFunc.current?.()
+                            readTicket.current = r.data.ticket
                         } else {
                             apiError.current = r
                         }
                     }
                 }}
             />
+            <ReadModal readTicket={readTicket.current}/>
             <APIErrorModal error={apiError.current}/>
         </HStack>
     )
@@ -131,5 +136,36 @@ function CallRight(params: {
             </VStack>
             <Spacer/>
         </VStack>
+    )
+}
+
+function ReadModal(params: {
+    readTicket: PrettyTicket | undefined
+}) {
+    const {isOpen, onClose, onOpen} = useDisclosure()
+
+    useEffect(() => {
+        if (params.readTicket) {
+            onOpen()
+        }
+    }, [params.readTicket])
+
+    if (!params.readTicket) {
+        return null
+    }
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <ModalOverlay/>
+            <ModalContent>
+                <ModalHeader>
+                    <ModalCloseButton/>
+                    <Heading>受け渡し内容</Heading>
+                </ModalHeader>
+                <ModalBody>
+                    <TicketComponent ticket={params.readTicket}/>
+                </ModalBody>
+            </ModalContent>
+        </Modal>
     )
 }
