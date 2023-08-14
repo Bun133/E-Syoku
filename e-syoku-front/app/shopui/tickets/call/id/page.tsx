@@ -163,7 +163,12 @@ function ReadModal(params: {
                     <Heading>受け渡し内容</Heading>
                 </ModalHeader>
                 <ModalBody>
-                    <TicketComponent ticket={params.readTicket}/>
+                    <TicketComponent
+                        ticket={params.readTicket}
+                        button={(
+                            <Btn onClick={onClose}>閉じる</Btn>
+                        )}
+                    />
                 </ModalBody>
             </ModalContent>
         </Modal>

@@ -38,14 +38,17 @@ export default function Page() {
                                 totalAmount.current += item.goods.price * orderData.count
                                 return (
                                     <Box w={"full"} key={index}>
-                                        <Goods goods={item.goods} footer={(
-                                            <CardFooter>
-                                                <VStack alignItems={"start"}>
-                                                    <Text>注文数：{orderData.count}個</Text>
-                                                    <Text size={"6xl"}>小計：{item.goods.price * orderData.count}円</Text>
-                                                </VStack>
-                                            </CardFooter>
-                                        )}/>
+                                        <Goods goods={item.goods}
+                                               waiting={item.waitingData}
+                                               footer={(
+                                                   <CardFooter>
+                                                       <VStack alignItems={"start"}>
+                                                           <Text>注文数：{orderData.count}個</Text>
+                                                           <Text
+                                                               size={"6xl"}>小計：{item.goods.price * orderData.count}円</Text>
+                                                       </VStack>
+                                                   </CardFooter>
+                                               )}/>
                                     </Box>
                                 )
                             })}

@@ -263,13 +263,21 @@ export const ticketSpecifyRequest = z.object({
     barcode: z.string()
 }).or(ticketIdRequest)
 
-export const goodsWithRemainDataSchema = z.object({goods: prettyGoodsSchema, remainData: goodsRemainDataSchema})
+export const waitingDataSchema = z.object({waiting: z.number()})
+
+export type WaitingData = z.infer<typeof waitingDataSchema>
+
+export const goodsWithRemainDataWaitingDataSchema = z.object({
+    goods: prettyGoodsSchema,
+    remainData: goodsRemainDataSchema,
+    waitingData: waitingDataSchema
+})
 
 
-export type GoodsWithRemainData = z.infer<typeof goodsWithRemainDataSchema>
+export type GoodsWithRemainDataWaitingData = z.infer<typeof goodsWithRemainDataWaitingDataSchema>
 
 export const listGoodsResponse = defaultResponseFormat.and(z.object({
-    data: z.array(goodsWithRemainDataSchema)
+    data: z.array(goodsWithRemainDataWaitingDataSchema)
 }))
 
 // TODO Error Message Handling

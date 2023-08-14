@@ -1,11 +1,11 @@
-import {GoodsRemainData, GoodsWithRemainData, Order} from "@/lib/e-syoku-api/Types";
+import {GoodsRemainData, GoodsWithRemainDataWaitingData, Order} from "@/lib/e-syoku-api/Types";
 import {SimpleGrid, Spacer, Text} from "@chakra-ui/react";
 import Goods from "@/components/goods";
 import {useState} from "react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import Btn from "@/components/btn";
 
-export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: (order: Order) => void }) {
+export function OrderSelection(param: { goods: GoodsWithRemainDataWaitingData[], callBack: (order: Order) => void }) {
     const [listRefs, setListRefs] = useState<number[]>([])
 
 
@@ -32,6 +32,7 @@ export function OrderSelection(param: { goods: GoodsWithRemainData[], callBack: 
                             <Goods
                                 goods={g.goods}
                                 key={g.goods.goodsId}
+                                waiting={g.waitingData}
                                 footer={(
                                     <OrderSelectionFooter
                                         onChange={(to) => {
