@@ -44,3 +44,14 @@ export const remainNumberSchema = z.object({
 export const goodsRemainDataSchema = remainNumberSchema.or(remainBooleanSchema)
 
 export type GoodsRemainData = z.infer<typeof goodsRemainDataSchema>
+
+
+/**
+ * 特定の商品の受け取りを待っている人数のデータ
+ */
+export const waitingDataSchema = z.object({
+    goodsId: uniqueId,
+    waiting: z.number()
+})
+
+export type WaitingData = z.infer<typeof waitingDataSchema>

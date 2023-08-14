@@ -38,6 +38,8 @@ export const ticketSchema = z.object({
     issueTime: timeStampSchema,
     // 注文内容データ
     orderData: orderSchema,
+    // DB検索用の注文した商品のID一覧
+    goodsIds: z.string().array(),
     // 決済セッションID
     paymentSessionId: uniqueId,
     // 食券ステータスデータ

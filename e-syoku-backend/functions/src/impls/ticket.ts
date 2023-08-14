@@ -31,7 +31,8 @@ function ticketParser(uniqueId: string, data: firestore.DocumentData): Ticket {
         status: data.status,
         lastStatusUpdated: data.lastStatusUpdated,
         paymentSessionId: data.paymentSessionId,
-        orderData: data.orderData
+        orderData: data.orderData,
+        goodsIds: data.goodsIds
     }
 }
 
@@ -132,6 +133,7 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
         customerId: true,
         issueTime: true,
         orderData: true,
+        goodsIds: true,
         paymentSessionId: true,
         shopId: true,
         uniqueId: true
@@ -247,6 +249,7 @@ async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: O
             customerId: uid,
             shopId: shopId,
             orderData: order,
+            goodsIds: order.map((e) => e.goodsId),
             status: "PROCESSING",
             lastStatusUpdated: Timestamp.now(),
             issueTime: Timestamp.now(),

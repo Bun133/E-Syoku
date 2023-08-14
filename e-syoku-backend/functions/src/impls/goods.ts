@@ -1,4 +1,4 @@
-import {Goods, GoodsRemainData, goodsRemainDataSchema, goodsSchema} from "../types/goods";
+import {Goods, GoodsRemainData, goodsRemainDataSchema, goodsSchema, WaitingData} from "../types/goods";
 import {DBRefs, parseData, parseDataAll, updateEntireData} from "../utils/db";
 import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
@@ -6,9 +6,10 @@ import {error} from "../utils/logger";
 import {Order, SingleOrder} from "../types/order";
 import {Error, Result, Success, TypedSingleResult} from "../types/errors";
 import {
+    dbNotFoundError,
     deltaNegativeError,
     injectError,
-    itemGoneError, dbNotFoundError,
+    itemGoneError,
     remainDataTypeNotKnownError,
     remainStatusNegativeError
 } from "./errors";
@@ -306,4 +307,25 @@ function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
         ...injectError(remainDataTypeNotKnownError)
     }
     return err
+}
+
+
+/**
+ * 指定された商品の受け取り待ちの人数をカウントして返却します
+ * @param refs
+ * @param goodsId
+ */
+export async function getWaitingDataOfGoods(refs: DBRefs, goodsId: string): Promise<TypedSingleResult<WaitingData>> {
+    const query = refs.tickets.where("goodsIds", "array-contains", goodsId)
+        .where("status", "in", ["PROCESSING", "COOKING"]);
+
+    const waiting = (await query.count().get()).data().count
+
+    return {
+        isSuccess: true,
+        data: {
+            goodsId: goodsId,
+            waiting: waiting
+        }
+    }
 }

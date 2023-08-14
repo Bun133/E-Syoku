@@ -13,7 +13,7 @@ import {
     ticketById,
     updateTicketStatusByIds
 } from "./impls/ticket";
-import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
+import {getAllGoods, getRemainDataOfGoods, getWaitingDataOfGoods} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
@@ -263,9 +263,16 @@ export const listGoods = standardFunction(async (request, response) => {
                 if (!remainData.isSuccess) {
                     return undefined
                 }
+
+                const waitingData = await getWaitingDataOfGoods(refs, g.goodsId)
+                if (!waitingData.isSuccess) {
+                    return undefined
+                }
+
                 return {
                     goods: pGoods.data,
-                    remainData: remainData.data
+                    remainData: remainData.data,
+                    waitingData: waitingData.data
                 }
             }))).filter(d => d != undefined)
 
