@@ -11,7 +11,7 @@ import {
     ModalOverlay
 } from "@chakra-ui/modal";
 import Btn from "@/components/btn";
-import {Text} from "@chakra-ui/react";
+import {Tab, TabList, TabPanel, TabPanels, Tabs, Text} from "@chakra-ui/react";
 import {ErrorMdComponent} from "@/components/error/ErrorMdComponent";
 
 export function APIErrorModal(params: {
@@ -25,9 +25,42 @@ export function APIErrorModal(params: {
         }
     }, [params.error])
 
+    function errors() {
+        if (params.error) {
+            return [params.error.error, ...params.error.errors]
+        } else {
+            return []
+        }
+    }
+
     if (params.error) {
         return (
-            <APIErrorModalBody errorCode={params.error.errorCode} isOpen={isOpen} onClose={onClose}/>
+            <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false} scrollBehavior={"inside"}>
+                <ModalOverlay/>
+                <ModalContent>
+                    <ModalCloseButton/>
+                    <ModalHeader>
+                        エラー
+                    </ModalHeader>
+                    <ModalBody>
+                        <Tabs>
+                            <TabList>
+                                {errors().map((e, i) => {
+                                    return <Tab key={i}>{e.errorCode}</Tab>
+                                })}
+                            </TabList>
+
+                            <TabPanels>
+                                {errors().map((e, i) => {
+                                    return <TabPanel key={i}>
+                                        <ErrorMdComponent errorCode={e.errorCode}/>
+                                    </TabPanel>
+                                })}
+                            </TabPanels>
+                        </Tabs>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
         )
     } else {
         return null

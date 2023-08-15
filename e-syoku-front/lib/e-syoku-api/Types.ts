@@ -232,7 +232,13 @@ export const errorSchema = z.object({
     stack: z.string().optional()
 })
 
-export const resultSchema = successSchema.or(errorSchema)
+export const errorResultSchema = z.object({
+    isSuccess: z.literal(false),
+    error: errorSchema,
+    errors: errorSchema.array()
+})
+
+export const resultSchema = successSchema.or(errorResultSchema)
 
 export const defaultResponseFormat = resultSchema
 

@@ -2,7 +2,7 @@
 
 import {ZodType} from "zod";
 import {defaultResponseFormat, DefaultResponseFormat} from "@/lib/e-syoku-api/Types";
-import {useEffect, useRef, useState} from "react";
+import {useState} from "react";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {User} from "@firebase/auth";
 
@@ -31,15 +31,20 @@ export type EndPointSuccessResponse<R extends DefaultResponseFormat> = {
     // defaultResponseFormatでparse出来てもfalse
     isSuccess: true,
 } & EndPointBaseResponse<R>
-export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
-    data: undefined,
+export type EndPointError = {
     error: string,
     errorCode: string,
     // 正常にparseできたときのAPIResponseのisSuccess
     // 正常にparse出来なかったときはfalse
     // defaultResponseFormatでparse出来てもfalse
     isSuccess: false,
-    stack: string | undefined
+    stack?: string
+}
+export type EndPointErrorResponse<R extends DefaultResponseFormat> = {
+    data: undefined,
+    error: EndPointError,
+    errors: EndPointError[],
+    isSuccess: false
 } & EndPointBaseResponse<R>
 
 export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessResponse<R> | EndPointErrorResponse<R>
@@ -60,12 +65,15 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
     if (user == undefined) {
         return {
             data: undefined,
-            error: "No user instance",
-            errorCode: "[Client]NO_USER_INSTANCE",
+            error: {
+                isSuccess: false,
+                error: "No user instance",
+                errorCode: "[Client]NO_USER_INSTANCE",
+            },
+            errors: [],
             parseFailed: false,
             fetchFailed: false,
             isSuccess: false,
-            stack: undefined
         }
     }
     const tokenString = await (user.getIdToken(true))
@@ -85,12 +93,16 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
     } catch (e: any) {
         return {
             data: undefined,
-            error: e.message ?? "Unknown Error",
-            errorCode: "[Client]FETCH_FAILED",
+            error: {
+                isSuccess: false,
+                stack: e.stack ?? "No stack",
+                error: e.message ?? "Unknown Error",
+                errorCode: "[Client]FETCH_FAILED",
+            },
+            errors: [],
             parseFailed: false,
             fetchFailed: true,
             isSuccess: false,
-            stack: e.stack ?? "No stack"
         }
     }
 
@@ -113,11 +125,10 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             const r: EndPointErrorResponse<R> = {
                 data: undefined,
                 error: parsed.data.error,
-                errorCode: parsed.data.errorCode,
+                errors: parsed.data.errors,
                 parseFailed: false,
                 fetchFailed: false,
                 isSuccess: parsed.data.isSuccess,
-                stack: parsed.data.stack
             }
             return r
         }
@@ -133,23 +144,25 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
                 // TODO このパターンが謎
                 const r: EndPointErrorResponse<R> = {
                     data: undefined,
-                    error: "正常にレスポンスを得られませんでした",
-                    errorCode: "[Client]SUCCESS_FALLBACK_PARSING",
+                    error: {
+                        isSuccess: false,
+                        error: "正常にレスポンスを得られませんでした",
+                        errorCode: "[Client]SUCCESS_FALLBACK_PARSING",
+                    },
+                    errors: [],
                     parseFailed: false,
                     fetchFailed: false,
                     isSuccess: false,
-                    stack: "No stack"
                 }
                 return r
             } else {
                 const r: EndPointErrorResponse<R> = {
                     data: undefined,
                     parseFailed: false,
-                    errorCode: defaultParsed.data.errorCode,
                     error: defaultParsed.data.error,
+                    errors: defaultParsed.data.errors,
                     fetchFailed: false,
                     isSuccess: false,
-                    stack: defaultParsed.data.stack
                 }
                 return r
             }
@@ -158,12 +171,15 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             console.log("Endpoint Fallback Parsing Failed")
             const r: EndPointErrorResponse<R> = {
                 data: undefined,
-                error: "正常にレスポンスを得られませんでした",
-                errorCode: "[Client]ENDPOINT_FALLBACK_PARSING_FAILED",
+                error: {
+                    isSuccess: false,
+                    error: "正常にレスポンスを得られませんでした",
+                    errorCode: "[Client]ENDPOINT_FALLBACK_PARSING_FAILED",
+                },
+                errors: [],
                 parseFailed: true,
                 fetchFailed: false,
                 isSuccess: false,
-                stack: "No stack"
             }
             return r
         }
