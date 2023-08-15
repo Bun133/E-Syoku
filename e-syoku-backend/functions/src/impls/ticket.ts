@@ -375,7 +375,13 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
         }
 
         const res = await Promise.all(toCallTicketIds.map(async e => {
-            const result = await updateTicketStatusByIds(ref, messaging, e.uniqueId, "PROCESSING", "CALLED")
+            const calledNotificationData: NotificationData = {
+                title: "E-Syoku通知",
+                body: "お客様の食券が呼ばれました",
+                clickUrl: `https://e-syoku.web.app/tickets/id?id=${e.uniqueId}`,
+            }
+
+            const result = await updateTicketStatusByIds(ref, messaging, e.uniqueId, "PROCESSING", "CALLED", undefined, calledNotificationData)
             return {
                 ticketId: e.uniqueId,
                 result: result

@@ -36,15 +36,29 @@ function multicastMessageBuilder(data: {
     tokens: string[],
     body: string,
     title: string,
-    imageUrl?: string
+    imageUrl?: string,
+    clickUrl?: string
 }): MulticastMessage {
+    if (data.clickUrl) {
+        return {
+            tokens: data.tokens,
+            data: {
+                pathname: data.clickUrl
+            },
+            notification: {
+                body: data.body,
+                title: data.title,
+                imageUrl: data.imageUrl,
+            }
+        }
+    }
     return {
         tokens: data.tokens,
         data: {},
         notification: {
             body: data.body,
             title: data.title,
-            imageUrl: data.imageUrl
+            imageUrl: data.imageUrl,
         }
     }
 }
@@ -52,7 +66,8 @@ function multicastMessageBuilder(data: {
 export type NotificationData = {
     body: string,
     title: string,
-    imageUrl?: string
+    imageUrl?: string,
+    clickUrl?: string
 }
 
 export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: string, notificationData: NotificationData) {
@@ -65,7 +80,8 @@ export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: strin
         tokens: data.data.registeredTokens,
         body: notificationData.body,
         title: notificationData.title,
-        imageUrl: notificationData.imageUrl
+        imageUrl: notificationData.imageUrl,
+        clickUrl: notificationData.clickUrl
     })
 
     await messaging.sendEachForMulticast(multicastMessage)
