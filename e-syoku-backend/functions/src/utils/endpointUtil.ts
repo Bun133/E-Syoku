@@ -4,7 +4,7 @@ import {Response} from "firebase-functions";
 import {safeAs} from "./safeAs";
 import {Error as EError, Result} from "../types/errors";
 import {error, logTrace, writeLog} from "./logger";
-import {injectError, internalErrorThrownError} from "../impls/errors";
+import {errorResult, injectError, internalErrorThrownError} from "../impls/errors";
 
 /**
  * Require a parameter from the request
@@ -27,11 +27,11 @@ export function requireParameter<Z>(paramName: string, type: ZodType<Z>, request
     if (parsed === undefined) {
         return {
             param: undefined,
-            error: {
+            error: errorResult({
                 isSuccess: false,
                 error: `Missing parameter ${paramName}`,
                 errorCode: "MISSING_PARAMETER"
-            }
+            })
         }
     } else {
         return {
@@ -107,6 +107,7 @@ async function handleRequest<R extends ResultOrPromise>(request: Request, respon
         const err: EError = {
             isSuccess: false,
             ...injectError(internalErrorThrownError),
+            // @ts-ignore
             rawError: rawErrorMessage,
             stack: stack
         }

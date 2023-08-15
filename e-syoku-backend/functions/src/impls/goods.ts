@@ -4,11 +4,13 @@ import {firestore} from "firebase-admin";
 import {UniqueId} from "../types/types";
 import {error} from "../utils/logger";
 import {Order, SingleOrder} from "../types/order";
-import {Error, Result, Success, TypedSingleResult} from "../types/errors";
+import {Error, SingleError, SingleResult, Success, TypedSingleResult} from "../types/errors";
 import {
     dbNotFoundError,
     deltaNegativeError,
+    errorResult,
     injectError,
+    isSingleError,
     itemGoneError,
     remainDataTypeNotKnownError,
     remainStatusNegativeError
@@ -64,7 +66,7 @@ export async function getRemainDataOfGoods(refs: DBRefs, goodsId: UniqueId, tran
  * @param remainData
  * @param quantity
  */
-export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number): Error | Success & {
+export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number): SingleError | Success & {
     isEnough: boolean
 } {
     // @ts-ignore
@@ -93,7 +95,7 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
         return r
     }
     error("in remainDataIsEnough cannot decide what type the data is.Data:", remainData)
-    const r: Error = {
+    const r: SingleError = {
         isSuccess: false,
         ...injectError(remainDataTypeNotKnownError)
     }
@@ -109,7 +111,7 @@ export function remainDataIsEnough(remainData: GoodsRemainData, quantity: number
 export async function cancelReserveGoods(refs: DBRefs, order: Order): Promise<Success> {
     const canceled: {
         order: SingleOrder,
-        reserveResult: Result
+        reserveResult: SingleResult
     }[] = await Promise.all(order.map(async (single: SingleOrder) => {
         return {
             order: single,
@@ -131,27 +133,24 @@ export async function cancelReserveGoods(refs: DBRefs, order: Order): Promise<Su
  * @param refs
  * @param o
  */
-async function cancelReserveSingleGoods(refs: DBRefs, o: SingleOrder) {
+async function cancelReserveSingleGoods(refs: DBRefs, o: SingleOrder): Promise<SingleResult> {
     return refs.db.runTransaction(async (transaction) => {
         const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
-        if (!remainData.isSuccess) {
+        if (isSingleError(remainData)) {
             return remainData
-        } else {
-            const calculated = increaseRemainData(remainData.data, o.count)
-            if (!calculated.isSuccess) {
-                const err: Error = calculated
-                return err
-            }
-            const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(o.goodsId), calculated.calculated, transaction)
-            if (!update.isSuccess) {
-                const err: Error = update
-                return err
-            }
-            const suc: Success = {
-                isSuccess: true
-            }
-            return suc
         }
+        const calculated = increaseRemainData(remainData.data, o.count)
+        if (isSingleError(calculated)) {
+            return calculated
+        }
+        const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(o.goodsId), calculated.calculated, transaction)
+        if (isSingleError(update)) {
+            return update
+        }
+        const suc: Success = {
+            isSuccess: true
+        }
+        return suc
     })
 }
 
@@ -168,7 +167,7 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success 
 }> {
     const result: {
         order: SingleOrder,
-        reserveResult: Result
+        reserveResult: SingleResult
     }[] = await Promise.all(order.map(async (single: SingleOrder) => {
         return {
             order: single,
@@ -187,17 +186,13 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success 
         }
         return suc
     } else {
-        const error: Error & {
-            reserved: SingleOrder[],
-            notReserved: SingleOrder[]
-        } = {
-            isSuccess: false,
-            ...injectError(itemGoneError(notReserved.map(e => e.order.goodsId))),
-            reserved: reserved.map(e => e.order),
-            notReserved: notReserved.map(e => e.order)
-        }
-
-        return error
+        return Object.assign(
+            errorResult({isSuccess: false, ...injectError(itemGoneError(notReserved.map(e => e.order.goodsId)))}),
+            {
+                reserved: reserved.map(e => e.order),
+                notReserved: notReserved.map(e => e.order)
+            }
+        )
     }
 }
 
@@ -206,29 +201,26 @@ export async function reserveGoods(refs: DBRefs, order: Order): Promise<Success 
  * @param refs
  * @param o
  */
-async function reserveSingleGoods(refs: DBRefs, o: SingleOrder): Promise<Result> {
+async function reserveSingleGoods(refs: DBRefs, o: SingleOrder): Promise<SingleResult> {
     return refs.db.runTransaction(async (transaction) => {
-        const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
-        if (!remainData.isSuccess) {
-            const err: Error = remainData
-            return err
-        } else {
+            const remainData = await getRemainDataOfGoods(refs, o.goodsId, transaction)
+            if (isSingleError(remainData)) {
+                return remainData
+            }
             const calculated = reduceRemainData(remainData.data, o.count)
-            if (!calculated.isSuccess) {
-                const err: Error = calculated
-                return err
+            if (isSingleError(calculated)) {
+                return calculated
             }
             const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(o.goodsId), calculated.calculated, transaction)
-            if (!update.isSuccess) {
-                const err: Error = update
-                return err
+            if (isSingleError(update)) {
+                return update
             }
             const suc: Success = {
                 isSuccess: true
             }
             return suc
         }
-    })
+    )
 }
 
 /**
@@ -238,9 +230,9 @@ async function reserveSingleGoods(refs: DBRefs, o: SingleOrder): Promise<Result>
  */
 function reduceRemainData(remainData: GoodsRemainData, decrease: number): Success & {
     calculated: GoodsRemainData
-} | Error {
+} | SingleError {
     if (decrease < 0) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(deltaNegativeError)
         }
@@ -251,9 +243,9 @@ function reduceRemainData(remainData: GoodsRemainData, decrease: number): Succes
 
 function increaseRemainData(remainData: GoodsRemainData, increase: number): Success & {
     calculated: GoodsRemainData
-} | Error {
+} | SingleError {
     if (increase < 0) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(deltaNegativeError)
         }
@@ -265,7 +257,7 @@ function increaseRemainData(remainData: GoodsRemainData, increase: number): Succ
 
 function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
     calculated: GoodsRemainData
-} | Error {
+} | SingleError {
     // @ts-ignore
     if (remainData.remain != undefined && typeof remainData.remain == "boolean") {
         // Bool値なので変更は手動、よって変化無し
@@ -283,7 +275,7 @@ function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
         const toChange = remainData.remainCount + delta
         if (toChange < 0) {
             error("in reduceRemainData cannot delta.Data:", remainData)
-            const err: Error = {
+            const err: SingleError = {
                 isSuccess: false,
                 ...injectError(remainStatusNegativeError)
             }
@@ -302,7 +294,7 @@ function editRemainData(remainData: GoodsRemainData, delta: number): Success & {
         return suc
     }
     error("in editRemainData cannot decide what type the data is.Data:", remainData)
-    const err: Error = {
+    const err: SingleError = {
         isSuccess: false,
         ...injectError(remainDataTypeNotKnownError)
     }

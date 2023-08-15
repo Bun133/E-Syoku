@@ -3,7 +3,7 @@ import {CollectionReference, DocumentData, DocumentReference, Firestore, Transac
 import {ZodType} from "zod";
 import {v4 as uuidv4} from 'uuid';
 import {error, warn} from "./logger";
-import {Error, Result, SingleError, Success, TypedSuccess} from "../types/errors";
+import {SingleError, SingleResult, Success, TypedSuccess} from "../types/errors";
 import {
     createDataFailedError,
     dummyError,
@@ -182,7 +182,7 @@ export async function parseQueryDataAll<T extends DocumentData>(type: ZodType<T>
  * @param toUpdate
  * @param transaction
  */
-export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<Result> {
+export async function updateEntireData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toUpdate: T, transaction?: firestore.Transaction): Promise<SingleResult> {
     try {
         const data = type.parse(toUpdate)
         if (transaction) {
@@ -191,7 +191,7 @@ export async function updateEntireData<T extends DocumentData>(type: ZodType<T>,
             await ref.update(data);
         }
     } catch (e) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(updateDataFailedError),
             toUpdateRef: ref.path,
@@ -214,7 +214,7 @@ export async function updateEntireData<T extends DocumentData>(type: ZodType<T>,
  * @param toSet
  * @param transaction
  */
-export async function setData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toSet: T, transaction?: firestore.Transaction): Promise<Result> {
+export async function setData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toSet: T, transaction?: firestore.Transaction): Promise<SingleResult> {
     try {
         const data = type.parse(toSet)
         if (transaction) {
@@ -223,7 +223,7 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
             await ref.set(data, {merge: false});
         }
     } catch (e) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(setDataFailedError),
             toSetRef: ref.path,
@@ -246,7 +246,7 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
  * @param toMerge
  * @param transaction
  */
-export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toMerge: T, transaction?: firestore.Transaction): Promise<Result> {
+export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toMerge: T, transaction?: firestore.Transaction): Promise<SingleResult> {
     try {
         const data = type.parse(toMerge)
         if (transaction) {
@@ -255,7 +255,7 @@ export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: D
             await ref.set(data, {merge: true});
         }
     } catch (e) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(mergeDataFailedError),
             toMergeRef: ref.path,
@@ -277,7 +277,7 @@ export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: D
  * @param toCreate
  * @param transaction
  */
-export async function createData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toCreate: T, transaction?: firestore.Transaction): Promise<Result> {
+export async function createData<T extends DocumentData>(type: ZodType<T>, ref: DocumentReference<firestore.DocumentData>, toCreate: T, transaction?: firestore.Transaction): Promise<SingleResult> {
     try {
         const data = type.parse(toCreate)
         if (transaction) {
@@ -286,7 +286,7 @@ export async function createData<T extends DocumentData>(type: ZodType<T>, ref: 
             await ref.create(data);
         }
     } catch (e) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(createDataFailedError),
             toCreateRef: ref.path,

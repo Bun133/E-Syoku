@@ -1,6 +1,15 @@
 // TSの型チェックを使うためのファンクション
 
-import {MultipleError, SingleError, TypedResult} from "../types/errors";
+import {
+    Error,
+    Result,
+    SingleError,
+    SingleResult,
+    Success,
+    TypedResult,
+    TypedSingleResult,
+    TypedSuccess
+} from "../types/errors";
 
 export function injectError(error: ErrorType) {
     return error
@@ -11,20 +20,41 @@ export type ErrorType = {
     errorCode: string
 }
 
-export type RepresentativeErrorType = (errors: SingleError[]) => MultipleError
+type ErrorLike = SingleError | Error
 
-function representativeError(error: ErrorType): RepresentativeErrorType {
-    return (errors: SingleError[]) => {
-        const r: MultipleError = {
-            isSuccess: false,
-            error: {
-                isSuccess: false,
-                ...injectError(error)
-            },
-            errors: errors
+export function errorResult(leadingError: SingleError, ...childErrors: ErrorLike[]): Error {
+    const errors: SingleError[] = []
+
+    for (const error of childErrors) {
+        if (typeof error.error === "string") {
+            errors.push(error as SingleError)
+        } else {
+            errors.push((error as Error).error)
+            errors.push(...(error as Error).errors)
         }
-        return r
     }
+
+    return {
+        isSuccess: false,
+        error: leadingError,
+        errors: errors
+    }
+}
+
+export function isSingleError(res: SingleResult | TypedSingleResult<any>): res is SingleError {
+    return !res.isSuccess
+}
+
+export function isError(res: Result | TypedResult<any>): res is Error {
+    return !res.isSuccess
+}
+
+export function isSuccess(res: Result | SingleResult): res is Success {
+    return res.isSuccess
+}
+
+export function isTypedSuccess<R>(res: TypedResult<R> | TypedSingleResult<R>): res is TypedSuccess<R> {
+    return res.isSuccess
 }
 
 /**
@@ -43,17 +73,6 @@ const cmsError: (msg: string, errorCode: string) => ErrorType = (msg: string, er
     return {
         error: msg,
         errorCode: `CMS_${errorCode}`
-    }
-}
-
-export function mapError<T>(value: TypedResult<T>, toMap: ErrorType): TypedResult<T> {
-    if (value.isSuccess) {
-        return value
-    } else {
-        return {
-            isSuccess: false,
-            ...injectError(toMap)
-        }
     }
 }
 
@@ -78,9 +97,16 @@ export const authFailedError: ErrorType = {
 
 export const internalAuthFailedError: ErrorType = internalError("認証に失敗しました", "AUTH_FAILED")
 
-export const ticketNotFoundError: ErrorType =  inputWrongError("TicketId","指定されたチケットが見つかりません")
+export const ticketNotFoundError: ErrorType = inputWrongError("TicketId", "指定されたチケットが見つかりません")
 
-export const paymentNotFoundError: ErrorType = inputWrongError("PaymentSession","指定された決済セッションが見つかりません")
+export const paymentNotFoundError: ErrorType = inputWrongError("PaymentSession", "指定された決済セッションが見つかりません")
+
+export const paymentCreateFailedError = internalError("決済セッションの作成に失敗しました", "PAYMENT_CREATE_FAILED")
+
+export const paymentStatusNotSatisfiedError: ErrorType = {
+    error:"指定された決済セッションは無効です",
+    errorCode:"PAYMENT_NOT_SATISFY"
+}
 
 export const itemGoneError: (missedItemsId: string[]) => ErrorType = (ids: string[]) => {
     return {
@@ -104,7 +130,7 @@ export const ticketStatusInvalidError: (assumed: string, actual: string) => Erro
     }
 }
 
-export const paidWrongAmountError: ErrorType = inputWrongError("PaidAmount","決済済み金額が決済セッションの合計金額と合致しません")
+export const paidWrongAmountError: ErrorType = inputWrongError("PaidAmount", "決済済み金額が決済セッションの合計金額と合致しません")
 
 export const alreadyPaidError: ErrorType = {
     error: "すでに決済が完了している決済セッションです",
@@ -129,7 +155,7 @@ export const mergeDataFailedError = internalError("Mergeの際にエラーが発
 export const createDataFailedError = internalError("Createの際にエラーが発生したため、Create出来ませんでした", "CREATE_DATA_FAILED")
 
 
-export const requestNotContainUserIdError = inputWrongError("TargetUID","リクエストにUIDが含まれていない/指定されていません")
+export const requestNotContainUserIdError = inputWrongError("TargetUID", "リクエストにUIDが含まれていない/指定されていません")
 
 export const ticketNumGenerateFailedError = internalError("次のTicketNumの生成に失敗しました", "TICKETNUM_GENERATE_FAILED")
 
@@ -142,9 +168,11 @@ export const internalErrorThrownError = internalError("内部でエラーが発�
 
 export const failedToRegisterTicketError = internalError("チケットの登録に失敗しました", "REGISTER_TICKET_FAILED")
 
-export const barcodeNotMatch = inputWrongError("BARCODE","バーコードが合致しません")
+export const barcodeNotMatch = inputWrongError("BARCODE", "バーコードが合致しません")
 
-export const barcodeMatchTooMuch = inputWrongError("BARCODE","バーコードが複数に合致します")
+export const barcodeMatchTooMuch = inputWrongError("BARCODE", "バーコードが複数に合致します")
+
+export const barcodeBindDataNotFound = internalError("バーコード紐づけ情報が存在しません","BARCODE_BIND_NOT_FOUND")
 
 export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎます", "TICKET_NOT_SATISFY_CONDITION")
 
@@ -152,8 +180,10 @@ export const parseDataZodFailed = internalError(`正常にデータを処理で�
 
 export const parseDataNotFound = internalError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND`)
 
-export const prettyOrderFailed = representativeError(internalError("OrderデータをPretty化できませんでした", "PRETTY_ORDER_FAILED"))
+export const prettyOrderFailed = internalError("OrderデータをPretty化できませんでした", "PRETTY_ORDER_FAILED")
 
 export const dummyError = internalError("Dummy", "DUMMY_ERROR")
 
 export const paymentIdNotFoundError = inputWrongError("PaymentId|Barcode", "決済データが指定されていません")
+
+export const prettyTicketFailed = internalError("TicketデータをPretty化に失敗しました", "PRETTY_TICKET_FAILED")

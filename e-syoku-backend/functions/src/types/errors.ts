@@ -1,33 +1,35 @@
 import {z} from 'zod'
 
 
-export const successSchema = z.object({
+export const successResultSchema = z.object({
     isSuccess: z.literal(true),
     success: z.string().optional()
 }).passthrough()
 
-export const singleErrorSchema = z.object({
+export const errorSchema = z.object({
     isSuccess: z.literal(false),
     error: z.string(),
     errorCode: z.string()
 }).passthrough()
 
-export const multipleErrorSchema = z.object({
+export const errorResultSchema = z.object({
     isSuccess: z.literal(false),
-    errors: z.array(singleErrorSchema),
-    // 複数のErrorをまとめて一つのErrorとして扱うとき用
-    error: singleErrorSchema.optional()
-}).passthrough()
+    error: errorSchema,
+    // maybe empty
+    errors: z.array(errorSchema)
+})
 
-export const errorSchema = singleErrorSchema.or(multipleErrorSchema)
-export const resultSchema = successSchema.or(errorSchema)
 
-export type Result = z.infer<typeof resultSchema>
-export type Success = z.infer<typeof successSchema>
-export type Error = z.infer<typeof errorSchema>
-export type SingleError = z.infer<typeof singleErrorSchema>
-export type MultipleError = z.infer<typeof multipleErrorSchema>
+export type Success = z.infer<typeof successResultSchema>
+export type TypedSuccess<D> = Success & {
+    data: D
+}
 
+export type SingleError = z.infer<typeof errorSchema>
+
+export type Error = z.infer<typeof errorResultSchema>
+
+export type Result = Success | Error
 export type TypedResult<D> = TypedSuccess<D> | Error
+export type SingleResult = Success | SingleError
 export type TypedSingleResult<D> = TypedSuccess<D> | SingleError
-export type TypedSuccess<D> = Success & { data: D }

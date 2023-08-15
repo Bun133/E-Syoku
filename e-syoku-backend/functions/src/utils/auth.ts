@@ -4,8 +4,8 @@ import {Response} from "firebase-functions";
 import {DBRefs} from "./db";
 import {AuthInstance, AuthType} from "../types/auth";
 import {getAuthData} from "../impls/auth";
-import {Error} from "../types/errors";
-import {authFailedError, injectError, internalAuthFailedError} from "../impls/errors";
+import {SingleError} from "../types/errors";
+import {authFailedError, errorResult, injectError, internalAuthFailedError, isTypedSuccess} from "../impls/errors";
 import {ResultOrPromise} from "./endpointUtil";
 import Auth = auth.Auth;
 
@@ -50,7 +50,7 @@ export async function authed<R>(auth: Auth, refs: DBRefs, req: Request, res: Res
 
     if (user) {
         let authData = await getAuthData(refs, uid)
-        if (authData.isSuccess) {
+        if (isTypedSuccess(authData)) {
             let authInstance: AuthInstance = {
                 ...authData.data,
                 auth: user
@@ -73,12 +73,12 @@ export async function authed<R>(auth: Auth, refs: DBRefs, req: Request, res: Res
 
 export async function authedWithType(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => ResultOrPromise, failure?: () => ResultOrPromise): Promise<ResultOrPromise> {
     const failedFunction: () => ResultOrPromise = failure != undefined ? failure : () => {
-        const err: Error = {
+        const err: SingleError = {
             "isSuccess": false,
             ...injectError(authFailedError)
         }
         const r: ResultOrPromise = {
-            result: err
+            result: errorResult(err)
         }
         return r
     }
@@ -98,12 +98,12 @@ export async function authedWithType(authType: AuthType | AuthType[], auth: Auth
             }
         }
     }, () => {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(internalAuthFailedError)
         }
         return {
-            result: err
+            result: errorResult(err)
         }
     });
 }

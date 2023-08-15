@@ -16,7 +16,15 @@ import {getGoodsById} from "./goods";
 import {SingleError, TypedResult, TypedSingleResult, TypedSuccess} from "../types/errors";
 import {Goods} from "../types/goods";
 import {getShopById} from "./shop";
-import {prettyOrderFailed} from "./errors";
+import {
+    errorResult,
+    injectError,
+    isError,
+    isSingleError,
+    isTypedSuccess,
+    prettyOrderFailed,
+    prettyTicketFailed
+} from "./errors";
 import {PaymentSession, PaymentState} from "../types/payment";
 
 function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
@@ -28,43 +36,41 @@ function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
 
 export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSingleResult<PrettyGoods>> {
     const shop = await getShopById(refs, goods.shopId)
-    if (!shop.isSuccess) {
+    if (isSingleError(shop)) {
         return shop
-    } else {
-        const suc: TypedSuccess<PrettyGoods> = {
-            isSuccess: true,
-            data: {
-                shop: shop.data,
-                goodsId: goods.goodsId,
-                name: goods.name,
-                price: goods.price,
-                description: goods.description,
-                imageUrl: goods.imageUrl,
-            }
-        }
-
-        return suc
     }
+    const suc: TypedSuccess<PrettyGoods> = {
+        isSuccess: true,
+        data: {
+            shop: shop.data,
+            goodsId: goods.goodsId,
+            name: goods.name,
+            price: goods.price,
+            description: goods.description,
+            imageUrl: goods.imageUrl,
+        }
+    }
+
+    return suc
 }
 
-export async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promise<TypedSuccess<PrettySingleOrder> | SingleError> {
+export async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
     const goodsData = await getGoodsById(refs, order.goodsId)
-    if (!goodsData.isSuccess) {
+    if (isSingleError(goodsData)) {
         return goodsData
-    } else {
-        const pGoods = await prettyGoods(refs, goodsData.data)
-        if (!pGoods.isSuccess) {
-            return pGoods
-        }
-        const suc: TypedSuccess<PrettySingleOrder> = {
-            isSuccess: true,
-            data: {
-                goods: pGoods.data,
-                count: order.count,
-            }
-        }
-        return suc
     }
+    const pGoods = await prettyGoods(refs, goodsData.data)
+    if (isSingleError(pGoods)) {
+        return pGoods
+    }
+    const suc: TypedSuccess<PrettySingleOrder> = {
+        isSuccess: true,
+        data: {
+            goods: pGoods.data,
+            count: order.count,
+        }
+    }
+    return suc
 }
 
 export async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
@@ -73,7 +79,7 @@ export async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResu
     const successes: TypedSuccess<PrettySingleOrder>[] = []
 
     for (const single of singles) {
-        if (single.isSuccess) {
+        if (isTypedSuccess(single)) {
             successes.push(single)
         } else {
             errors.push(single)
@@ -82,8 +88,9 @@ export async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResu
 
 
     if (errors.length > 0) {
-        const error = prettyOrderFailed(errors)
-        return error
+        return errorResult({
+            isSuccess: false, ...injectError(prettyOrderFailed)
+        }, ...errors)
     } else {
         const order: PrettySingleOrder[] = successes.map(single => single.data)
         const suc: TypedSuccess<PrettyOrder> = {
@@ -114,13 +121,16 @@ export async function prettyTicket(refs: DBRefs, ticket: Ticket): Promise<TypedR
     const issueTime = prettyTimeStamp(ticket.issueTime)
     const lastUpdatedTime = prettyTimeStamp(ticket.lastStatusUpdated)
     const order = await prettyOrder(refs, ticket.orderData)
-    if (!order.isSuccess) {
+    if (isError(order)) {
         return order
     }
     const status = prettyStatus(ticket.status)
     const shop = await getShopById(refs, ticket.shopId)
-    if (!shop.isSuccess) {
-        return shop
+    if (isSingleError(shop)) {
+        return errorResult({
+            isSuccess: false,
+            ...injectError(prettyTicketFailed)
+        }, shop)
     }
     const prettyTicket: PrettyTicket = {
         issueTime: issueTime,
@@ -153,7 +163,7 @@ function prettyPaymentStatus(state: PaymentState): PrettyPaymentState {
 
 export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Promise<TypedResult<PrettyPaymentSession>> {
     const pOrder = await prettyOrder(refs, payment.orderContent)
-    if (!pOrder.isSuccess) {
+    if (isError(pOrder)) {
         return pOrder
     }
 

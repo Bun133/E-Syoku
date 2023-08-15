@@ -1,10 +1,10 @@
 import {AuthEntry, authEntrySchema, AuthType} from "../types/auth";
 import {DBRefs, parseData, setData} from "../utils/db";
-import {Error, Result, TypedSingleResult} from "../types/errors";
-import {authTypeInvalidError, injectError, dbNotFoundError, permissionDataMissing} from "./errors";
+import {SingleError, SingleResult, TypedSingleResult} from "../types/errors";
+import {authTypeInvalidError, dbNotFoundError, injectError, permissionDataMissing} from "./errors";
 
 export async function getAuthData(refs: DBRefs, uid: string): Promise<TypedSingleResult<AuthEntry>> {
-    return await parseData<AuthEntry>(dbNotFoundError("authData"),authEntrySchema, refs.auths.doc(uid), (data) => {
+    return await parseData<AuthEntry>(dbNotFoundError("authData"), authEntrySchema, refs.auths.doc(uid), (data) => {
         return {
             uid: uid,
             authType: data.authType,
@@ -19,7 +19,7 @@ export async function getAuthData(refs: DBRefs, uid: string): Promise<TypedSingl
  * @param targetUid
  * @param data
  */
-export async function updateAuthData(refs: DBRefs, targetUid: string, data: AuthEntry): Promise<Result> {
+export async function updateAuthData(refs: DBRefs, targetUid: string, data: AuthEntry): Promise<SingleResult> {
     return await setData<AuthEntry>(authEntrySchema, refs.auths.doc(targetUid), data)
 }
 
@@ -30,7 +30,7 @@ export async function updateAuthData(refs: DBRefs, targetUid: string, data: Auth
  * @param authType
  * @param shopId
  */
-export async function grantPermissionToUser(refs: DBRefs, targetUserId: string, authType: AuthType, shopId?: string): Promise<Result> {
+export async function grantPermissionToUser(refs: DBRefs, targetUserId: string, authType: AuthType, shopId?: string): Promise<SingleResult> {
     switch (authType) {
         case "ADMIN":
             return await updateAuthData(refs, targetUserId, {
@@ -39,7 +39,7 @@ export async function grantPermissionToUser(refs: DBRefs, targetUserId: string, 
             })
         case "SHOP":
             if (!shopId) {
-                const err: Error = {
+                const err: SingleError = {
                     isSuccess: false,
                     ...injectError(permissionDataMissing)
                 }

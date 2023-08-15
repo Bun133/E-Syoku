@@ -1,8 +1,8 @@
 import {DBRefs, mergeData, parseData} from "../utils/db";
-import {Result, TypedSingleResult} from "../types/errors";
+import {SingleResult, Success, TypedSingleResult} from "../types/errors";
 import {MessageTokenData, messageTokenDataSchema} from "../types/notification";
 import {Messaging, MulticastMessage} from "firebase-admin/lib/messaging";
-import {dbNotFoundError} from "./errors";
+import {dbNotFoundError, isSingleError, isTypedSuccess} from "./errors";
 
 export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<TypedSingleResult<MessageTokenData>> {
     return parseData(dbNotFoundError("messageTokenData"), messageTokenDataSchema, refs.messageTokens(uid), (data) => {
@@ -13,10 +13,10 @@ export async function getMessageTokenData(refs: DBRefs, uid: string): Promise<Ty
     })
 }
 
-export async function addMessageToken(refs: DBRefs, uid: string, toAddToken: string[]): Promise<Result> {
+export async function addMessageToken(refs: DBRefs, uid: string, toAddToken: string[]): Promise<SingleResult> {
     const data = await getMessageTokenData(refs, uid)
     let toMerge: MessageTokenData
-    if (data.isSuccess) {
+    if (isTypedSuccess(data)) {
         toMerge = {
             uid: uid,
             // Distinct
@@ -70,10 +70,11 @@ export type NotificationData = {
     clickUrl?: string
 }
 
-export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: string, notificationData: NotificationData) {
+// TODO Result Type
+export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: string, notificationData: NotificationData): Promise<SingleResult> {
     const data = await getMessageTokenData(refs, uid)
-    if (!data.isSuccess) {
-        return
+    if (isSingleError(data)) {
+        return data
     }
 
     const multicastMessage = multicastMessageBuilder({
@@ -85,4 +86,10 @@ export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: strin
     })
 
     await messaging.sendEachForMulticast(multicastMessage)
+
+    const suc: Success = {
+        isSuccess: true,
+    }
+
+    return suc
 }

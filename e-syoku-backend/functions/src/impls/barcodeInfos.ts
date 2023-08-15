@@ -1,11 +1,11 @@
 import {DBRefs, parseData, parseDataAll} from "../utils/db";
 import {listAllShop} from "./shop";
-import {Error, Success, TypedSingleResult} from "../types/errors";
-import {barcodeMatchTooMuch, barcodeNotMatch, injectError, dbNotFoundError} from "./errors";
+import {SingleError, Success, TypedSingleResult} from "../types/errors";
+import {barcodeMatchTooMuch, barcodeNotMatch, dbNotFoundError, injectError} from "./errors";
 import {BarcodeInfo, barcodeInfoSchema} from "../types/barcodeInfos";
 
 export async function getBarcodeInfo(refs: DBRefs, shopId: string): Promise<TypedSingleResult<BarcodeInfo>> {
-    return await parseData<BarcodeInfo>(dbNotFoundError("barcodeInfo"),barcodeInfoSchema, refs.barcodeInfos(shopId), (data) => {
+    return await parseData<BarcodeInfo>(dbNotFoundError("barcodeInfo"), barcodeInfoSchema, refs.barcodeInfos(shopId), (data) => {
         return {
             shopId: shopId,
             barcodeStartsWith: data.barcodeStartsWith
@@ -35,11 +35,11 @@ function isBarcodeMatch(info: BarcodeInfo, barcode: string): boolean {
  */
 export async function judgeBarcode(refs: DBRefs, barcode: string): Promise<Success & {
     info: BarcodeInfo
-} | Error> {
+} | SingleError> {
     const allInfos = await allBarcodeInfos(refs)
     const matches = allInfos.filter(d => isBarcodeMatch(d, barcode))
     if (matches.length === 0) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(barcodeNotMatch)
         }
@@ -53,7 +53,7 @@ export async function judgeBarcode(refs: DBRefs, barcode: string): Promise<Succe
         }
         return suc
     } else {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(barcodeMatchTooMuch)
         }

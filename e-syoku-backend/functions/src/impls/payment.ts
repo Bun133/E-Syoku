@@ -12,13 +12,19 @@ import {AuthInstance} from "../types/auth";
 import {PaidDetail, PaymentSession, paymentSessionSchema} from "../types/payment";
 import {cancelReserveGoods, getGoodsById, reserveGoods} from "./goods";
 import {firestore} from "firebase-admin";
-import {Error, Success, TypedSingleResult} from "../types/errors";
+import {Error, SingleError, Success, TypedSingleResult} from "../types/errors";
 import {
     alreadyPaidError,
     calculateTotalAmountFailed,
     dbNotFoundError,
+    errorResult,
     injectError,
-    paidWrongAmountError
+    isError,
+    isSingleError,
+    isTypedSuccess,
+    paidWrongAmountError,
+    paymentCreateFailedError,
+    paymentStatusNotSatisfiedError
 } from "./errors";
 import {deleteTickets, registerTicketsForPayment} from "./ticket";
 import {error} from "../utils/logger";
@@ -31,16 +37,17 @@ import DocumentReference = firestore.DocumentReference;
  * @param customer
  * @param order
  */
-export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthInstance, order: Order) {
+export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthInstance, order: Order): Promise<Success & {
+    paymentSessionId: string
+} | Error> {
     // 実際に決済セッションを作成するRef
     const paymentSessionRef = await newRandomRef(ref.payments)
     const barcode = await newRandomBarcode(ref.payments, 6)
 
     // 合計金額を計算
     const totalAmount = await calculateTotalAmount(ref, order)
-    if (!totalAmount.isSuccess) {
-        const err: Error = totalAmount
-        return err
+    if (isError(totalAmount)) {
+        return totalAmount
     }
 
     // 決済セッションのデータ
@@ -61,14 +68,18 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         totalAmount: paymentSession.totalAmount,
         barcode: barcode
     })
-    if (!setRes.isSuccess) {
+    if (isSingleError(setRes)) {
         // 決済セッションのデータを保存できなかった
         // 実害がないのでロールバックしない
-        const err: Error = setRes
-        return err
+        return errorResult({
+            isSuccess: false,
+            ...injectError(paymentCreateFailedError)
+        }, setRes)
     }
 
-    const suc: Success & { paymentSessionId: string } = {
+    const suc: Success & {
+        paymentSessionId: string
+    } = {
         isSuccess: true,
         paymentSessionId: paymentSession.sessionId
     }
@@ -81,36 +92,46 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
  * @param ref
  * @param order
  */
-async function calculateTotalAmount(ref: DBRefs, order: Order) {
-    const amounts = (await Promise.all(
+async function calculateTotalAmount(ref: DBRefs, order: Order): Promise<Success & {
+    totalAmount: number
+} | Error> {
+    const amounts: TypedSingleResult<number>[] = (await Promise.all(
             order.map(async (o) => {
                 // 商品データを取得
                 const data = await getGoodsById(ref, o.goodsId)
-                if (!data.isSuccess) return undefined
-                return data.data.price * o.count
+                if (isSingleError(data)) return data
+                return {
+                    isSuccess: true,
+                    data: data.data.price * o.count
+                }
             }))
-    ).filterNotNullStrict({toLog: {message: "in calculateTotalAmount,Failed to get goods data.Operation Terminated"}})
+    )
+
+    const failedAmounts = amounts.filter(isSingleError)
+    const successAmounts = amounts.filter(isTypedSuccess)
 
     // 一部の商品の商品データを取得出来なかった
-    if (!amounts) {
-        const err: Error = {
+    if (failedAmounts.length > 0) {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(calculateTotalAmountFailed)
         }
-        return err
+        return errorResult(err, ...failedAmounts)
     }
 
     // 全部足して合計金額を求める
-    const totalAmount = amounts.reduce((a, b) => a + b, 0)
+    const totalAmount = successAmounts.reduce((a, b) => a + b.data, 0)
 
-    const suc: Success & { totalAmount: number } = {
+    const suc: Success & {
+        totalAmount: number
+    } = {
         isSuccess: true,
         totalAmount: totalAmount
     }
     return suc
 }
 
-export async function getPaymentSessionById(ref: DBRefs, paymentSessionId: string) {
+export async function getPaymentSessionById(ref: DBRefs, paymentSessionId: string): Promise<TypedSingleResult<PaymentSession>> {
     return getPaymentSessionByRef(ref, ref.payments.doc(paymentSessionId))
 }
 
@@ -159,10 +180,12 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
     ticketsId: string[]
 }> {
     const assert = await assertPaymentStatus(refs, sessionId, paidDetail)
-    if (!assert.isSuccess) {
-        // 前庭条件を満たしていない
-        const err: Error = assert
-        return err
+    if (isSingleError(assert)) {
+        // 前提条件を満たしていない
+        return errorResult({
+            isSuccess: false,
+            ...injectError(paymentStatusNotSatisfiedError)
+        }, assert)
     }
 
     const {payment, paymentRef} = assert
@@ -176,7 +199,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
         await cancelReserveGoods(refs, reserveRes.reserved)
     }
 
-    if (!reserveRes.isSuccess) {
+    if (isError(reserveRes)) {
         // エラー内容はそのままパスでいいが、ロールバック処理を行う
         const err: Error = reserveRes
         await rollBackReserveGoods()
@@ -191,7 +214,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
         await deleteTickets(refs, ticketRes.registered.ticketIds)
     }
 
-    if (!ticketRes.isSuccess) {
+    if (isError(ticketRes)) {
         // エラー内容はそのままパスでいいが、ロールバック処理を行う
         const err: Error = ticketRes
         await rollBackReserveGoods()
@@ -212,14 +235,16 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
         paidDetail: paidDetail,
         boundTicketId: ticketRes.registered.ticketIds
     })
-    if (!update.isSuccess) {
-        const err: Error = update
+    if (isSingleError(update)) {
+        const err: SingleError = update
         await rollBackReserveGoods()
         await rollBackTickets()
-        return err
+        return errorResult(err)
     }
 
-    const suc: Success & { ticketsId: string[] } = {
+    const suc: Success & {
+        ticketsId: string[]
+    } = {
         isSuccess: true,
         ticketsId: ticketRes.registered.ticketIds
     }
@@ -230,7 +255,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
 /**
  * 決済取扱いにおいて、満たしていなければいけない前庭条件をassertします
  */
-async function assertPaymentStatus(refs: DBRefs, sessionId: string, paidDetail: PaidDetail): Promise<Error | Success & {
+async function assertPaymentStatus(refs: DBRefs, sessionId: string, paidDetail: PaidDetail): Promise<SingleError | Success & {
     payment: PaymentSession,
     paymentRef: DocumentReference
 }> {
@@ -238,15 +263,14 @@ async function assertPaymentStatus(refs: DBRefs, sessionId: string, paidDetail: 
     const paymentRef = refs.payments.doc(sessionId)
     const payment = await getPaymentSessionByRef(refs, paymentRef)
 
-    if (!payment.isSuccess) {
+    if (isSingleError(payment)) {
         // 決済セッションのデータが見つからなかった
-        const err: Error = payment
-        return err
+        return payment
     }
 
     // 決済セッションのデータのステータスが"PAID"になっている
     if (payment.data.state === "PAID") {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(alreadyPaidError)
         }
@@ -255,14 +279,17 @@ async function assertPaymentStatus(refs: DBRefs, sessionId: string, paidDetail: 
 
     // 決済済みの金額が決済セッションの合計金額と合致することを確認
     if (payment.data.totalAmount !== paidDetail.paidAmount) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(paidWrongAmountError)
         }
         return err
     }
 
-    const suc: Success & { payment: PaymentSession, paymentRef: DocumentReference } = {
+    const suc: Success & {
+        payment: PaymentSession,
+        paymentRef: DocumentReference
+    } = {
         isSuccess: true,
         payment: payment.data,
         paymentRef

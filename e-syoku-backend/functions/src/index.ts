@@ -20,12 +20,16 @@ import {createPaymentSession} from "./impls/order";
 import {getAllPayments, getPaymentSessionByBarcode, getPaymentSessionById, markPaymentAsPaid} from "./impls/payment";
 import {
     authFailedError,
+    barcodeBindDataNotFound,
+    errorResult,
     injectError,
+    isSingleError,
+    isTypedSuccess,
     paymentIdNotFoundError,
     paymentNotFoundError,
     ticketNotSpecifiedError
 } from "./impls/errors";
-import {Error, Success, TypedResult} from "./types/errors";
+import {Error, SingleError, Success, TypedResult, TypedSingleResult, TypedSuccess} from "./types/errors";
 import {listAllShop} from "./impls/shop";
 import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
@@ -34,7 +38,8 @@ import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, satisfyCondition} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
-import {PrettyTicket} from "./types/prettyPrint";
+import {PrettyGoods, PrettyTicket} from "./types/prettyPrint";
+import {GoodsRemainData, WaitingData} from "./types/goods";
 
 
 admin.initializeApp()
@@ -67,7 +72,7 @@ export const ticketStatus = standardFunction(async (request, response) => {
             // チケットデータ取得
             let ticket = await ticketById(refs, ticketId.param);
             if (!ticket.isSuccess) {
-                return {result: ticket}
+                return {result: errorResult(ticket)}
             }
 
             const pTicket = await prettyTicket(refs, ticket.data)
@@ -108,7 +113,7 @@ export const listTickets = standardFunction(async (request, response) => {
             // TODO Error Handling
             const suc: Success = {
                 "isSuccess": true,
-                "tickets": pTickets.filter(e => e.isSuccess).map(e => e.data)
+                "tickets": pTickets.filter(isTypedSuccess).map(e => e.data)
             }
             return {
                 result: suc
@@ -187,7 +192,10 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                     // チケットのデータからUID,TicketIdを取得します
                     const barcodeData = await getTicketBarcodeBindData(refs, barcode.param)
                     if (!barcodeData.isSuccess) {
-                        const err: Error = barcodeData
+                        const err: Error = errorResult({
+                            isSuccess: false,
+                            ...injectError(barcodeBindDataNotFound)
+                        }, barcodeData)
                         return {
                             statusCode: 400,
                             result: err
@@ -202,7 +210,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                     // チケットのステータスを変更します
                     let called = await updateTicketStatusByIds(refs, messaging, ticketId, fromStatus, toStatus, undefined, sendNotification)
                     if (!called.isSuccess) {
-                        const err: Error = called
+                        const err: Error = errorResult(called)
                         return {
                             statusCode: 400,
                             result: err
@@ -217,19 +225,21 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                         }
                     }
 
-                    const suc: Success & { ticket: PrettyTicket } = {
+                    const suc: Success & {
+                        ticket: PrettyTicket
+                    } = {
                         "isSuccess": true,
                         "success": successMessage,
                         ticket: pTicket.data
                     }
                     return {result: suc}
                 } else {
-                    const err: Error = {
+                    const err: SingleError = {
                         "isSuccess": false,
                         ...injectError(ticketNotSpecifiedError)
                     }
                     return {
-                        result: err
+                        result: errorResult(err)
                     }
                 }
             })
@@ -253,30 +263,37 @@ export const listGoods = standardFunction(async (request, response) => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // すべてのGoodsのデータを取得
             const goods = await getAllGoods(refs)
-            const data = (await Promise.all(goods.map(async g => {
+            const data: TypedSingleResult<{
+                goods: PrettyGoods,
+                remainData: GoodsRemainData,
+                waitingData: WaitingData
+            }>[] = (await Promise.all(goods.map(async g => {
                 const pGoods = await prettyGoods(refs, g)
-                if (!pGoods.isSuccess) {
-                    return undefined
+                if (isSingleError(pGoods)) {
+                    return pGoods
                 }
 
                 const remainData = await getRemainDataOfGoods(refs, g.goodsId)
-                if (!remainData.isSuccess) {
-                    return undefined
+                if (isSingleError(remainData)) {
+                    return remainData
                 }
 
                 const waitingData = await getWaitingDataOfGoods(refs, g.goodsId)
-                if (!waitingData.isSuccess) {
-                    return undefined
+                if (isSingleError(waitingData)) {
+                    return waitingData
                 }
 
                 return {
-                    goods: pGoods.data,
-                    remainData: remainData.data,
-                    waitingData: waitingData.data
+                    isSuccess: true,
+                    data: {
+                        goods: pGoods.data,
+                        remainData: remainData.data,
+                        waitingData: waitingData.data
+                    }
                 }
-            }))).filter(d => d != undefined)
+            })))
 
-            const suc: Success = {"isSuccess": true, "data": data}
+            const suc: Success = {"isSuccess": true, "data": data.filter(isTypedSuccess).map(s => s.data)}
             return {
                 result: suc
             }
@@ -366,12 +383,12 @@ export const paymentStatus = standardFunction(async (request, response) => {
             const barcode = requireOptionalParameter("barcode", z.string().optional(), request)
 
             if (id.param == undefined && barcode.param == undefined) {
-                const err: Error = {
+                const err: SingleError = {
                     "isSuccess": false,
                     ...injectError(paymentIdNotFoundError)
                 }
                 return {
-                    result: err
+                    result: errorResult(err)
                 }
             }
 
@@ -382,20 +399,27 @@ export const paymentStatus = standardFunction(async (request, response) => {
                 if (r.isSuccess) {
                     payment = r.data
                 } else {
-                    return {result: r}
+                    const err: SingleError = {
+                        isSuccess: false,
+                        ...injectError(paymentNotFoundError)
+                    }
+
+                    return {
+                        result: errorResult(err, r)
+                    }
                 }
             } else if (barcode.param != undefined) {
                 payment = await getPaymentSessionByBarcode(refs, barcode.param)
             }
 
             if (!payment) {
-                const err: Error = {
+                const err: SingleError = {
                     isSuccess: false,
                     ...injectError(paymentNotFoundError)
                 }
 
                 return {
-                    result: err
+                    result: errorResult(err)
                 }
             }
 
@@ -447,11 +471,11 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
             if (paymentId.param != undefined) pId = paymentId.param
             if (paymentBarcode.param != undefined) pId = (await getPaymentSessionByBarcode(refs, paymentBarcode.param))?.sessionId
             if (pId == undefined) {
-                const err: Error = {
+                const err: SingleError = {
                     isSuccess: false,
                     ...injectError(paymentIdNotFoundError)
                 }
-                return {result: err}
+                return {result: errorResult(err)}
             }
 
             // 要求データから生成された決済詳細データ
@@ -494,7 +518,7 @@ export const ticketDisplay = standardFunction(async (req, res) => {
 
             const pTickets: TypedResult<PrettyTicket>[] = await Promise.all((await listTicketForShop(refs, shopId)).map(async e => prettyTicket(refs, e)))
 
-            const data = pTickets.filter(e => e.isSuccess).map(e => e.data as PrettyTicket)
+            const data = pTickets.filter(isTypedSuccess).map((e: TypedSuccess<PrettyTicket>) => e.data)
 
             const suc: Success = {
                 isSuccess: true,
@@ -560,6 +584,8 @@ export const grantPermission = standardFunction(async (req, res) => {
 
 
             const result = await grantPermissionToUser(refs, uid.param, authType.param, shopId)
+            if (isSingleError(result)) return {result: errorResult(result)}
+
             return {
                 result: result
             }
@@ -587,6 +613,7 @@ export const bindBarcode = standardFunction(async (req, res) => {
             if (barcode.param == undefined) return {result: barcode.error}
 
             const result = await bindBarcodeToTicket(refs, barcode.param, ticketId.param)
+            if (isSingleError(result)) return {result: errorResult(result)}
             return {
                 result: result
             }
@@ -614,15 +641,16 @@ export const listenNotification = standardFunction(async (req, res) => {
             const token = requireParameter("token", z.string(), req)
             if (token.param == undefined) return {result: token.error}
             const res = await addMessageToken(refs, authInstance.uid, [token.param])
+            if (isSingleError(res)) return {result: errorResult(res)}
             return {
                 result: res
             }
         }, () => {
             return {
-                result: {
+                result: errorResult({
                     isSuccess: false,
                     ...injectError(authFailedError)
-                }
+                })
             }
         })
     })

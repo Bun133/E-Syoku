@@ -4,9 +4,24 @@ import {getRemainDataOfGoods, remainDataIsEnough} from "./goods";
 import {GoodsRemainData} from "../types/goods";
 import {AuthInstance} from "../types/auth";
 import {internalCreatePaymentSession} from "./payment";
-import {failedToGetItemDataError, injectError, itemGoneError} from "./errors";
-import {Error, Success} from "../types/errors";
+import {
+    errorResult,
+    failedToGetItemDataError,
+    injectError,
+    isError,
+    isSingleError,
+    isTypedSuccess,
+    itemGoneError,
+    paymentCreateFailedError
+} from "./errors";
+import {Error, SingleError, Success, TypedSingleResult} from "../types/errors";
 import {firestore} from "firebase-admin";
+
+type RemainData = {
+    goodsId: string,
+    remainData: GoodsRemainData,
+    isEnough: boolean
+}
 
 /**
  * 与えられたOrder内の商品の在庫を確認する
@@ -16,41 +31,50 @@ export async function checkOrderRemainStatus(ref: DBRefs, orderData: Order, tran
         goodsId: string,
         remainData: GoodsRemainData,
         isEnough: boolean
-    }[], isAllEnough: boolean
+    }[],
+    isAllEnough: boolean
 } | Error> {
     // 商品の在庫データを取得する
-    const items = (await Promise.all(orderData.map(async (order) => {
+    const items: TypedSingleResult<RemainData>[] = (await Promise.all(orderData.map(async (order) => {
         const remain = await getRemainDataOfGoods(ref, order.goodsId, transaction)
-        if (!remain.isSuccess) return undefined
+        if (isSingleError(remain)) return remain
         const isEnough = remainDataIsEnough(remain.data, order.count)
-        if (!isEnough.isSuccess) return undefined
+        if (isSingleError(isEnough)) return isEnough
         return {
-            goodsId: order.goodsId,
-            remainData: remain.data,
-            isEnough: isEnough.isEnough
+            isSuccess: true,
+            data: {
+                goodsId: order.goodsId,
+                remainData: remain.data,
+                isEnough: isEnough.isEnough
+            }
         }
-    }))).filterNotNullStrict({toLog: {message: "in checkOrderRemainStatus, Failed to retrieve remainData for some goods."}})
+    })))
+
+    const sucItems: RemainData[] = items.filter(isTypedSuccess).map((item) => item.data)
+    const errItems: SingleError[] = items.filter(isSingleError)
 
     // 一部の商品の在庫データを取得できなかった
-    if (items === undefined) {
-        const err: Error = {
+    if (errItems.length > 0) {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(failedToGetItemDataError)
         }
-        return err
+
+        return errorResult(err, ...errItems)
     }
 
     // すべての商品の在庫があるかどうか
-    const isAllEnough = items.every((item) => item.isEnough)
+    const isAllEnough = sucItems.every((item) => item.isEnough)
     const suc: Success & {
         items: {
             goodsId: string,
             remainData: GoodsRemainData,
             isEnough: boolean
-        }[], isAllEnough: boolean
+        }[],
+        isAllEnough: boolean
     } = {
         isSuccess: true,
-        items: items,
+        items: sucItems,
         isAllEnough: isAllEnough
     }
     return suc
@@ -64,27 +88,30 @@ export async function createPaymentSession(ref: DBRefs, customer: AuthInstance, 
 }> {
     // 商品の在庫があることを確認
     const status = await checkOrderRemainStatus(ref, orderData)
-    if (!status.isSuccess) {
-        const err: Error = status
-        return err
+    if (isError(status)) {
+        return status
     }
     if (!(status.isAllEnough)) {
         // 商品の一部が欠品
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(itemGoneError((status.items).filter((item) => !item.isEnough).map((item) => item.goodsId)))
         }
-        return err
+        return errorResult(err)
     }
 
     // 新規決済セッションを作成
     const paymentSession = await internalCreatePaymentSession(ref, customer, orderData)
-    if (!paymentSession.isSuccess) {
+    if (isError(paymentSession)) {
         // Failed to create Payment Session
-        const err: Error = paymentSession
-        return err
+        return errorResult({
+            isSuccess: false,
+            ...injectError(paymentCreateFailedError)
+        }, paymentSession)
     }
 
-    const suc: Success & { paymentSessionId: string } = paymentSession
+    const suc: Success & {
+        paymentSessionId: string
+    } = paymentSession
     return suc
 }

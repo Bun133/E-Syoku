@@ -2,22 +2,26 @@ import {Ticket, ticketSchema, TicketStatus} from "../types/ticket";
 import {firestore} from "firebase-admin";
 import {DBRefs, mergeData, parseData, parseQueryDataAll} from "../utils/db";
 import {UniqueId} from "../types/types";
-import {Error, Result, Success, TypedSingleResult} from "../types/errors";
+import {Error, SingleError, SingleResult, Success, TypedSingleResult} from "../types/errors";
 import {PaymentSession} from "../types/payment";
 import {getGoodsById} from "./goods";
 import {
     dbNotFoundError,
+    errorResult,
     failedToGetItemDataError,
     failedToRegisterTicketError,
-    injectError,
+    injectError, isError,
+    isSingleError,
+    isSuccess,
+    isTypedSuccess,
     ticketStatusInvalidError
 } from "./errors";
 import {Order, SingleOrder} from "../types/order";
 import {Timestamp} from "firebase-admin/firestore";
 import {createNewTicket} from "./ticketNumInfos";
-import {getTicketBarcodeBindData} from "./barcode";
 import {NotificationData, sendMessage} from "./notification";
 import {Messaging} from "firebase-admin/lib/messaging";
+import {Goods} from "../types/goods";
 import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
@@ -56,7 +60,7 @@ export async function ticketByRef(ref: DBRefs, ticketRef: DocumentReference<fire
     return await parseData<Ticket>(dbNotFoundError("ticket"), ticketSchema, ticketRef, (data) => ticketParser(ticketRef.id, data), transaction);
 }
 
-export async function getTickets(ref: DBRefs, ticketIds: string[]) {
+export async function getTickets(ref: DBRefs, ticketIds: string[]): Promise<Ticket[]> {
     return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("uniqueId", "in", ticketIds), (ref, data) => ticketParser(ref.id, data))
 }
 
@@ -73,28 +77,9 @@ export async function listTicketForShop(ref: DBRefs, shopId: string): Promise<Ar
     return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("shopId", "==", shopId), (ref, data) => ticketParser(ref.id, data))
 }
 
-/**
- * チケットのステータスをバーコードの情報から食券データを特定し更新します
- * @param ref
- * @param messaging
- * @param barcode
- * @param fromStatus
- * @param toStatus
- * @param transaction
- */
-export async function updateTicketStatusByBarcode(ref: DBRefs, messaging: Messaging, barcode: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction): Promise<Result> {
-    const barcodeData = await getTicketBarcodeBindData(ref, barcode)
-    if (!barcodeData.isSuccess) {
-        const err: Error = barcodeData
-        return err
-    }
-
-    return await updateTicketStatusByIds(ref, messaging, barcodeData.data.ticketId, fromStatus, toStatus, transaction)
-}
-
 export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, ticketId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Success & {
     targetTicket: Ticket
-} | Error> {
+} | SingleError> {
     return await internalUpdateTicketStatus(ref, messaging, ref.tickets.doc(ticketId), fromStatus, toStatus, transaction, sendNotification)
 }
 
@@ -109,18 +94,19 @@ export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging,
  * @param sendNotification
  */
 async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, ticketRef: DocumentReference, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData)
-    : Promise<Success & { targetTicket: Ticket } | Error> {
+    : Promise<Success & {
+    targetTicket: Ticket
+} | SingleError> {
 
     // チケットの存在を確認する
     const ticket = await ticketByRef(ref, ticketRef)
-    if (!ticket.isSuccess) {
-        const err: Error = ticket
-        return err
+    if (isSingleError(ticket)) {
+        return ticket
     }
 
     if (ticket.data.status !== fromStatus) {
         // チケットのステータスが変更前のステータスではないのでエラー
-        const err: Error = {
+        const err: SingleError = {
             "isSuccess": false,
             ...injectError(ticketStatusInvalidError(fromStatus, ticket.data.status))
         }
@@ -128,7 +114,7 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
     }
 
     // チケットのデータをもとに、DBを更新
-    let writeResult: Result = await mergeData(ticketSchema.omit({
+    let writeResult: SingleResult = await mergeData(ticketSchema.omit({
         ticketNum: true,
         customerId: true,
         issueTime: true,
@@ -139,12 +125,14 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
         uniqueId: true
     }), ticketRef, {status: toStatus, lastStatusUpdated: Timestamp.now()}, transaction)
 
-    if (writeResult.isSuccess) {
+    if (isSuccess(writeResult)) {
         // 通知を送信する場合は送信処理を行います
         if (sendNotification) {
             await sendMessage(ref, messaging, ticket.data.customerId, sendNotification)
         }
-        const suc: Success & { targetTicket: Ticket } = {
+        const suc: Success & {
+            targetTicket: Ticket
+        } = {
             isSuccess: true,
             targetTicket: ticket.data
         }
@@ -173,7 +161,7 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
 })> {
     // 店舗ごとにバラす
     const associated = await associatedWithShop(ref, payment)
-    if (!associated.isSuccess) {
+    if (isError(associated)) {
         const err: Error & {
             registered: {
                 ticketIds: string[]
@@ -188,36 +176,29 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
 
 
     // 書き込み済のチケット
-    const registered: string[] = []
-    const notRegistered: {
-        shopId: string,
-        order: Order
-    }[] = []
+    const written: (Success & {
+        ticketId: string
+    } | SingleError)[] = []
 
     let shopId: string
     let order: Order
     // 店舗ごとに分けたOrderから食券登録
     for ([shopId, order] of shopMap.toArray()) {
         const r = await registerTicket(ref, payment.customerId, shopId, order, payment)
-        if (r.isSuccess) {
-            registered.push(r.ticketId)
-        } else {
-            notRegistered.push({shopId: shopId, order: order})
-        }
+        written.push(r)
     }
 
-    if (notRegistered.length > 0) {
-        const err: Error & {
-            registered: {
-                ticketIds: string[]
-            }
-        } = {
-            isSuccess: false,
-            registered: {ticketIds: registered},
-            ...injectError(failedToRegisterTicketError)
-        }
+    const registered: (Success & {
+        ticketId: string
+    })[] = written.filter(isSuccess) as (Success & {
+        ticketId: string
+    })[]
+    const notRegistered: SingleError[] = written.filter(isSingleError) as SingleError[]
 
-        return err
+    if (notRegistered.length > 0) {
+        return Object.assign(errorResult({isSuccess: false, ...injectError(failedToRegisterTicketError)}, ...notRegistered), {
+            registered: {ticketIds: registered.map(e => e.ticketId)},
+        })
     }
 
     const suc: Success & {
@@ -226,7 +207,7 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
         }
     } = {
         isSuccess: true,
-        registered: {ticketIds: registered}
+        registered: {ticketIds: registered.map(e => e.ticketId)}
     }
 
     return suc
@@ -242,7 +223,7 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
  */
 async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: Order, associatedPayment: PaymentSession): Promise<Success & {
     ticketId: string
-} | Error> {
+} | SingleError> {
     const newTicket = await createNewTicket(ref, shopId, (ticketId: string, ticketNum: string) => {
         const ticketData: Ticket = {
             uniqueId: ticketId,
@@ -259,8 +240,8 @@ async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: O
         return ticketData
     })
 
-    if (!newTicket.isSuccess) {
-        const err: Error = newTicket
+    if (isSingleError(newTicket)) {
+        const err: SingleError = newTicket
         return err
     }
 
@@ -279,38 +260,49 @@ async function registerTicket(ref: DBRefs, uid: string, shopId: string, order: O
  * @param ref
  * @param ticketIds
  */
-export async function deleteTickets(ref: DBRefs, ticketIds: string[]) {
+export async function deleteTickets(ref: DBRefs, ticketIds: string[]): Promise<Awaited<void>[]> {
     return await Promise.all(ticketIds.map(async (id) => {
         await (ref.tickets.doc(id).delete())
     }))
+}
+
+type SingleOrderWithGoods = SingleOrder & {
+    itemData: Goods
 }
 
 async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise<Error | Success & {
     shopMap: Map<UniqueId, SingleOrder[]>
 }> {
     // 商品データを取得
-    const orderWithShopData = (await Promise.all(payment.orderContent.map(async (e) => {
+    const orderWithShopData: TypedSingleResult<SingleOrderWithGoods>[] = (await Promise.all(payment.orderContent.map(async (e) => {
         const itemData = await getGoodsById(ref, e.goodsId)
-        if (!itemData.isSuccess) {
-            return undefined
+        if (isSingleError(itemData)) {
+            return itemData
         }
         return {
-            ...e,
-            itemData: itemData.data
+            isSuccess: true,
+            data: {
+                ...e,
+                itemData: itemData.data
+            }
         }
-    }))).filterNotNullStrict()
-    if (orderWithShopData === undefined) {
+    })))
+
+    const withGoodsData: SingleOrderWithGoods[] = orderWithShopData.filter(isTypedSuccess).map(e => e.data) as SingleOrderWithGoods[]
+    const err: SingleError[] = orderWithShopData.filter(isSingleError)
+
+    if (err.length > 0) {
         // 一つでも商品データを取得できなかった場合はエラーに
-        const err: Error = {
+        const e: SingleError = {
             isSuccess: false,
             ...injectError(failedToGetItemDataError)
         }
-        return err
+        return errorResult(e, ...err)
     }
 
     // 店舗ごとに振り分け
     const shopMap: Map<UniqueId, SingleOrder[]> = new Map()
-    for (const order of orderWithShopData) {
+    for (const order of withGoodsData) {
         const rawOrder: SingleOrder = {
             goodsId: order.goodsId,
             count: order.count
@@ -359,7 +351,9 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
     const toCallCount = count - calledTicketCount
     if (toCallCount <= 0) {
         // Do nothing
-        const suc: Success & { calledTicketIds: string[] } = {
+        const suc: Success & {
+            calledTicketIds: string[]
+        } = {
             isSuccess: true,
             calledTicketIds: []
         }
@@ -391,7 +385,9 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
 
         const success = res.filter(r => r.result.isSuccess)
 
-        const suc: Success & { calledTicketIds: string[] } = {
+        const suc: Success & {
+            calledTicketIds: string[]
+        } = {
             isSuccess: true,
             calledTicketIds: success.map(e => e.ticketId)
         }
