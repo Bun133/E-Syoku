@@ -3,11 +3,11 @@ import {authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {Auth} from "firebase-admin/lib/auth";
 import {DBRefs} from "./utils/db";
-import {Error, Result, Success, TypedSingleResult} from "./types/errors";
+import {Result, SingleError, Success, TypedSingleResult} from "./types/errors";
 import {Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {z} from "zod";
-import {cmsTicketNotSatisfyCondition, injectError, ticketNotFoundError} from "./impls/errors";
+import {cmsTicketNotSatisfyCondition, errorResult, injectError, ticketNotFoundError} from "./impls/errors";
 import {ticketByBarcode} from "./impls/barcode";
 import {Ticket} from "./types/ticket";
 import {ticketById} from "./impls/ticket";
@@ -43,24 +43,24 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
     }
 
     if (!satisfyCondition) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(cmsTicketNotSatisfyCondition)
         }
 
         return {
-            result: err
+            result: errorResult(err)
         }
     }
 
     if (!ticket || !ticket.isSuccess) {
-        const err: Error = {
+        const err: SingleError = {
             isSuccess: false,
             ...injectError(ticketNotFoundError)
         }
 
         return {
-            result: err
+            result: errorResult(err)
         }
     }
 
