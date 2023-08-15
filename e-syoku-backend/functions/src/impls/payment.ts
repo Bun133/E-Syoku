@@ -59,7 +59,7 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         orderContent: paymentSession.orderContent,
         state: paymentSession.state,
         totalAmount: paymentSession.totalAmount,
-        barcode:barcode
+        barcode: barcode
     })
     if (!setRes.isSuccess) {
         // 決済セッションのデータを保存できなかった
@@ -114,14 +114,15 @@ export async function getPaymentSessionById(ref: DBRefs, paymentSessionId: strin
     return getPaymentSessionByRef(ref, ref.payments.doc(paymentSessionId))
 }
 
-function transformPaymentSession(sessionId: string, data: firestore.DocumentData) {
+function transformPaymentSession(sessionId: string, data: firestore.DocumentData): PaymentSession {
     return {
         sessionId: sessionId,
         customerId: data.customerId,
         orderContent: data.orderContent,
+        boundTicketId: data.boundTicketId,
         state: data.state,
         totalAmount: data.totalAmount,
-        barcode:data.barcode
+        barcode: data.barcode
     }
 }
 
@@ -199,6 +200,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
     }
 
     // 決済セッションのステータスを支払い済みに変更
+    // 決済セッションのデータにboundTicketIdを追加
     const update = await updateEntireData(paymentSessionSchema.omit({
         sessionId: true,
         customerId: true,
@@ -207,7 +209,8 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
         barcode: true,
     }), paymentRef, {
         state: "PAID",
-        paidDetail: paidDetail
+        paidDetail: paidDetail,
+        boundTicketId: ticketRes.registered.ticketIds
     })
     if (!update.isSuccess) {
         const err: Error = update

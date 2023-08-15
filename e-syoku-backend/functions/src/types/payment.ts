@@ -50,6 +50,8 @@ export const paymentSessionSchema = z.object({
     state: paymentStateSchema,
     // 決済完了データ
     paidDetail: paidDetailSchema.optional(),
+    // 決済完了後に発行される食券のIDたち
+    boundTicketId: uniqueId.array().optional(),
 })
 
 export type PaymentSession = z.infer<typeof paymentSessionSchema>

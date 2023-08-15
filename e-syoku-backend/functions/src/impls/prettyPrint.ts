@@ -167,6 +167,7 @@ export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Prom
         orderContent: pOrder.data,
         state: pStatus,
         totalAmount: payment.totalAmount,
+        boundTicketId: payment.boundTicketId
     }
 
     return {

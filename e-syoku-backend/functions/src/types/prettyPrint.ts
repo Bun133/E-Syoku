@@ -74,6 +74,8 @@ export const prettyPaymentSessionSchema = z.object({
     totalAmount: z.number(),
     state: prettyPaymentStateSchema,
     paidDetail: paidDetailSchema.optional(),
+    // 決済完了後に発行される食券のIDたち
+    boundTicketId: uniqueId.array().optional(),
 })
 
 export type PrettyPaymentSession = z.infer<typeof prettyPaymentSessionSchema>
