@@ -212,6 +212,8 @@ export const prettyPaymentSessionSchema = z.object({
     totalAmount: z.number(),
     state: prettyPaymentStateSchema,
     paidDetail: paidDetailSchema.optional(),
+    // 決済完了後に発行される食券のIDたち
+    boundTicketId: uniqueId.array().optional(),
     barcode: z.string()
 })
 
@@ -237,7 +239,7 @@ export const defaultResponseFormat = resultSchema
 export type DefaultResponseFormat = z.infer<typeof defaultResponseFormat>
 
 export const ticketResponse = defaultResponseFormat.and(z.object({
-    ticket: prettyTicketSchema.optional()
+    ticket: prettyTicketSchema
 }))
 
 export type TicketStatusResponse = z.infer<typeof ticketResponse>
