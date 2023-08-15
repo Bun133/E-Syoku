@@ -13,13 +13,25 @@ export function OrderSelection(param: { goods: GoodsWithRemainDataWaitingData[],
         return listRefs.some(r => r > 0)
     }
 
+    function getAmount(index: number) {
+        return listRefs[index] ?? 0
+    }
+
     function generateOrder(): Order {
         return param.goods.map((g, index) => {
             return {
                 goodsId: g.goods.goodsId,
-                count: listRefs[index]
+                count: getAmount(index)
             }
         }).filter(o => o.count > 0)
+    }
+
+    function calcTotal() {
+        let total = 0
+        param.goods.forEach((g, index) => {
+            total += (g.goods.price * getAmount(index)) ?? 0
+        })
+        return total
     }
 
 
@@ -48,9 +60,12 @@ export function OrderSelection(param: { goods: GoodsWithRemainDataWaitingData[],
                 </SimpleGrid>
             </Center>
             <Center>
-                <Btn disabled={!isPossibleToEnd()} onClick={() => {
-                    param.callBack(generateOrder())
-                }}>決定</Btn>
+                <VStack>
+                    <Text size={"3xl"}>合計金額：{calcTotal()}円</Text>
+                    <Btn disabled={!isPossibleToEnd()} onClick={() => {
+                        param.callBack(generateOrder())
+                    }}>決定</Btn>
+                </VStack>
             </Center>
         </VStack>
     )

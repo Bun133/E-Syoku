@@ -9,6 +9,9 @@ export default function Home() {
         <Container>
             <Center>
                 <VStack>
+                    <Btn href="/buy">
+                        購入(新)
+                    </Btn>
                     <Btn href="/order">
                         新規注文
                     </Btn>
