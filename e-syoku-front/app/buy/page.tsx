@@ -155,7 +155,7 @@ function Payment(params: {
     return (
         <APIEndpoint endpoint={paymentStatusEndPoint}
                      query={{paymentId: params.paymentId}}
-                     refetch={{interval: 30}}
+                     refetch={{interval: 10}}
                      onEnd={(response) => {
                          const payment: PrettyPaymentSession = response.data.payment
                          updatePaid(payment)
