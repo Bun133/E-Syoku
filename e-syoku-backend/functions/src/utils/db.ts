@@ -72,6 +72,14 @@ async function get(data: DBDataLike, transaction?: firestore.Transaction): Promi
     }
 }
 
+function ref(data: DBDataLike): DocumentReference {
+    if (data instanceof DocumentReference) {
+        return data
+    } else {
+        return data.ref
+    }
+}
+
 /**
  * Simply Parse data from db using zod type.
  * @param errorType
@@ -108,7 +116,7 @@ export async function parseData<T extends DocumentData>(errorType: ErrorType, ty
             error("in ParseData,zod threw an error", e)
             const err: SingleError = {
                 isSuccess: false,
-                ...injectError(parseDataZodFailed)
+                ...injectError(parseDataZodFailed(ref(dataLike)))
             }
             return err
         }
@@ -116,7 +124,7 @@ export async function parseData<T extends DocumentData>(errorType: ErrorType, ty
     } else {
         const err: SingleError = {
             isSuccess: false,
-            ...injectError(parseDataNotFound)
+            ...injectError(parseDataNotFound(ref(dataLike)))
         }
         return err
     }
@@ -193,7 +201,7 @@ export async function updateEntireData<T extends DocumentData>(type: ZodType<T>,
     } catch (e) {
         const err: SingleError = {
             isSuccess: false,
-            ...injectError(updateDataFailedError),
+            ...injectError(updateDataFailedError(ref)),
             toUpdateRef: ref.path,
             rawError: e,
             toUpdate: toUpdate,
@@ -225,7 +233,7 @@ export async function setData<T extends DocumentData>(type: ZodType<T>, ref: Doc
     } catch (e) {
         const err: SingleError = {
             isSuccess: false,
-            ...injectError(setDataFailedError),
+            ...injectError(setDataFailedError(ref)),
             toSetRef: ref.path,
             rawError: e,
             toSet: toSet,
@@ -257,7 +265,7 @@ export async function mergeData<T extends DocumentData>(type: ZodType<T>, ref: D
     } catch (e) {
         const err: SingleError = {
             isSuccess: false,
-            ...injectError(mergeDataFailedError),
+            ...injectError(mergeDataFailedError(ref)),
             toMergeRef: ref.path,
             rawError: e,
             toMerge: toMerge,
@@ -288,7 +296,7 @@ export async function createData<T extends DocumentData>(type: ZodType<T>, ref: 
     } catch (e) {
         const err: SingleError = {
             isSuccess: false,
-            ...injectError(createDataFailedError),
+            ...injectError(createDataFailedError(ref)),
             toCreateRef: ref.path,
             rawError: e,
             toCreate: toCreate,
