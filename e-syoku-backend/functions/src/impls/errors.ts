@@ -10,6 +10,7 @@ import {
     TypedSingleResult,
     TypedSuccess
 } from "../types/errors";
+import {CollectionReference, DocumentReference} from "firebase-admin/firestore";
 
 export function injectError(error: ErrorType) {
     return error
@@ -76,6 +77,16 @@ const cmsError: (msg: string, errorCode: string) => ErrorType = (msg: string, er
     }
 }
 
+const dbError: (msg: string, errorCode: string) => ((ref: DocumentReference | CollectionReference) => ErrorType) = (msg, errorCode) => {
+    return (ref) => {
+        return {
+            error: msg,
+            errorCode: `DB_${errorCode}`,
+            ref: ref.path
+        }
+    }
+}
+
 // DB内にデータが見つからない
 export const dbNotFoundError = (dataName: string) => {
     const upperCase = dataName.toUpperCase()
@@ -104,8 +115,8 @@ export const paymentNotFoundError: ErrorType = inputWrongError("PaymentSession",
 export const paymentCreateFailedError = internalError("決済セッションの作成に失敗しました", "PAYMENT_CREATE_FAILED")
 
 export const paymentStatusNotSatisfiedError: ErrorType = {
-    error:"指定された決済セッションは無効です",
-    errorCode:"PAYMENT_NOT_SATISFY"
+    error: "指定された決済セッションは無効です",
+    errorCode: "PAYMENT_NOT_SATISFY"
 }
 
 export const itemGoneError: (missedItemsId: string[]) => ErrorType = (ids: string[]) => {
@@ -147,12 +158,12 @@ export const remainDataTypeNotKnownError: ErrorType = internalError("RemainData�
 export const remainStatusNegativeError: ErrorType = internalError("RemainStatusのremainCountが負の値になりました", "REMAIN_STATUS_NEGATIVE")
 export const deltaNegativeError: ErrorType = internalError("変化量が負の値になりました", "DELTA_NEGATIVE")
 
-export const updateDataFailedError = internalError("Updateの際にエラーが発生したため、Update出来ませんでした", "UPDATE_DATA_FAILED")
-export const setDataFailedError = internalError("SETの際にエラーが発生したため、Update出来ませんでした", "SET_DATA_FAILED")
+export const updateDataFailedError = dbError("Updateの際にエラーが発生したため、Update出来ませんでした", "UPDATE_DATA_FAILED")
+export const setDataFailedError = dbError("SETの際にエラーが発生したため、Update出来ませんでした", "SET_DATA_FAILED")
 
-export const mergeDataFailedError = internalError("Mergeの際にエラーが発生したため、Merge出来ませんでした", "MERGE_DATA_FAILED")
+export const mergeDataFailedError = dbError("Mergeの際にエラーが発生したため、Merge出来ませんでした", "MERGE_DATA_FAILED")
 
-export const createDataFailedError = internalError("Createの際にエラーが発生したため、Create出来ませんでした", "CREATE_DATA_FAILED")
+export const createDataFailedError = dbError("Createの際にエラーが発生したため、Create出来ませんでした", "CREATE_DATA_FAILED")
 
 
 export const requestNotContainUserIdError = inputWrongError("TargetUID", "リクエストにUIDが含まれていない/指定されていません")
@@ -172,13 +183,13 @@ export const barcodeNotMatch = inputWrongError("BARCODE", "バーコードが合
 
 export const barcodeMatchTooMuch = inputWrongError("BARCODE", "バーコードが複数に合致します")
 
-export const barcodeBindDataNotFound = internalError("バーコード紐づけ情報が存在しません","BARCODE_BIND_NOT_FOUND")
+export const barcodeBindDataNotFound = internalError("バーコード紐づけ情報が存在しません", "BARCODE_BIND_NOT_FOUND")
 
 export const cmsTicketNotSatisfyCondition = cmsError("指定条件が緩すぎます", "TICKET_NOT_SATISFY_CONDITION")
 
-export const parseDataZodFailed = internalError(`正常にデータを処理できませんでした`, `PARSE_DATA_FAILED_ZOD`)
+export const parseDataZodFailed = dbError(`正常にデータを処理できませんでした`, `PARSE_DATA_FAILED_ZOD`)
 
-export const parseDataNotFound = internalError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND`)
+export const parseDataNotFound = dbError(`データが見つかりませんでした`, `PARSE_DATA_FAILED_NOT_FOUND`)
 
 export const prettyOrderFailed = internalError("OrderデータをPretty化できませんでした", "PRETTY_ORDER_FAILED")
 

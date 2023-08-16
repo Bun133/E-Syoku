@@ -45,6 +45,19 @@ function multicastMessageBuilder(data: {
             data: {
                 pathname: data.clickUrl
             },
+            android: {
+                notification: {
+                    clickAction: data.clickUrl,
+                }
+            },
+            apns: {
+                fcmOptions: {
+                    imageUrl: data.imageUrl
+                },
+                payload: {
+                    aps: {}
+                }
+            },
             notification: {
                 body: data.body,
                 title: data.title,
