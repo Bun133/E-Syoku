@@ -19,7 +19,6 @@ import PageTitle from "@/components/pageTitle";
 import {useRef, useState} from "react";
 import {Order, PrettyPaymentSession, PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
-import {OrderSelection} from "@/components/form/OrderSelection";
 import {
     listGoodsEndPoint,
     paymentStatusEndPoint,
@@ -28,6 +27,7 @@ import {
 } from "@/lib/e-syoku-api/EndPoints";
 import {PaymentCard} from "@/components/Payment";
 import {TicketCard} from "@/components/Ticket";
+import {NOrderSelection} from "@/components/order/NOrderSelection";
 
 export default function Page() {
     const [order, setOrder] = useState<Order>();
@@ -76,7 +76,7 @@ export default function Page() {
     function renderPayment() {
         return (
             <Payment paymentId={paymentId!!} onPaid={(boundTicketId) => {
-                console.log("boundTicketId",boundTicketId)
+                console.log("boundTicketId", boundTicketId)
                 setTicketIds(boundTicketId)
                 goToNext()
             }}/>
@@ -128,7 +128,7 @@ function Order(params: {
     return (
         <APIEndpoint endpoint={listGoodsEndPoint} query={{}} onEnd={(response) => {
             return (
-                <OrderSelection callBack={params.onSelectOrder} goods={response.data.data}/>
+                <NOrderSelection onOrder={params.onSelectOrder} goods={response.data.data}/>
             )
         }}/>
     )
