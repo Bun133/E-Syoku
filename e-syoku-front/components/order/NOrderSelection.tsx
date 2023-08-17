@@ -6,6 +6,7 @@ import {Modal, ModalBody, ModalCloseButton, ModalFooter, ModalHeader, ModalOverl
 import {useDisclosure} from "@chakra-ui/hooks";
 import {useState} from "react";
 import Btn from "@/components/btn";
+import {StorageImage} from "@/lib/firebase/storage";
 
 export function NOrderSelection(params: {
     goods: GoodsWithRemainDataWaitingData[],
@@ -44,7 +45,7 @@ export function NOrderSelection(params: {
         <VStack>
             {params.goods.map((g, i) => {
                 return (
-                    <Box>
+                    <Box key={i}>
                         <GoodsOrderCard goods={g} onUpdate={(count) => updateOrderMap(g.goods.goodsId, count)}/>
                     </Box>
                 )
@@ -67,11 +68,16 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
     return (
         <>
             <Card onClick={onOpen} cursor={"pointer"}>
-                <CardHeader>
-                    {params.goods.goods.name}
-                </CardHeader>
+                {
+                    params.goods.goods.imageRefPath && (
+                        <CardHeader>
+                            <StorageImage storagePath={params.goods.goods.imageRefPath} alt={params.goods.goods.name}/>
+                        </CardHeader>
+                    )
+                }
                 <CardBody>
                     <VStack alignItems={"flex-start"}>
+                        <Heading>{params.goods.goods.name}</Heading>
                         <Text>{params.goods.goods.description}</Text>
                         <Text>金額:{params.goods.goods.price}</Text>
                         <Text>受け取り待ち人数:{params.goods.waitingData.waiting}</Text>
