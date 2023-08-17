@@ -1,7 +1,7 @@
-import {GoodsWithRemainDataWaitingData, Order} from "@/lib/e-syoku-api/Types";
+import {GoodsRemainData, GoodsWithRemainDataWaitingData, Order} from "@/lib/e-syoku-api/Types";
 import {AspectRatio, Heading, VStack} from "@chakra-ui/layout";
 import {Card, CardBody, CardHeader} from "@chakra-ui/card";
-import {Box, HStack, ModalContent, SimpleGrid, Spacer, Text} from "@chakra-ui/react";
+import {Box, HStack, ModalContent, SimpleGrid, Text} from "@chakra-ui/react";
 import {Modal, ModalBody, ModalCloseButton, ModalFooter, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {useState} from "react";
@@ -60,11 +60,37 @@ export function NOrderSelection(params: {
 
 function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdate?: (count: number) => void }) {
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const [count, setCount] = useState(0)
+    const [count, setCount] = useState<number>(0)
 
     function onCartAdd() {
         params.onUpdate?.(count)
         onClose()
+    }
+
+    function addButtonDisabled() {
+        const toUpdate = count + 1
+        if (isExceed(params.goods.remainData, toUpdate)) {
+            return true
+        }
+        return false
+    }
+
+    function reduceButtonDisabled() {
+        return count <= 0
+    }
+
+    function isExceed(r: GoodsRemainData, count: number) {
+        // @ts-ignore
+        if (r.remain != undefined) {
+            // @ts-ignore
+            return !r.remain
+            // @ts-ignore
+        } else if (r.remainCount != undefined) {
+            // @ts-ignore
+            return r.remainCount < count
+        }
+
+        throw new Error("remain is not defined")
     }
 
     return (
@@ -81,10 +107,8 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
                 }
                 <CardBody>
                     <VStack alignItems={"flex-start"}>
-                        <Heading>{params.goods.goods.name}</Heading>
-                        <Text>{params.goods.goods.description}</Text>
-                        <Text>金額:{params.goods.goods.price}</Text>
-                        <Text>受け取り待ち人数:{params.goods.waitingData.waiting}</Text>
+                        <Text>{params.goods.goods.name}</Text>
+                        {count > 0 && <Text>注文個数: {count}</Text>}
                     </VStack>
                 </CardBody>
             </Card>
@@ -92,9 +116,17 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
             <Modal size={"full"} isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay/>
                 <ModalContent>
-                    <ModalHeader>
-                        <ModalCloseButton/>
-                    </ModalHeader>
+                    <ModalCloseButton/>
+                    {
+                        params.goods.goods.imageRefPath && (
+                            <ModalHeader>
+                                <AspectRatio ratio={1}>
+                                    <StorageImage storagePath={params.goods.goods.imageRefPath}
+                                                  alt={params.goods.goods.name}/>
+                                </AspectRatio>
+                            </ModalHeader>
+                        )
+                    }
                     <ModalBody>
                         <Heading>
                             {params.goods.goods.name}
@@ -110,21 +142,17 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
                         </Text>
                     </ModalBody>
                     <ModalFooter>
-                        <HStack>
+                        <VStack alignItems={"flex-end"}>
                             <Heading>
                                 小計：{params.goods.goods.price * count}円
                             </Heading>
-                            <Spacer/>
                             <HStack>
-                                <HStack>
-                                    <Btn onClick={() => setCount(count - 1)}>-</Btn>
-                                    <Text>{count}個</Text>
-                                    <Btn onClick={() => setCount(count + 1)}>+</Btn>
-                                </HStack>
-                                <Box w={4}/>
-                                <Btn onClick={onCartAdd}>カートに追加する</Btn>
+                                <Btn onClick={() => setCount(count - 1)} disabled={reduceButtonDisabled()}>-</Btn>
+                                <Text>{count}個</Text>
+                                <Btn onClick={() => setCount(count + 1)} disabled={addButtonDisabled()}>+</Btn>
                             </HStack>
-                        </HStack>
+                            <Btn onClick={onCartAdd}>カートに追加する</Btn>
+                        </VStack>
                     </ModalFooter>
                 </ModalContent>
             </Modal>
