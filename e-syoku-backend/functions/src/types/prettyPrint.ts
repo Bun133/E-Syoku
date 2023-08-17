@@ -30,7 +30,7 @@ export const prettyGoodsSchema = z.object({
     name: z.string(),
     price: z.number(),
     description: z.string().optional(),
-    imageUrl: z.string().optional(),
+    imageRefPath: z.string().optional(),
 })
 
 export type PrettyGoods = z.infer<typeof prettyGoodsSchema>

@@ -16,7 +16,7 @@ export const goodsSchema = z.object({
     // 商品説明文
     description: z.string().optional(),
     // 商品画像
-    imageUrl: z.string().optional(),
+    imageRefPath: z.string().optional(),
 })
 
 export type Goods = z.infer<typeof goodsSchema>

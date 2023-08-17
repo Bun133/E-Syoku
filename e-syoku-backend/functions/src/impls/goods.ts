@@ -17,30 +17,27 @@ import {
 } from "./errors";
 import Transaction = firestore.Transaction;
 
+function transformGoods(goodsId: string, data: firestore.DocumentData): Goods {
+    return {
+        goodsId: goodsId,
+        description: data.description,
+        shopId: data.shopId,
+        name: data.name,
+        imageRefPath: data.imageRefPath,
+        price: data.price,
+    }
+}
+
 export async function getGoodsById(ref: DBRefs, goodsId: UniqueId, transaction?: Transaction): Promise<TypedSingleResult<Goods>> {
     const directRef = ref.goods.doc(goodsId)
     return await parseData<Goods>(dbNotFoundError("goods"), goodsSchema, directRef, (data) => {
-        return {
-            goodsId: directRef.id,
-            description: data.description,
-            shopId: data.shopId,
-            name: data.name,
-            imageUrl: data.imageUrl,
-            price: data.price,
-        }
+        return transformGoods(goodsId, data)
     }, transaction)
 }
 
 export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
     return await parseDataAll<Goods>(goodsSchema, refs.goods, (doc, data) => {
-        return {
-            goodsId: doc.id,
-            description: data.description,
-            shopId: data.shopId,
-            name: data.name,
-            imageUrl: data.imageUrl,
-            price: data.price,
-        }
+        return transformGoods(doc.id, data)
     })
 }
 

@@ -47,7 +47,7 @@ export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSing
             name: goods.name,
             price: goods.price,
             description: goods.description,
-            imageUrl: goods.imageUrl,
+            imageRefPath: goods.imageRefPath,
         }
     }
 

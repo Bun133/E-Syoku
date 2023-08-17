@@ -48,26 +48,6 @@ export const shopDetailType = z.object({
 
 export type ShopDetail = z.infer<typeof shopDetailType>
 
-////// Goods(商品) //////
-
-// 商品データ
-export const goodsSchema = z.object({
-    // 商品ID
-    goodsId: uniqueId,
-    // 販売店舗ID
-    shopId: uniqueId,
-    // 表示名
-    name: z.string(),
-    // 価格
-    price: z.number(),
-    // 商品説明文
-    description: z.string().optional(),
-    // 商品画像
-    imageUrl: z.string().optional(),
-})
-
-export type Goods = z.infer<typeof goodsSchema>
-
 ///// 在庫データ /////
 
 // ①在庫あり/なし
@@ -169,7 +149,7 @@ export const prettyGoodsSchema = z.object({
     name: z.string(),
     price: z.number(),
     description: z.string().optional(),
-    imageUrl: z.string().optional(),
+    imageRefPath: z.string().optional(),
 })
 
 export type PrettyGoods = z.infer<typeof prettyGoodsSchema>
