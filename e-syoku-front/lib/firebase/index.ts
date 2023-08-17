@@ -1,7 +1,8 @@
 "use client"
 import * as firebase from "firebase/app"
+import {FirebaseApp} from "firebase/app"
 import {FirebaseOptions} from "@firebase/app";
-import {FirebaseApp} from "firebase/app";
+import {connectStorageEmulator, getStorage} from "@firebase/storage";
 
 export const firebaseConfig: FirebaseOptions = {
     apiKey: process.env.NEXT_PUBLIC_apiKey,
@@ -15,3 +16,10 @@ export const firebaseConfig: FirebaseOptions = {
 
 firebase.initializeApp(firebaseConfig)
 export const firebaseApp: FirebaseApp = firebase.getApp()
+
+if (process.env.NODE_ENV === "development") {
+    // Connect Storage Emulator
+    console.log("Connecting Storage Emulator")
+    const storage = getStorage(firebaseApp)
+    connectStorageEmulator(storage, "localhost", 9199)
+}

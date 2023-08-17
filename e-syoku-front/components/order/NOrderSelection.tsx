@@ -1,7 +1,7 @@
 import {GoodsWithRemainDataWaitingData, Order} from "@/lib/e-syoku-api/Types";
-import {Heading, VStack} from "@chakra-ui/layout";
+import {AspectRatio, Heading, VStack} from "@chakra-ui/layout";
 import {Card, CardBody, CardHeader} from "@chakra-ui/card";
-import {Box, HStack, ModalContent, Spacer, Text} from "@chakra-ui/react";
+import {Box, HStack, ModalContent, SimpleGrid, Spacer, Text} from "@chakra-ui/react";
 import {Modal, ModalBody, ModalCloseButton, ModalFooter, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {useState} from "react";
@@ -43,13 +43,15 @@ export function NOrderSelection(params: {
 
     return (
         <VStack>
-            {params.goods.map((g, i) => {
-                return (
-                    <Box key={i}>
-                        <GoodsOrderCard goods={g} onUpdate={(count) => updateOrderMap(g.goods.goodsId, count)}/>
-                    </Box>
-                )
-            })}
+            <SimpleGrid columns={2} spacing={10}>
+                {params.goods.map((g, i) => {
+                    return (
+                        <Box key={i}>
+                            <GoodsOrderCard goods={g} onUpdate={(count) => updateOrderMap(g.goods.goodsId, count)}/>
+                        </Box>
+                    )
+                })}
+            </SimpleGrid>
 
             <Btn onClick={() => params.onOrder(generateOrder())} disabled={isDisabled()}>注文を確定する</Btn>
         </VStack>
@@ -71,7 +73,9 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
                 {
                     params.goods.goods.imageRefPath && (
                         <CardHeader>
-                            <StorageImage storagePath={params.goods.goods.imageRefPath} alt={params.goods.goods.name}/>
+                            <AspectRatio ratio={1}>
+                                <StorageImage storagePath={params.goods.goods.imageRefPath} alt={params.goods.goods.name}/>
+                            </AspectRatio>
                         </CardHeader>
                     )
                 }
