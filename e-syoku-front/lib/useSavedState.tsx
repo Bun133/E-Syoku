@@ -1,15 +1,13 @@
 "use client"
 
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import {usePathname, useRouter, useSearchParams} from "next/navigation";
 
 type Dict = {
     [key: string]: any
 }
 
-export function useSavedState<T extends Dict>(paramName: string, defaultValue?: T): [T | undefined, (toChange: T) => void] {
-    const [state, setState] = useState<T | undefined>(defaultValue)
-
+export function useSavedState<T extends Dict>(paramName: string, defaultValue?: T, paramChange?: (t: T | undefined) => void): [T | undefined, (toChange: T) => void] {
     const params = useSearchParams()
     const param = params.get(paramName) ?? undefined
     const router = useRouter()
@@ -27,7 +25,16 @@ export function useSavedState<T extends Dict>(paramName: string, defaultValue?: 
         }
     }
 
+    function currentValue(): T | undefined {
+        if (param) {
+            return parse(param)
+        }
+
+        return defaultValue
+    }
+
     function isDifferFromState(str: string | undefined) {
+        const state = currentValue()
         if (state !== undefined && str !== undefined) {
             return JSON.stringify(state) !== str
         }
@@ -36,19 +43,27 @@ export function useSavedState<T extends Dict>(paramName: string, defaultValue?: 
     }
 
     function onParamChange(str: string | undefined) {
-        if (isDifferFromState(str)) {
+        console.log("onParamChange")
+        const diff = isDifferFromState(str)
+        console.log("diff", diff)
+        if (diff) {
+            let state: T | undefined
             if (str) {
-                setState(parse(str))
-            } else {
-                setState(undefined)
+                state = parse(str)
             }
+
+            newState(state)
+            paramChange?.(state)
         }
     }
 
-    function newState(toChange: T) {
-        setState(toChange)
+    function newState(toChange: T | undefined) {
         const newParam = new URLSearchParams(Array.from(params.entries()))
-        newParam.set(paramName, JSON.stringify(toChange))
+        if (toChange) {
+            newParam.set(paramName, JSON.stringify(toChange))
+        } else {
+            newParam.delete(paramName)
+        }
 
         const newParamStr = newParam.toString()
         const query = newParamStr === "" ? "" : `?${newParamStr}`
@@ -57,5 +72,5 @@ export function useSavedState<T extends Dict>(paramName: string, defaultValue?: 
         router.replace(newPathName)
     }
 
-    return [state, newState]
+    return [currentValue(), newState]
 }
