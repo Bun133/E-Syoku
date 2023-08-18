@@ -29,7 +29,7 @@ export function OrderSelection(param: { goods: GoodsWithRemainDataWaitingData[],
     function calcTotal() {
         let total = 0
         param.goods.forEach((g, index) => {
-            total += (g.goods.price * getAmount(index)) ?? 0
+            total += g.goods.price * getAmount(index)
         })
         return total
     }
