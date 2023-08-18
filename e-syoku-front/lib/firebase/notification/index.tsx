@@ -57,7 +57,7 @@ export function NotificationEnsure(params: {
     }
 
     async function postToken(token: string) {
-        const r = await callEndpoint(listenNotificationEndpoint, auth.user, {token: token})
+        const r = await callEndpoint(listenNotificationEndpoint, await auth.waitForUser(), {token: token})
         return r.isSuccess
     }
 
