@@ -64,10 +64,6 @@ export default function Page() {
         }
 
         if (!ticketIds) {
-            return 1
-        }
-
-        if (ticketIds!!.boundTicketIds.length === 0) {
             return 2
         }
 
@@ -244,6 +240,7 @@ function Payment(params: {
         <APIEndpoint endpoint={paymentStatusEndPoint}
                      query={{paymentId: params.paymentId}}
                      refetch={{interval: 10}}
+                     disableLoading={true}
                      onEnd={(response) => {
                          const payment: PrettyPaymentSession = response.data.payment
                          updatePaid(payment)
