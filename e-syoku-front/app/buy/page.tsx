@@ -2,6 +2,7 @@
 
 import {
     Box,
+    Spinner,
     Step,
     StepDescription,
     StepIcon,
@@ -11,7 +12,6 @@ import {
     StepSeparator,
     StepStatus,
     StepTitle,
-    Text,
     useSteps
 } from "@chakra-ui/react";
 import {Center, VStack} from "@chakra-ui/layout";
@@ -29,7 +29,6 @@ import {PaymentCard} from "@/components/Payment";
 import {TicketCard} from "@/components/Ticket";
 import {NOrderSelection} from "@/components/order/NOrderSelection";
 import {useSavedState} from "@/lib/useSavedState";
-import {update} from "@firebase/database";
 
 type OrderData = {
     data: Order
@@ -44,9 +43,9 @@ type TicketData = {
 }
 
 export default function Page() {
-    const [order, setOrder] = useSavedState<OrderData>("order",undefined,updateActiveStep);
-    const [paymentId, setPaymentId] = useSavedState<PaymentData>("pid",undefined,updateActiveStep);
-    const [ticketIds, setTicketIds] = useSavedState<TicketData>("tid", undefined,updateActiveStep);
+    const [order, setOrder] = useSavedState<OrderData>("order", undefined, updateActiveStep);
+    const [paymentId, setPaymentId] = useSavedState<PaymentData>("pid", undefined, updateActiveStep);
+    const [ticketIds, setTicketIds] = useSavedState<TicketData>("tid", undefined, updateActiveStep);
 
     const steps = [
         {title: '商品選択', description: '注文する商品を選択'},
@@ -72,7 +71,7 @@ export default function Page() {
         return 3
     }
 
-    function updateActiveStep(){
+    function updateActiveStep() {
         const determinedIndex = determineStepIndex()
         console.log("determineStepIndex", determinedIndex)
         if (determinedIndex !== activeStep) {
@@ -101,21 +100,25 @@ export default function Page() {
     }
 
     function renderPostOrder() {
+        function body() {
+            return (
+                <Center>
+                    <Spinner/>
+                </Center>
+            )
+        }
+
         return (
             <APIEndpoint
                 endpoint={submitOrderEndPoint}
                 query={{order: order?.data}}
+                queryNotSatisfied={body}
                 onEnd={(response) => {
                     setPaymentId({
                         paymentSessionId: response.data.paymentSessionId
                     })
                     goToNext()
-
-                    return (
-                        <Center>
-                            <Text>自動的に遷移します</Text>
-                        </Center>
-                    )
+                    return body()
                 }}/>
         )
     }
