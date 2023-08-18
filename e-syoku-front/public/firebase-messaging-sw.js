@@ -18,11 +18,11 @@ firebase.initializeApp({
     measurementId: 'G-3899ZFCT6J',
 });
 
-// TODO 動いてるか怪しい
 // Retrieve an instance of Firebase Messaging so that it can handle background
 // messages.
 const messaging = firebase.messaging();
-messaging.onBackgroundMessage(messaging, (payload) => {
+messaging.onBackgroundMessage((payload) => {
+    // TODO 二個通知が表示される
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
     if (payload.notification) {
         const title = payload.notification.title ?? "E-Syokuからの通知"
@@ -31,7 +31,15 @@ messaging.onBackgroundMessage(messaging, (payload) => {
 
         self.registration.showNotification(title, {
             body: body,
-            icon: icon
+            icon: icon,
+            data: payload.data
         })
     }
 });
+
+self.addEventListener("notificationclick", function (event) {
+    event.notification.close()
+    const data = event.notification.data
+    const url = data.pathname ?? "https://e-syoku.web.app/"
+    event.waitUntil(clients.openWindow(url))
+})

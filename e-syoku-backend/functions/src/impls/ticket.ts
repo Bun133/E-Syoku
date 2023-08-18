@@ -370,7 +370,7 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
 
         const res = await Promise.all(toCallTicketIds.map(async e => {
             const calledNotificationData: NotificationData = {
-                title: "E-Syoku通知",
+                title: "食券呼び出し",
                 body: "お客様の食券が呼ばれました",
                 clickUrl: `https://e-syoku.web.app/tickets/id?id=${e.uniqueId}`,
             }

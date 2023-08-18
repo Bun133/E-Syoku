@@ -1,11 +1,15 @@
 "use client"
-import {createContext, useContext, useEffect, useRef, useState} from "react";
-import {getMessaging, getToken, isSupported, Messaging, onMessage} from "@firebase/messaging";
+import React, {createContext, useContext, useEffect, useRef, useState} from "react";
+import {getMessaging, getToken, isSupported, MessagePayload, Messaging, onMessage} from "@firebase/messaging";
 import {firebaseApp} from "@/lib/firebase";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {callEndpoint} from "@/lib/e-syoku-api/Axios";
 import {listenNotificationEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import {useToast} from "@chakra-ui/toast";
+import {RenderProps} from "@chakra-ui/toast/dist/toast.types";
+import {Box, CloseButton, Flex, Spacer, Text} from "@chakra-ui/react";
+import Btn from "@/components/btn";
+import {Info} from "react-feather";
 
 export const cloudMessagingContext = createContext<Messaging | undefined>(undefined)
 
@@ -91,11 +95,8 @@ export function NotificationEnsure(params: {
             onMessage(messaging, (value) => {
                 console.log("message", value)
                 toast({
-                    title: value.notification?.title ?? "通知",
-                    description: value.notification?.body ?? "",
-                    status: "info",
-                    isClosable: true,
-                    duration: null
+                    duration: null,
+                    render: (toast) => notificationToast(toast, value)
                 })
             })
 
@@ -109,5 +110,29 @@ export function NotificationEnsure(params: {
                 requestPermission()
             })}
         </>
+    )
+}
+
+function notificationToast(props: RenderProps, value: MessagePayload): React.ReactNode {
+    const title = value.notification?.title ?? "通知"
+    const description = value.notification?.body ?? ""
+    const url = value.data?.pathname ?? "/"
+
+    return (
+        <Box backgroundColor={"blue.500"} p={2} rounded={2}>
+            <Flex w={"full"}>
+                <Info color={"white"}/>
+                <Box w={2}/>
+                <Text color={"white"}>通知</Text>
+                <Spacer/>
+                <CloseButton color={"white"} onClick={props.onClose}/>
+            </Flex>
+            <Text color={"white"} fontSize={"3xl"}>{title}</Text>
+            <Text color={"white"}>{description}</Text>
+            <Flex w={"full"}>
+                <Spacer/>
+                <Btn href={url} onClick={props.onClose}>開く</Btn>
+            </Flex>
+        </Box>
     )
 }
