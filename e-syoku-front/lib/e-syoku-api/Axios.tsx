@@ -52,7 +52,7 @@ export type EndPointResponse<R extends DefaultResponseFormat> = EndPointSuccessR
 let apiEndpointPrefix = process.env.NEXT_PUBLIC_apiEndpointPrefix
 let apiEndpointSuffix = process.env.NEXT_PUBLIC_apiEndpointSuffix
 
-export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
+export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     let r: EndPointResponse<R>
     r = await internalCallEndpoint(endPoint, user, requestData, abortController)
     console.log("[callEndpoint:Request]", requestData)
@@ -60,7 +60,7 @@ export async function callEndpoint<Q, R extends DefaultResponseFormat>(endPoint:
     return r
 }
 
-async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User | undefined, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
+async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint: EndPoint<Q, R>, user: User, requestData: Q, abortController?: AbortController): Promise<EndPointResponse<R>> {
     let fullPath = (apiEndpointPrefix ?? "") + endPoint.endpointPath + (apiEndpointSuffix ?? "")
     if (user == undefined) {
         return {
@@ -193,7 +193,10 @@ export function useLazyEndpoint<Q, R extends DefaultResponseFormat>(endPoint: En
 
     async function fetch(q: Q): Promise<EndPointResponse<R>> {
         setLoaded(false)
-        const r = await callEndpoint(endPoint, token.user, q)
+        // wait until token.user is loaded
+        const user = await token.waitForUser()
+
+        const r = await callEndpoint(endPoint, user, q)
         setLoaded(true)
         setResponse(r)
         return r

@@ -25,7 +25,7 @@ export default function Page() {
     }
 
     async function handle(barcode?: string, uid?: string, ticketId?: string) {
-        const res = await callEndpoint(cmsTicketEndpoint, token.user, {
+        const res = await callEndpoint(cmsTicketEndpoint, await token.waitForUser(), {
             barcode: barcode,
             uid: uid,
             ticketId: ticketId

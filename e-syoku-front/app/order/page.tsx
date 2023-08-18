@@ -58,7 +58,7 @@ export default function Page() {
                                 <Spacer/>
                                 <Btn onClick={async () => {
                                     // TODO 読み込み中にボタンが一瞬押せる
-                                    const r = await callEndpoint(submitOrderEndPoint, auth.user, {order: order})
+                                    const r = await callEndpoint(submitOrderEndPoint, await auth.waitForUser(), {order: order})
                                     if (r.isSuccess) {
                                         router.push(`/payment/id?id=${r.data.paymentSessionId}`)
                                     } else {

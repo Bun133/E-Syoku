@@ -2,10 +2,10 @@
 
 import React, {createContext, useEffect, useState} from "react";
 import {
-    Auth, browserLocalPersistence,
+    Auth,
+    browserLocalPersistence,
     browserSessionPersistence,
     getAuth,
-    Persistence,
     setPersistence,
     signInAnonymously,
     User
@@ -36,7 +36,7 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
             if (user == null) setUser(undefined)
             else setUser(user)
             setPersistence(auth, browserLocalPersistence).then(() => {
-                console.log("Persistence set to",browserSessionPersistence)
+                console.log("Persistence set to", browserSessionPersistence)
             }).catch(() => {
                 console.log("Persistence set failed")
             })
@@ -61,5 +61,21 @@ async function defaultProcess(auth: Auth) {
 }
 
 export function useFirebaseAuth() {
-    return React.useContext(firebaseAuthContext)
+    const ctx = React.useContext(firebaseAuthContext)
+    return {
+        ...ctx,
+        waitForUser: async () => {
+            const auth = getAuth(firebaseApp)
+
+            return new Promise<User>(resolve => {
+                if (auth.currentUser != null) {
+                    resolve(auth.currentUser)
+                }
+
+                auth.onAuthStateChanged(user => {
+                    if (user != null) resolve(user)
+                })
+            },)
+        }
+    }
 }

@@ -39,7 +39,7 @@ export default function Page() {
             <Flex direction={"column"} h={"max"}>
                 <VStack>
                     <BarcodeReader onRead={async (e) => {
-                        const res = await callEndpoint(bindBarcodeEndpoint, token.user, {
+                        const res = await callEndpoint(bindBarcodeEndpoint, await token.waitForUser(), {
                             barcode: e,
                             ticketId: status.filter(s => !s.isBound).map(s => s.ticketId)
                         })

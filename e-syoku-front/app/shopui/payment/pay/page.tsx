@@ -75,7 +75,7 @@ export default function Page() {
                         </FormErrorMessage>) : null}
                     </FormControl>
                     <Btn onClick={async () => {
-                        const res = await callEndpoint(markPaymentPaidEndpoint, auth.user, {
+                        const res = await callEndpoint(markPaymentPaidEndpoint,await auth.waitForUser(), {
                             paidAmount: amount,
                             paidMeans: paidMeans,
                             paymentId: paymentId,
