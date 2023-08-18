@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import {Center, VStack} from "@chakra-ui/layout";
 import PageTitle from "@/components/pageTitle";
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Order, PrettyPaymentSession, PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {
@@ -28,11 +28,24 @@ import {
 import {PaymentCard} from "@/components/Payment";
 import {TicketCard} from "@/components/Ticket";
 import {NOrderSelection} from "@/components/order/NOrderSelection";
+import {useSavedState} from "@/lib/useSavedState";
+
+type OrderData = {
+    data: Order
+}
+
+type PaymentData = {
+    paymentSessionId: string
+}
+
+type TicketData = {
+    boundTicketIds: string[]
+}
 
 export default function Page() {
-    const [order, setOrder] = useState<Order>();
-    const [paymentId, setPaymentId] = useState<string>();
-    const [ticketIds, setTicketIds] = useState<string[]>([])
+    const [order, setOrder] = useSavedState<OrderData>("order");
+    const [paymentId, setPaymentId] = useSavedState<PaymentData>("pid");
+    const [ticketIds, setTicketIds] = useSavedState<TicketData>("tid", {boundTicketIds: []})
 
     const steps = [
         {title: '商品選択', description: '注文する商品を選択'},
@@ -41,15 +54,45 @@ export default function Page() {
         {title: '食券', description: '商品を受け取り'},
     ]
 
-    const {activeStep, goToNext} = useSteps({
+    function determineStepIndex() {
+        if (!order) {
+            return 0
+        }
+
+        if (!paymentId) {
+            return 1
+        }
+
+        if (!ticketIds) {
+            return 1
+        }
+
+        if (ticketIds!!.boundTicketIds.length === 0) {
+            return 2
+        }
+
+        return 3
+    }
+
+    const {activeStep, goToNext, setActiveStep} = useSteps({
         index: 0,
         count: steps.length
     })
 
+    useEffect(() => {
+        const determinedIndex = determineStepIndex()
+        console.log("determineStepIndex", determinedIndex)
+        if (determinedIndex !== activeStep) {
+            setActiveStep(determinedIndex)
+        }
+    }, [])
+
     function renderOrder() {
         return (
             <Order onSelectOrder={(order: Order) => {
-                setOrder(order)
+                setOrder({
+                    data: order
+                })
                 goToNext()
             }}/>
         )
@@ -59,9 +102,11 @@ export default function Page() {
         return (
             <APIEndpoint
                 endpoint={submitOrderEndPoint}
-                query={{order: order}}
+                query={{order: order?.data}}
                 onEnd={(response) => {
-                    setPaymentId(response.data.paymentSessionId)
+                    setPaymentId({
+                        paymentSessionId: response.data.paymentSessionId
+                    })
                     goToNext()
 
                     return (
@@ -75,9 +120,11 @@ export default function Page() {
 
     function renderPayment() {
         return (
-            <Payment paymentId={paymentId!!} onPaid={(boundTicketId) => {
+            <Payment paymentId={paymentId!!.paymentSessionId} onPaid={(boundTicketId) => {
                 console.log("boundTicketId", boundTicketId)
-                setTicketIds(boundTicketId)
+                setTicketIds({
+                    boundTicketIds: boundTicketId
+                })
                 goToNext()
             }}/>
         )
@@ -85,33 +132,16 @@ export default function Page() {
 
     function renderTicket() {
         return (
-            <Tickets ticketIds={ticketIds!!}/>
+            <Tickets ticketIds={ticketIds!!.boundTicketIds}/>
         )
     }
 
     return (
         <VStack>
             <PageTitle title={"商品購入"}/>
-            <Stepper index={activeStep}>
-                {steps.map((step, index) => (
-                    <Step key={index}>
-                        <StepIndicator>
-                            <StepStatus
-                                complete={<StepIcon/>}
-                                incomplete={<StepNumber/>}
-                                active={<StepNumber/>}
-                            />
-                        </StepIndicator>
-
-                        <Box flexShrink='0'>
-                            <StepTitle>{step.title}</StepTitle>
-                            <StepDescription>{step.description}</StepDescription>
-                        </Box>
-
-                        <StepSeparator/>
-                    </Step>
-                ))}
-            </Stepper>
+            <Center>
+                <PageStepper activeStep={activeStep} steps={steps}/>
+            </Center>
 
             {activeStep === 0 && renderOrder()}
             {activeStep === 1 && renderPostOrder()}
@@ -120,6 +150,64 @@ export default function Page() {
         </VStack>
     )
 
+}
+
+function PageStepper(params: {
+    activeStep: number,
+    steps: ({
+        title: string,
+        description: string
+    })[]
+}) {
+    const refs = useRef<HTMLDivElement[]>([])
+
+    function setRef(elem: HTMLDivElement | null, index: number) {
+        if (elem) {
+            refs.current[index] = elem
+        }
+    }
+
+    function navigateTo(index: number) {
+        const ref = refs.current[index]
+        if (ref) {
+            ref.scrollIntoView({behavior: "smooth", block: "start"})
+        }
+    }
+
+    useEffect(() => {
+        navigateTo(params.activeStep)
+    }, [params.activeStep])
+
+    return (
+        <Box w={"full"} overflowX={"scroll"} overflowY={"hidden"}>
+            <Stepper index={params.activeStep}>
+                {params.steps.map((step, index) => (
+                    <Box key={index} flexShrink={0} flexGrow={1} ref={instance => {
+                        setRef(instance, index)
+                    }}>
+                        <Step>
+                            <StepIndicator>
+                                <StepStatus
+                                    complete={<StepIcon/>}
+                                    incomplete={<StepNumber/>}
+                                    active={<StepNumber/>}
+                                />
+                            </StepIndicator>
+
+                            <Box flexShrink='0'>
+                                <StepTitle>{step.title}</StepTitle>
+                                <StepDescription>{step.description}</StepDescription>
+                            </Box>
+
+                            <Box minWidth={2} flexGrow={1}>
+                                <StepSeparator/>
+                            </Box>
+                        </Step>
+                    </Box>
+                ))}
+            </Stepper>
+        </Box>
+    )
 }
 
 function Order(params: {
