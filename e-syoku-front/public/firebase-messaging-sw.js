@@ -22,19 +22,16 @@ firebase.initializeApp({
 // messages.
 const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
-    // TODO 二個通知が表示される
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    if (payload.notification) {
-        const title = payload.notification.title ?? "E-Syokuからの通知"
-        const body = payload.notification.body ?? ""
-        const icon = payload.notification.icon ?? undefined
+    const title = payload.data.title ?? "E-Syokuからの通知"
+    const body = payload.data.body ?? ""
+    const icon = payload.data.imageUrl ?? undefined
 
-        self.registration.showNotification(title, {
-            body: body,
-            icon: icon,
-            data: payload.data
-        })
-    }
+    self.registration.showNotification(title, {
+        body: body,
+        icon: icon,
+        data: payload.data
+    })
 });
 
 self.addEventListener("notificationclick", function (event) {

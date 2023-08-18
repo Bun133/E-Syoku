@@ -40,38 +40,43 @@ function multicastMessageBuilder(data: {
     clickUrl?: string
 }): MulticastMessage {
     if (data.clickUrl) {
+        if (data.imageUrl) {
+            return {
+                tokens: data.tokens,
+                data: {
+                    body: data.body,
+                    title: data.title,
+                    pathname: data.clickUrl,
+                    imageUrl: data.imageUrl
+                }
+            }
+        }
         return {
             tokens: data.tokens,
             data: {
-                pathname: data.clickUrl
-            },
-            android: {
-                notification: {
-                    clickAction: data.clickUrl,
-                }
-            },
-            apns: {
-                fcmOptions: {
-                    imageUrl: data.imageUrl
-                },
-                payload: {
-                    aps: {}
-                }
-            },
-            notification: {
                 body: data.body,
                 title: data.title,
-                imageUrl: data.imageUrl,
+                pathname: data.clickUrl
             }
         }
-    }
-    return {
-        tokens: data.tokens,
-        data: {},
-        notification: {
-            body: data.body,
-            title: data.title,
-            imageUrl: data.imageUrl,
+    } else {
+        if (data.imageUrl) {
+            return {
+                tokens: data.tokens,
+                data: {
+                    body: data.body,
+                    title: data.title,
+                    imageUrl: data.imageUrl
+                }
+            }
+        }
+
+        return {
+            tokens: data.tokens,
+            data: {
+                body: data.body,
+                title: data.title,
+            }
         }
     }
 }

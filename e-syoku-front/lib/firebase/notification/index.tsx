@@ -114,8 +114,8 @@ export function NotificationEnsure(params: {
 }
 
 function notificationToast(props: RenderProps, value: MessagePayload): React.ReactNode {
-    const title = value.notification?.title ?? "通知"
-    const description = value.notification?.body ?? ""
+    const title = value.data?.title ?? "通知"
+    const description = value.data?.body ?? ""
     const url = value.data?.pathname ?? "/"
 
     return (
