@@ -198,3 +198,5 @@ export const dummyError = internalError("Dummy", "DUMMY_ERROR")
 export const paymentIdNotFoundError = inputWrongError("PaymentId|Barcode", "決済データが指定されていません")
 
 export const prettyTicketFailed = internalError("TicketデータをPretty化に失敗しました", "PRETTY_TICKET_FAILED")
+
+export const cmsRemainTypeNotMatch = cmsError("RemainTypeがremainNumberSchemaに合致しません", "REMAIN_TYPE_NOT_MATCH")

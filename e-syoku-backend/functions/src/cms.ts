@@ -1,17 +1,33 @@
-import {EndpointResult, onPost, requireOptionalParameter, standardFunction} from "./utils/endpointUtil";
+import {
+    EndpointResult,
+    onPost,
+    requireOptionalParameter,
+    requireParameter,
+    standardFunction
+} from "./utils/endpointUtil";
 import {authedWithType} from "./utils/auth";
 import {AuthInstance} from "./types/auth";
 import {Auth} from "firebase-admin/lib/auth";
-import {DBRefs} from "./utils/db";
-import {Result, SingleError, Success, TypedSingleResult} from "./types/errors";
+import {DBRefs, updateEntireData} from "./utils/db";
+import {Result, SingleError, SingleResult, Success, TypedSingleResult} from "./types/errors";
 import {Request} from "firebase-functions/v2/https";
 import {Response} from "firebase-functions";
 import {z} from "zod";
-import {cmsTicketNotSatisfyCondition, errorResult, injectError, ticketNotFoundError} from "./impls/errors";
+import {
+    cmsRemainTypeNotMatch,
+    cmsTicketNotSatisfyCondition,
+    errorResult,
+    injectError,
+    isSingleError,
+    isTypedSuccess,
+    ticketNotFoundError
+} from "./impls/errors";
 import {ticketByBarcode} from "./impls/barcode";
 import {Ticket} from "./types/ticket";
 import {ticketById} from "./impls/ticket";
 import {prettyTicket} from "./impls/prettyPrint";
+import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
+import {Goods, GoodsRemainData, goodsRemainDataSchema} from "./types/goods";
 
 
 export function cmsFunction(auth: Auth, refs: DBRefs, f: (authInstance: AuthInstance, req: Request, res: Response) => Promise<{
@@ -25,7 +41,7 @@ export function cmsFunction(auth: Auth, refs: DBRefs, f: (authInstance: AuthInst
     })
 }
 
-export async function satisfyCondition(refs: DBRefs, req: Request): Promise<EndpointResult> {
+export async function cmsTicketFunc(refs: DBRefs, req: Request): Promise<EndpointResult> {
     const uid = requireOptionalParameter("uid", z.string().optional(), req).param
     const ticketId = requireOptionalParameter("ticketId", z.string().optional(), req).param
     const barcode = requireOptionalParameter("barcode", z.string().optional(), req).param
@@ -79,4 +95,103 @@ export async function satisfyCondition(refs: DBRefs, req: Request): Promise<Endp
     return {
         result: suc
     }
+}
+
+export async function cmsRemainFunc(refs: DBRefs, req: Request): Promise<EndpointResult> {
+    const op = requireOptionalParameter("op", z.enum(["add", "set"]), req).param
+    if (!op) {
+        // List Remain Data and return
+        const allRemainData: TypedSingleResult<{ goods: Goods, remain: GoodsRemainData }>[] = await Promise.all((await getAllGoods(refs)).map(async e => {
+            const remainData = await getRemainDataOfGoods(refs, e.goodsId)
+            if (!remainData.isSuccess) {
+                return remainData
+            }
+            return {
+                isSuccess: true,
+                data: {
+                    goods: e,
+                    remain: remainData.data
+                }
+            }
+        }))
+
+        const suc: { goods: Goods, remain: GoodsRemainData }[] = allRemainData.filter(isTypedSuccess).map(e => e.data)
+        const err: SingleError[] = allRemainData.filter(isSingleError)
+        if (err.length > 0) {
+            return {
+                result: errorResult(err[0], ...err.slice(1))
+            }
+        }
+
+        return {
+            result: {
+                isSuccess: true,
+                data: {
+                    remainData: suc
+                }
+            }
+        }
+    } else {
+        const goodsId = requireParameter("goodsId", z.string(), req)
+        if (goodsId.param === undefined) return {result: goodsId.error}
+        const amount = requireParameter("amount", z.number(), req)
+        if (amount.param === undefined) return {result: amount.error}
+        // according to op,goodsId,amount update remain data
+
+        const r = await refs.db.runTransaction<SingleResult>(async t => {
+            const currentRemain = await getRemainDataOfGoods(refs, goodsId.param, t)
+            if (!currentRemain.isSuccess) return currentRemain
+            const edited = editRemainData(currentRemain.data, amount.param, op)
+            if (!edited.isSuccess) return edited
+            const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(goodsId.param), edited.data, t)
+            if (!update.isSuccess) return update
+            return {
+                isSuccess: true
+            }
+        })
+
+        if (!r.isSuccess) {
+            return {
+                result: errorResult(r)
+            }
+        }
+
+        return {
+            result: r
+        }
+    }
+}
+
+function editRemainData(remainData: GoodsRemainData, amount: number, op: "add" | "set"): TypedSingleResult<GoodsRemainData> {
+    // @ts-ignore
+    if (remainData.remain !== undefined) {
+        return {
+            isSuccess: false,
+            ...injectError(cmsRemainTypeNotMatch)
+        }
+    }
+
+    if (op === "add") {
+        const newRemain: GoodsRemainData = {
+            goodsId: remainData.goodsId,
+            // @ts-ignore
+            remainCount: remainData.remainCount + amount
+        }
+        return {
+            isSuccess: true,
+            data: newRemain
+        }
+    } else if (op === "set") {
+        const newRemain: GoodsRemainData = {
+            goodsId: remainData.goodsId,
+            // @ts-ignore
+            remainCount: amount
+        }
+        return {
+            isSuccess: true,
+            data: newRemain
+        }
+    }
+
+    throw new Error("Not Reachable")
 }

@@ -35,7 +35,7 @@ import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
-import {cmsFunction, satisfyCondition} from "./cms";
+import {cmsFunction, cmsRemainFunc, cmsTicketFunc} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 import {PrettyGoods, PrettyTicket} from "./types/prettyPrint";
@@ -632,7 +632,7 @@ export const bindBarcode = standardFunction(async (req, res) => {
  *  - ADMIN
  */
 export const cmsTicket = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
-    return await satisfyCondition(refs, req)
+    return await cmsTicketFunc(refs, req)
 })
 
 export const listenNotification = standardFunction(async (req, res) => {
@@ -673,4 +673,18 @@ export const callTicketStack = standardFunction(async (req, res) => {
             }
         })
     })
+})
+
+/**
+ * 商品の在庫データの一覧を取得したり、個別に変更を加えるためのエンドポイントです
+ * Param:
+ *  - op:add | set | undefined
+ *  - amount: number | undefined
+ *  - goodsId: string | undefined
+ * Response:
+ * Permission:
+ *  - ADMIN
+ */
+export const cmsRemain = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
+    return await cmsRemainFunc(refs, req)
 })
