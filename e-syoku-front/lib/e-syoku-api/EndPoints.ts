@@ -4,6 +4,7 @@ import {
     authStateResponse,
     bindTicketResponse,
     defaultResponseFormat,
+    goodsRemainDataSchema,
     grantPermissionRequest,
     listGoodsResponse,
     listPaymentResponse,
@@ -62,3 +63,11 @@ export const callTicketStackEndpoint = endpoint("callTicketStack", z.object({
     shopId: uniqueId,
     count: z.number()
 }), defaultResponseFormat)
+
+export const cmsRemainEndpoint = endpoint("cmsRemain", z.object({}).or(z.object({
+    op: z.literal("add").or(z.literal("set")),
+    goodsId: uniqueId,
+    amount: z.number()
+})), defaultResponseFormat.and(z.object({
+    remainData: goodsRemainDataSchema.array().optional()
+})))
