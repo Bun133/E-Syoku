@@ -1,8 +1,8 @@
 import {GoodsRemainData, GoodsWithRemainDataWaitingData, Order} from "@/lib/e-syoku-api/Types";
 import {AspectRatio, Heading, VStack} from "@chakra-ui/layout";
-import {Card, CardBody, CardHeader} from "@chakra-ui/card";
-import {Box, HStack, ModalContent, SimpleGrid, Text} from "@chakra-ui/react";
-import {Modal, ModalBody, ModalCloseButton, ModalFooter, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
+import {Card, CardBody} from "@chakra-ui/card";
+import {Box, HStack, ModalContent, ModalHeader, SimpleGrid, Text} from "@chakra-ui/react";
+import {Modal, ModalBody, ModalCloseButton, ModalFooter, ModalOverlay} from "@chakra-ui/modal";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {useState} from "react";
 import Btn from "@/components/btn";
@@ -42,7 +42,7 @@ export function NOrderSelection(params: {
     }
 
     return (
-        <VStack>
+        <VStack w={"full"} h={"full"}>
             <SimpleGrid columns={2} spacing={10}>
                 {params.goods.map((g, i) => {
                     return (
@@ -98,11 +98,9 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
             <Card onClick={onOpen} cursor={"pointer"}>
                 {
                     params.goods.goods.imageRefPath && (
-                        <CardHeader>
-                            <AspectRatio ratio={1}>
-                                <StorageImage storagePath={params.goods.goods.imageRefPath} alt={params.goods.goods.name}/>
-                            </AspectRatio>
-                        </CardHeader>
+                        <AspectRatio ratio={1}>
+                            <StorageImage storagePath={params.goods.goods.imageRefPath} alt={params.goods.goods.name}/>
+                        </AspectRatio>
                     )
                 }
                 <CardBody>
@@ -117,17 +115,18 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
                 <ModalOverlay/>
                 <ModalContent>
                     <ModalCloseButton/>
-                    {
-                        params.goods.goods.imageRefPath && (
-                            <ModalHeader>
+                    <ModalHeader>
+                        <Text>商品追加</Text>
+                    </ModalHeader>
+                    <ModalBody>
+                        {
+                            params.goods.goods.imageRefPath && (
                                 <AspectRatio ratio={1}>
                                     <StorageImage storagePath={params.goods.goods.imageRefPath}
                                                   alt={params.goods.goods.name}/>
                                 </AspectRatio>
-                            </ModalHeader>
-                        )
-                    }
-                    <ModalBody>
+                            )
+                        }
                         <Heading>
                             {params.goods.goods.name}
                         </Heading>

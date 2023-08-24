@@ -12,9 +12,10 @@ import {
     StepSeparator,
     StepStatus,
     StepTitle,
+    Text,
     useSteps
 } from "@chakra-ui/react";
-import {Center, VStack} from "@chakra-ui/layout";
+import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import PageTitle from "@/components/pageTitle";
 import {useEffect, useRef, useState} from "react";
 import {Order, PrettyPaymentSession, PrettyTicket} from "@/lib/e-syoku-api/Types";
@@ -29,6 +30,8 @@ import {PaymentCard} from "@/components/Payment";
 import {TicketCard} from "@/components/Ticket";
 import {NOrderSelection} from "@/components/order/NOrderSelection";
 import {useSavedState} from "@/lib/useSavedState";
+import {AlertCircle, AlertTriangle} from "react-feather";
+import Btn from "@/components/btn";
 
 type OrderData = {
     data: Order
@@ -148,10 +151,12 @@ export default function Page() {
                 <PageStepper activeStep={activeStep} steps={steps}/>
             </Center>
 
-            {activeStep === 0 && renderOrder()}
-            {activeStep === 1 && renderPostOrder()}
-            {activeStep === 2 && renderPayment()}
-            {activeStep === 3 && renderTicket()}
+            <Box w={"full"} h={"full"}>
+                {activeStep === 0 && renderOrder()}
+                {activeStep === 1 && renderPostOrder()}
+                {activeStep === 2 && renderPayment()}
+                {activeStep === 3 && renderTicket()}
+            </Box>
         </VStack>
     )
 
@@ -255,7 +260,24 @@ function Payment(params: {
                          updatePaid(payment)
 
                          return (
-                             <PaymentCard payment={response.data.payment}/>
+                             <VStack>
+                                 <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"orange.300"} bgColor={"orange.100"}>
+                                     <HStack>
+                                         <AlertTriangle color={"orange"} size={36}/>
+                                         <Text fontSize={"3xl"}>
+                                             注意
+                                         </Text>
+                                     </HStack>
+                                     <Text>
+                                         まだ注文は確定していません！
+                                     </Text>
+                                     <Text>
+                                         店舗で代金をお支払いいただくと注文が確定します
+                                     </Text>
+                                 </Box>
+
+                                 <PaymentCard payment={response.data.payment}/>
+                             </VStack>
                          )
                      }}/>
     )
@@ -268,6 +290,21 @@ function Tickets(params: {
 
     return (
         <VStack>
+            <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"blue.300"} bgColor={"blue.100"}>
+                <HStack>
+                    <AlertCircle color={"#3182ce"} size={24}/>
+                    <Text fontSize={"2xl"}>
+                        注意
+                    </Text>
+                </HStack>
+                <Text>
+                    紙の食券をなくさないようご注意ください
+                </Text>
+                <Text>
+                    当ウェブサイトで呼び出し順序の確認が出来ます。また、呼び出し通知の送信を行います
+                </Text>
+            </Box>
+
             {params.ticketIds
                 .filter(e => !resolved.includes(e))
                 .map(e => {
@@ -279,6 +316,8 @@ function Tickets(params: {
                         </Box>
                     )
                 })}
+
+            <Btn href="/">トップに戻る</Btn>
         </VStack>
     )
 }
