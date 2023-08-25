@@ -92,6 +92,7 @@ export const paidDetailSchema = z.object({
     // 備考
     remark: z.string().optional(),
 })
+export type PaidDetail = z.infer<typeof paidDetailSchema>
 
 // 決済状況ステータス
 export const paymentStateSchema = z.enum([
