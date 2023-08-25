@@ -15,6 +15,7 @@ import {
     paidResponse,
     paymentIdRequest,
     paymentStatusResponse,
+    prettyGoodsSchema,
     submitOrderResponse,
     ticketDisplayResponse,
     ticketIdRequest,
@@ -69,5 +70,8 @@ export const cmsRemainEndpoint = endpoint("cmsRemain", z.object({}).or(z.object(
     goodsId: uniqueId,
     amount: z.number()
 })), defaultResponseFormat.and(z.object({
-    remainData: goodsRemainDataSchema.array().optional()
+    remainData: z.object({
+        goods: prettyGoodsSchema,
+        remain: goodsRemainDataSchema
+    }).array().optional()
 })))
