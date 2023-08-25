@@ -8,6 +8,7 @@ export default function Page() {
         <Center>
             <VStack>
                 <Btn href="/cms/ticket">食券照会</Btn>
+                <Btn href="/cms/remain">商品在庫</Btn>
             </VStack>
         </Center>
     )
