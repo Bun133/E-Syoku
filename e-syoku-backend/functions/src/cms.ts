@@ -25,9 +25,10 @@ import {
 import {ticketByBarcode} from "./impls/barcode";
 import {Ticket} from "./types/ticket";
 import {ticketById} from "./impls/ticket";
-import {prettyTicket} from "./impls/prettyPrint";
+import {prettyGoods, prettyTicket} from "./impls/prettyPrint";
 import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
-import {Goods, GoodsRemainData, goodsRemainDataSchema} from "./types/goods";
+import {GoodsRemainData, goodsRemainDataSchema} from "./types/goods";
+import {PrettyGoods} from "./types/prettyPrint";
 
 
 export function cmsFunction(auth: Auth, refs: DBRefs, f: (authInstance: AuthInstance, req: Request, res: Response) => Promise<{
@@ -101,21 +102,25 @@ export async function cmsRemainFunc(refs: DBRefs, req: Request): Promise<Endpoin
     const op = requireOptionalParameter("op", z.enum(["add", "set"]), req).param
     if (!op) {
         // List Remain Data and return
-        const allRemainData: TypedSingleResult<{ goods: Goods, remain: GoodsRemainData }>[] = await Promise.all((await getAllGoods(refs)).map(async e => {
+        const allRemainData: TypedSingleResult<{ goods: PrettyGoods, remain: GoodsRemainData }>[] = await Promise.all((await getAllGoods(refs)).map(async e => {
             const remainData = await getRemainDataOfGoods(refs, e.goodsId)
             if (!remainData.isSuccess) {
                 return remainData
             }
+            const pGoods = await prettyGoods(refs, e)
+            if (!pGoods.isSuccess) {
+                return pGoods
+            }
             return {
                 isSuccess: true,
                 data: {
-                    goods: e,
+                    goods: pGoods.data,
                     remain: remainData.data
                 }
             }
         }))
 
-        const suc: { goods: Goods, remain: GoodsRemainData }[] = allRemainData.filter(isTypedSuccess).map(e => e.data)
+        const suc: { goods: PrettyGoods, remain: GoodsRemainData }[] = allRemainData.filter(isTypedSuccess).map(e => e.data)
         const err: SingleError[] = allRemainData.filter(isSingleError)
         if (err.length > 0) {
             return {
@@ -126,9 +131,7 @@ export async function cmsRemainFunc(refs: DBRefs, req: Request): Promise<Endpoin
         return {
             result: {
                 isSuccess: true,
-                data: {
-                    remainData: suc
-                }
+                remainData: suc
             }
         }
     } else {

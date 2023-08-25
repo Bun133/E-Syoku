@@ -682,7 +682,7 @@ export const callTicketStack = standardFunction(async (req, res) => {
  *  - amount: number | undefined
  *  - goodsId: string | undefined
  * Response:
- * (- remainData:GoodsRemainData[])
+ * (- remainData:{goods:PrettyGoods,remain:GoodsRemainData}[])
  * Permission:
  *  - ADMIN
  */
