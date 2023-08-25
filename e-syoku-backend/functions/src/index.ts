@@ -35,7 +35,7 @@ import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
 import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
-import {cmsFunction, cmsRemainFunc, cmsTicketFunc} from "./cms";
+import {cmsFunction, cmsPaymentListFunc, cmsRemainFunc, cmsTicketFunc} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 import {PrettyGoods, PrettyTicket} from "./types/prettyPrint";
@@ -688,4 +688,17 @@ export const callTicketStack = standardFunction(async (req, res) => {
  */
 export const cmsRemain = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
     return await cmsRemainFunc(refs, req)
+})
+
+/**
+ * 商品の在庫データの一覧を取得したり、個別に変更を加えるためのエンドポイントです
+ * Param:
+ *  - uid:string
+ * Response:
+ *  - payments:PrettyPayment[]
+ * Permission:
+ *  - ADMIN
+ */
+export const cmsPaymentList = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
+    return await cmsPaymentListFunc(refs, req)
 })

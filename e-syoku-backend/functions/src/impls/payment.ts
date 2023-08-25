@@ -135,7 +135,7 @@ export async function getPaymentSessionById(ref: DBRefs, paymentSessionId: strin
     return getPaymentSessionByRef(ref, ref.payments.doc(paymentSessionId))
 }
 
-function transformPaymentSession(sessionId: string, data: firestore.DocumentData): PaymentSession {
+export function transformPaymentSession(sessionId: string, data: firestore.DocumentData): PaymentSession {
     return {
         sessionId: sessionId,
         customerId: data.customerId,
