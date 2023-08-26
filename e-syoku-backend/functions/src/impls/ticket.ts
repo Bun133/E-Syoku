@@ -193,7 +193,7 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
     })[] = written.filter(isSuccess) as (Success & {
         ticketId: string
     })[]
-    const notRegistered: SingleError[] = written.filter(isSingleError) as SingleError[]
+    const notRegistered: SingleError[] = written.filter(isSingleError)
 
     if (notRegistered.length > 0) {
         return Object.assign(errorResult({isSuccess: false, ...injectError(failedToRegisterTicketError)}, ...notRegistered), {
