@@ -269,7 +269,6 @@ export const listGoodsResponse = defaultResponseFormat.and(z.object({
     data: z.array(goodsWithRemainDataWaitingDataSchema)
 }))
 
-// TODO Error Message Handling
 export const submitOrderResponse = defaultResponseFormat.and(z.object({
     paymentSessionId: z.string()
 }))
