@@ -288,7 +288,7 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
         }
     })))
 
-    const withGoodsData: SingleOrderWithGoods[] = orderWithShopData.filter(isTypedSuccess).map(e => e.data) as SingleOrderWithGoods[]
+    const withGoodsData: SingleOrderWithGoods[] = orderWithShopData.filter(isTypedSuccess).map(e => e.data)
     const err: SingleError[] = orderWithShopData.filter(isSingleError)
 
     if (err.length > 0) {
