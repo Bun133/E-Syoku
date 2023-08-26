@@ -72,7 +72,7 @@ export async function authed<R>(auth: Auth, refs: DBRefs, req: Request, res: Res
 }
 
 export async function authedWithType(authType: AuthType | AuthType[], auth: Auth, refs: DBRefs, req: Request, res: Response, success: (authInstance: AuthInstance) => ResultOrPromise, failure?: () => ResultOrPromise): Promise<ResultOrPromise> {
-    const failedFunction: () => ResultOrPromise = failure != undefined ? failure : () => {
+    const failedFunction: () => ResultOrPromise = failure ?? (() => {
         const err: SingleError = {
             "isSuccess": false,
             ...injectError(authFailedError)
@@ -81,7 +81,7 @@ export async function authedWithType(authType: AuthType | AuthType[], auth: Auth
             result: errorResult(err)
         }
         return r
-    }
+    })
 
     return authed<ResultOrPromise>(auth, refs, req, res, async (user: AuthInstance) => {
         if (Array.isArray(authType)) {
