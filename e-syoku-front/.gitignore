@@ -34,4 +34,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /public/sw.js
-/public/workbox-8f0e986c.js
+/public/workbox-*.js
+/firebase_hosting/
