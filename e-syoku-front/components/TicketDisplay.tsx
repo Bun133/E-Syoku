@@ -20,7 +20,8 @@ const defaultDisplaySelection: DisplaySelection = {
 
 export function TicketDisplay(params: {
     data: PrettyTicket[],
-    displaySelection?: DisplaySelection
+    displaySelection?: DisplaySelection,
+    disableAutoScroll?: boolean
 }) {
     const selection = params.displaySelection ?? defaultDisplaySelection
     const sorted = params.data.sort((a, b) => a.lastStatusUpdated.utcSeconds - b.lastStatusUpdated.utcSeconds)
@@ -32,18 +33,27 @@ export function TicketDisplay(params: {
     return (
         <VStack w={"full"} h={"full"} flexShrink={1}>
             {selection.processing &&
-                <TicketDisplayRow title={"調理中"} displays={processing} ticketColor={ticketColor("調理中")}/>}
+                <TicketDisplayRow title={"調理中"} displays={processing} ticketColor={ticketColor("調理中")}
+                                  disableAutoScroll={params.disableAutoScroll}/>}
             {selection.resolved &&
-                <TicketDisplayRow title={"受け渡し可能"} displays={called} ticketColor={ticketColor("受け取り待ち")}/>}
+                <TicketDisplayRow title={"受け渡し可能"} displays={called} ticketColor={ticketColor("受け取り待ち")}
+                                  disableAutoScroll={params.disableAutoScroll}/>}
             {selection.informed &&
-                <TicketDisplayRow title={"お呼び出し"} displays={informed} ticketColor={ticketColor("お知らせ")}/>}
+                <TicketDisplayRow title={"お呼び出し"} displays={informed} ticketColor={ticketColor("お知らせ")}
+                                  disableAutoScroll={params.disableAutoScroll}/>}
             {selection.resolved &&
-                <TicketDisplayRow title={"完了"} displays={resolved} ticketColor={ticketColor("完了")}/>}
+                <TicketDisplayRow title={"完了"} displays={resolved} ticketColor={ticketColor("完了")}
+                                  disableAutoScroll={params.disableAutoScroll}/>}
         </VStack>
     )
 }
 
-function TicketDisplayRow(props: { title: string, displays: PrettyTicket[], ticketColor: string }) {
+function TicketDisplayRow(props: {
+    title: string,
+    displays: PrettyTicket[],
+    ticketColor: string,
+    disableAutoScroll?: boolean
+}) {
     const duration = 2000
     const currentIndex = useRef(0)
     const listElement = useRef<HTMLDivElement>(null)
@@ -72,7 +82,9 @@ function TicketDisplayRow(props: { title: string, displays: PrettyTicket[], tick
     }
 
     useEffect(() => {
-        move()
+        if (props.disableAutoScroll) {
+            move()
+        }
     }, [])
 
     return (

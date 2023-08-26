@@ -56,7 +56,7 @@ export default function Page() {
                                                  called: true,
                                                  resolved: true,
                                                  informed: true
-                                             }}/>
+                                             }} disableAutoScroll={true}/>
                                              <Btn onClick={reload}>再読み込み</Btn>
                                          </VStack>
                                      )
