@@ -183,7 +183,7 @@ export async function registerTicketsForPayment(ref: DBRefs, payment: PaymentSes
     let shopId: string
     let order: Order
     // 店舗ごとに分けたOrderから食券登録
-    for ([shopId, order] of shopMap.toArray()) {
+    for ([shopId, order] of Array.from(shopMap.entries())) {
         const r = await registerTicket(ref, payment.customerId, shopId, order, payment)
         written.push(r)
     }

@@ -176,7 +176,7 @@ export async function parseDataAll<T extends DocumentData>(type: ZodType<T>, col
         } else {
             return null
         }
-    }))).filterNotNull()
+    }))).filter(e => e != null) as T[]
 }
 
 export async function parseQueryDataAll<T extends DocumentData>(type: ZodType<T>, query: firestore.Query, transform?: (doc: DocumentReference<firestore.DocumentData>, data: DocumentData) => T, transaction?: firestore.Transaction) {
@@ -331,7 +331,7 @@ export async function newRandomRef(parent: CollectionReference, transaction?: Tr
     return ref;
 }
 
-export async function newRandomBarcode(col: CollectionReference, digits: number) :Promise<string> {
+export async function newRandomBarcode(col: CollectionReference, digits: number): Promise<string> {
     let code = ""
     for (let i = 0; i < digits; i++) {
         code += Math.floor(Math.random() * 10)
