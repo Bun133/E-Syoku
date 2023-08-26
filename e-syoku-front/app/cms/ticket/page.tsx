@@ -1,6 +1,6 @@
 "use client"
 import React, {useRef, useState} from "react";
-import {PrettyTicket, Ticket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {Flex, HStack, VStack} from "@chakra-ui/layout";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
@@ -36,7 +36,7 @@ export default function Page() {
             if (res.data.ticket) {
                 setTicket(res.data.ticket)
             } else {
-                // TODO
+                setTicket(undefined)
             }
         } else {
             setError(res)
