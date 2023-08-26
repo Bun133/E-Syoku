@@ -1,14 +1,15 @@
 "use client"
 import {useSearchParams} from "next/navigation";
-import {Flex, Spacer, Text} from "@chakra-ui/react";
+import {Box, Flex, Spacer, Text} from "@chakra-ui/react";
 import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
-import {bindBarcodeEndpoint} from "@/lib/e-syoku-api/EndPoints";
+import {bindBarcodeEndpoint, ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {HStack, VStack} from "@chakra-ui/layout";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import React, {useState} from "react";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {APIErrorModal} from "@/components/modal/APIErrorModal";
 import Btn from "@/components/btn";
+import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 
 type BindStatus = {
     ticketId: string,
@@ -58,11 +59,12 @@ export default function Page() {
                         }
                     }} placeholder={"バーコードを読み取ってください"} autoSelect={true}/>
                     <APIErrorModal error={error}/>
-                    <VStack>
+                    <VStack w={"full"}>
                         {status.map(s => {
                             return (
-                                <HStack key={s.ticketId}>
-                                    <Text>{s.ticketId}</Text>
+                                <HStack key={s.ticketId} w={"full"} borderWidth={2} borderColor={"black.300"} p={2}
+                                        backgroundColor={s.isBound ? "green.100" : "red.100"}>
+                                    <TicketIdComponent ticketId={s.ticketId}/>
                                     <Spacer/>
                                     {s.isBound ? <Text color={"green"}>紐づけ済み</Text> :
                                         <Text color={"red"}>紐づけ前</Text>}
@@ -72,7 +74,7 @@ export default function Page() {
                     </VStack>
                 </VStack>
 
-                <Spacer/>
+                <Box h={"1rem"}/>
 
                 <VStack>
                     <Btn disabled={!isAllBound} href={"/shopui/payment/scan"}>決済処理の最初に戻る</Btn>
@@ -80,4 +82,23 @@ export default function Page() {
             </Flex>
         )
     }
+}
+
+function TicketIdComponent(params: { ticketId: string }) {
+    return (
+        <APIEndpoint endpoint={ticketStatusEndPoint} query={{ticketId: params.ticketId}} onEnd={(response) => {
+            const ticket = response.data.ticket
+            return (
+                <HStack>
+                    <Text>{ticket.ticketNum}</Text>
+                    <Spacer/>
+                    <Text>{ticket.shop.name}</Text>
+                </HStack>
+            )
+        }} loading={() => {
+            return (
+                <Text>{params.ticketId}</Text>
+            )
+        }}/>
+    )
 }
