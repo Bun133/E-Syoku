@@ -62,6 +62,7 @@ export default function Page() {
                                 ticketId.current = e.target.value
                             }}/>
                         </InputGroup>
+                    {/* TODO 食券番号から検索できるように*/}
                     </HStack>
                     <Btn onClick={async () => {
                         reset()
