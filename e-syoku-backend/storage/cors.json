@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://e-syoku.web.app/","localhost:3000"],
+    "method": ["GET","CREATE","POST"],
+    "maxAgeSeconds": 3600
+  }
+]
