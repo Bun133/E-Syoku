@@ -305,17 +305,19 @@ function Tickets(params: {
                 </Text>
             </Box>
 
-            {params.ticketIds
-                .filter(e => !resolved.includes(e))
-                .map(e => {
-                    return (
-                        <Box key={e}>
-                            <Ticket ticketId={e} onReceived={() => {
-                                setResolved(resolved.filter(id => id !== e))
-                            }}/>
-                        </Box>
-                    )
-                })}
+            <Box w={"30rem"}>
+                {params.ticketIds
+                    .filter(e => !resolved.includes(e))
+                    .map(e => {
+                        return (
+                            <Box key={e} w={"full"}>
+                                <Ticket ticketId={e} onReceived={() => {
+                                    setResolved(resolved.filter(id => id !== e))
+                                }}/>
+                            </Box>
+                        )
+                    })}
+            </Box>
 
             <Btn href="/">トップに戻る</Btn>
         </VStack>

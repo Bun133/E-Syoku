@@ -78,7 +78,7 @@ export function TicketComponent(param: {
 
 export function TicketCard(params: { ticket: PrettyTicket }) {
     return (
-        <Card>
+        <Card w={"full"}>
 
             <CardHeader>
                 <Badge colorScheme={colorScheme(params.ticket.status)}>
@@ -102,12 +102,15 @@ export function TicketCard(params: { ticket: PrettyTicket }) {
                     <Box pl={"1rem"}>
                         <UnorderedList>{orderDataTransform(params.ticket.orderData)}</UnorderedList>
                     </Box>
-                    <Text>食券ID：{params.ticket.uniqueId}</Text>
 
-                    {/**TODO 時刻表示**/}
-                    <Text>IssueTime :{params.ticket.issueTime.utcSeconds}</Text>
+                    <Text>発行時刻：{utcSecToString(params.ticket.issueTime.utcSeconds)}</Text>
                 </VStack>
             </CardBody>
         </Card>
     )
+}
+
+function utcSecToString(utcSec: number) {
+    const date = new Date(utcSec * 1000);
+    return date.toLocaleString();
 }

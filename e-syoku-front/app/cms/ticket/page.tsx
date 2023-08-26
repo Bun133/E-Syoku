@@ -7,7 +7,7 @@ import {callEndpoint, EndPointErrorResponse} from "@/lib/e-syoku-api/Axios";
 import {cmsTicketEndpoint} from "@/lib/e-syoku-api/EndPoints";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {APIErrorModal} from "@/components/modal/APIErrorModal";
-import {Input, InputGroup} from "@chakra-ui/react";
+import {Box, Input, InputGroup} from "@chakra-ui/react";
 import {ArrowRight} from "react-feather";
 import Btn from "@/components/btn";
 import {TicketCard} from "@/components/Ticket";
@@ -71,7 +71,9 @@ export default function Page() {
                     </Btn>
                 </Flex>
             </Flex>
-            {ticket !== undefined ? <TicketCard ticket={ticket}/> : null}
+            <Box w={"30rem"}>
+                {ticket !== undefined ? <TicketCard ticket={ticket}/> : null}
+            </Box>
             <APIErrorModal error={error}/>
         </VStack>
     )
