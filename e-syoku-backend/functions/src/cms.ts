@@ -103,39 +103,7 @@ export async function cmsTicketFunc(refs: DBRefs, req: Request): Promise<Endpoin
 export async function cmsRemainFunc(refs: DBRefs, req: Request): Promise<EndpointResult> {
     const op = requireOptionalParameter("op", z.enum(["add", "set"]), req).param
     if (!op) {
-        // List Remain Data and return
-        const allRemainData: TypedSingleResult<{ goods: PrettyGoods, remain: GoodsRemainData }>[] = await Promise.all((await getAllGoods(refs)).map(async e => {
-            const remainData = await getRemainDataOfGoods(refs, e.goodsId)
-            if (!remainData.isSuccess) {
-                return remainData
-            }
-            const pGoods = await prettyGoods(refs, e)
-            if (!pGoods.isSuccess) {
-                return pGoods
-            }
-            return {
-                isSuccess: true,
-                data: {
-                    goods: pGoods.data,
-                    remain: remainData.data
-                }
-            }
-        }))
-
-        const suc: { goods: PrettyGoods, remain: GoodsRemainData }[] = allRemainData.filter(isTypedSuccess).map(e => e.data)
-        const err: SingleError[] = allRemainData.filter(isSingleError)
-        if (err.length > 0) {
-            return {
-                result: errorResult(err[0], ...err.slice(1))
-            }
-        }
-
-        return {
-            result: {
-                isSuccess: true,
-                remainData: suc
-            }
-        }
+        return await cmsRemainList(refs, req)
     } else {
         const goodsId = requireParameter("goodsId", z.string(), req)
         if (goodsId.param === undefined) return {result: goodsId.error}
@@ -143,17 +111,7 @@ export async function cmsRemainFunc(refs: DBRefs, req: Request): Promise<Endpoin
         if (amount.param === undefined) return {result: amount.error}
         // according to op,goodsId,amount update remain data
 
-        const r = await refs.db.runTransaction<SingleResult>(async t => {
-            const currentRemain = await getRemainDataOfGoods(refs, goodsId.param, t)
-            if (!currentRemain.isSuccess) return currentRemain
-            const edited = editRemainData(currentRemain.data, amount.param, op)
-            if (!edited.isSuccess) return edited
-            const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(goodsId.param), edited.data, t)
-            if (!update.isSuccess) return update
-            return {
-                isSuccess: true
-            }
-        })
+        const r = await cmsRemainOperation(refs, goodsId.param, amount.param, op)
 
         if (!r.isSuccess) {
             return {
@@ -165,6 +123,61 @@ export async function cmsRemainFunc(refs: DBRefs, req: Request): Promise<Endpoin
             result: r
         }
     }
+}
+
+async function cmsRemainList(refs: DBRefs, req: Request): Promise<EndpointResult> {
+    const allRemainData: TypedSingleResult<{
+        goods: PrettyGoods,
+        remain: GoodsRemainData
+    }>[] = await Promise.all((await getAllGoods(refs)).map(async e => {
+        const remainData = await getRemainDataOfGoods(refs, e.goodsId)
+        if (!remainData.isSuccess) {
+            return remainData
+        }
+        const pGoods = await prettyGoods(refs, e)
+        if (!pGoods.isSuccess) {
+            return pGoods
+        }
+        return {
+            isSuccess: true,
+            data: {
+                goods: pGoods.data,
+                remain: remainData.data
+            }
+        }
+    }))
+
+    const suc: {
+        goods: PrettyGoods,
+        remain: GoodsRemainData
+    }[] = allRemainData.filter(isTypedSuccess).map(e => e.data)
+    const err: SingleError[] = allRemainData.filter(isSingleError)
+    if (err.length > 0) {
+        return {
+            result: errorResult(err[0], ...err.slice(1))
+        }
+    }
+
+    return {
+        result: {
+            isSuccess: true,
+            remainData: suc
+        }
+    }
+}
+
+async function cmsRemainOperation(refs: DBRefs, goodsId: string, amount: number, opString: "set" | "add"): Promise<SingleResult> {
+    return await refs.db.runTransaction<SingleResult>(async t => {
+        const currentRemain = await getRemainDataOfGoods(refs, goodsId, t)
+        if (!currentRemain.isSuccess) return currentRemain
+        const edited = editRemainData(currentRemain.data, amount, opString)
+        if (!edited.isSuccess) return edited
+        const update = await updateEntireData(goodsRemainDataSchema, refs.remains.doc(goodsId), edited.data, t)
+        if (!update.isSuccess) return update
+        return {
+            isSuccess: true
+        }
+    })
 }
 
 function editRemainData(remainData: GoodsRemainData, amount: number, op: "add" | "set"): TypedSingleResult<GoodsRemainData> {
