@@ -88,7 +88,6 @@ export type NotificationData = {
     clickUrl?: string
 }
 
-// TODO Result Type
 export async function sendMessage(refs: DBRefs, messaging: Messaging, uid: string, notificationData: NotificationData): Promise<SingleResult> {
     const data = await getMessageTokenData(refs, uid)
     if (isSingleError(data)) {

@@ -34,8 +34,6 @@ export default function Page() {
             </Text>
         )
     } else {
-
-        // TODO もっとましにする
         return (
             <Flex direction={"column"} h={"max"}>
                 <VStack>

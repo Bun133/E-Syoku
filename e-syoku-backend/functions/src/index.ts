@@ -499,7 +499,6 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
 
 /**
  * TicketDisplayのデータをすべて読み取って返却します
- * TODO クライアントから直接FirestoreをListenするかどうか
  * Param:
  *  - shipId:string
  * Response:
