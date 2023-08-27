@@ -1,4 +1,4 @@
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
 import {Html5QrcodeScanType} from "html5-qrcode";
 import {
     Html5QrcodeConstants,
@@ -10,6 +10,7 @@ import {
 import {Html5Qrcode, Html5QrcodeConfigs, Html5QrcodeFullConfig} from "html5-qrcode/es2015/html5-qrcode";
 import {Html5QrcodeScannerConfig} from "html5-qrcode/es2015/html5-qrcode-scanner";
 import {Html5QrcodeCameraScanConfig} from "html5-qrcode/src/html5-qrcode";
+import {RotateCcw} from "react-feather";
 
 const qrcodeRegionId = "qr-code-scanner";
 
@@ -73,45 +74,70 @@ export function QRCodeReader(config: {
     qrBox?: number | QrDimensions | QrDimensionFunction,
     toLog?: boolean
 }) {
-    useEffect(() => {
-        // when component mounts
+    const conf = useRef<Html5QrcodeScannerConfig>(createConfig({
+        fps: config.fps,
+        qrbox: config.qrBox,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    }))
+
+    function setUpHtml5Qr(): Html5Qrcode {
         const toLog = config.toLog === true;
-        const conf = createConfig({
-            fps: config.fps,
-            qrbox: config.qrBox,
-            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-        })
-        const option = toHtml5QrcodeFullConfig(conf, toLog)
-        const html5Qr = new Html5Qrcode(qrcodeRegionId, option);
+        const option = toHtml5QrcodeFullConfig(conf.current, toLog)
+        return new Html5Qrcode(qrcodeRegionId, option);
+    }
 
-        const a = async () => {
-            const cameras = await Html5Qrcode.getCameras()
-            if (cameras.length === 0) {
-                throw new Error("No camera found")
-            }
+    const html5QrInstance = useRef<Html5Qrcode>();
 
-            const cameraScanConfig = toHtml5QrcodeCameraScanConfig(conf)
-            return {
-                cameraId: cameras[0].id,
-                cameraScanConfig: cameraScanConfig
-            }
-        }
+    async function listCameras() {
+        return await Html5Qrcode.getCameras()
+    }
 
+    async function startScan(instance: Html5Qrcode, cameraIndex: number) {
+        const cameraId = (await listCameras())[cameraIndex]
+        return await instance.start(cameraId.id, toHtml5QrcodeCameraScanConfig(conf.current), config.onScan, config.onError)
+    }
 
-        a().then((d) => {
-            html5Qr.start(d.cameraId, d.cameraScanConfig, config.onScan, config.onError).then(r => {
+    async function cleanUp() {
+        await html5QrInstance.current?.stop()
+        html5QrInstance.current?.clear()
+    }
 
-            })
+    const cameraIndex = useRef(0)
+
+    async function initStart() {
+        html5QrInstance.current = setUpHtml5Qr()
+        await startScan(html5QrInstance.current!!, cameraIndex.current)
+    }
+
+    async function switchCamera() {
+        await cleanUp()
+        await incrementCameraIndex()
+        await initStart()
+    }
+
+    async function incrementCameraIndex() {
+        const list = await listCameras()
+        cameraIndex.current = (cameraIndex.current + 1) % list.length
+    }
+
+    useEffect(() => {
+        initStart().then(r => {
         })
 
         return () => {
-            html5Qr.stop().then(() => {
-                html5Qr.clear();
-            })
+            cleanUp()
         }
     }, []);
 
     return (
-        <div id={qrcodeRegionId}/>
+        <div style={{position: "relative"}}>
+            <div id={qrcodeRegionId}/>
+            <div className={"camera-switch"}
+                 style={{position: "absolute", right: "1rem", top: "1rem", zIndex: 1, cursor: "pointer"}}
+                 onClick={switchCamera}
+            >
+                <RotateCcw color={"white"}/>
+            </div>
+        </div>
     );
 }
