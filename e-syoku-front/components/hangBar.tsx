@@ -128,6 +128,7 @@ export function HangBar() {
                             </VStack>
                             <VStack>
                                 <HangEntity text={"CMS"} href="/cms" onClick={onClose}/>
+                                <HangEntity text={"権限付与"} href="/account/grant" onClick={onClose}/>
                             </VStack>
                         </AdminOnly>
                     </DrawerBody>
