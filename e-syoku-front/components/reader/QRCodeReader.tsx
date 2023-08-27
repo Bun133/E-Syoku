@@ -66,7 +66,6 @@ function toHtml5QrcodeCameraScanConfig(config: Html5QrcodeScannerConfig)
     };
 }
 
-// TODO インカメラ・アウトカメラの切り替えが出来るように
 export function QRCodeReader(config: {
     fps: number,
     onScan: (decodedText: string, result: Html5QrcodeResult) => void,
