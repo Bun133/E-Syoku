@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function Home() {
     return (
-        <Center h={"calc(100vh - 1rem - 24px - 8px)"} w={"full"} p={2}>
+        <Center h={"calc(100dvh - 1rem - 24px - 8px)"} w={"full"} p={2}>
             <Flex h={"full"} w={"67%"} direction={"column"} alignItems={"center"}>
                 <LinkBtn href="/buy" text="新規購入"/>
                 <Spacer/>
