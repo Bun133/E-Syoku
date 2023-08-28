@@ -1,5 +1,7 @@
 export type HelpEntry = {
     mdFileName: string,
+    // Help一覧に出すときの表示名(省略すると非表示)
+    displayName?: string,
     validator: (errorCode: string) => boolean
 }
 
@@ -7,6 +9,14 @@ function errorMd(errCode: string): HelpEntry {
     return {
         mdFileName: `${errCode}.md`,
         validator: (errorCode) => errorCode === errCode,
+    }
+}
+
+function hintMd(mdName: string, displayName: string): HelpEntry {
+    return {
+        mdFileName: mdName,
+        displayName,
+        validator: (errorCode) => false,
     }
 }
 
@@ -22,6 +32,9 @@ const helpEntries: HelpEntry[] = [
     errorMd("INPUT_WRONG_PAIDAMOUNT"),
     errorMd("INPUT_WRONG_BARCODE"),
     errorMd("TICKET_STATUS_INVALID"),
+    hintMd("HowToOrder.md", "注文方法について"),
+    hintMd("HowToCheckTicket.md", "食券を確認したい"),
+    hintMd("HowToPay.md", "支払方法について"),
 ]
 
 export function findHelpEntry(errorCode: string): HelpEntry {
