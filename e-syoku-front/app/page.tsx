@@ -13,6 +13,8 @@ export default function Home() {
                 <LinkBtn href="/payment" text="支払い一覧"/>
                 <Spacer/>
                 <LinkBtn href="/tickets" text="食券一覧"/>
+                <Spacer/>
+                <LinkBtn href="/help/list" text="ヘルプ一覧"/>
                 <CashierOnly>
                     <Spacer/>
                     <LinkBtn href="/shopui/payment/scan" text="決済取扱"/>
