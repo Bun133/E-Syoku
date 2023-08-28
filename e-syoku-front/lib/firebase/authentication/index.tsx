@@ -43,7 +43,7 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
         })
     }, [auth])
 
-    // defaultProcess(auth)
+    defaultProcess(auth)
 
     return (
         <firebaseAuthContext.Provider
