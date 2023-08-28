@@ -82,7 +82,7 @@ function TicketDisplayRow(props: {
     }
 
     useEffect(() => {
-        if (props.disableAutoScroll) {
+        if (!props.disableAutoScroll) {
             move()
         }
     }, [])
