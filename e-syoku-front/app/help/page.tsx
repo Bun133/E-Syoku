@@ -1,9 +1,9 @@
 "use client"
 import {useSearchParams} from "next/navigation";
-import {ErrorMdComponent} from "@/components/error/ErrorMdComponent";
+import {MdComponent} from "@/components/error/ErrorMdComponent";
 
 export default function Page() {
     const params = useSearchParams()
-    const errorCode = params.get("code") ?? ""
-    return <ErrorMdComponent errorCode={errorCode}/>
+    const fileName = params.get("fs") ?? ""
+    return <MdComponent mdFileName={fileName}/>
 }
