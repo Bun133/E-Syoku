@@ -27,11 +27,17 @@ export const firebaseAuthContext = createContext<FirebaseAuthContextType>({
 
 export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | undefined>()
+    const [isLoaded, setIsLoaded] = useState(false)
 
     const auth = getAuth(firebaseApp)
 
     useEffect(() => {
         return auth.onAuthStateChanged(user => {
+            if (!isLoaded) {
+                setIsLoaded(true)
+                signUpAnonymously(auth)
+            }
+
             console.log("User Instance changed to", user)
             if (user == null) setUser(undefined)
             else setUser(user)
@@ -43,15 +49,13 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
         })
     }, [auth])
 
-    defaultProcess(auth)
-
     return (
         <firebaseAuthContext.Provider
             value={{user: user, isAuthenticated: !!user, auth: auth}}>{params.children}</firebaseAuthContext.Provider>
     )
 }
 
-async function defaultProcess(auth: Auth) {
+async function signUpAnonymously(auth: Auth) {
     if (auth.currentUser == null) {
         // Anonymous SignUp
 
