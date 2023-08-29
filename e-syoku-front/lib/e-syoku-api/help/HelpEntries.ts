@@ -58,6 +58,7 @@ const helpEntries: HelpEntry[] = [
     hintMd("HowToOrder.md", "注文方法について"),
     hintMd("HowToCheckTicket.md", "食券を確認したい"),
     hintMd("HowToPay.md", "支払方法について"),
+    hintMd("System.md", "このシステムの利用方法について"),
     shopMd("HowToProvideItems.md","商品受け渡しについて"),
     shopMd("AutoCallSettings.md","自動呼出し設定について"),
     cashierMd("HowToReceiveMoney.md","代金受け取りについて"),
