@@ -1,9 +1,8 @@
 "use client"
 import {Menu, UserCheck, UserX} from "react-feather";
-import React, {useContext} from "react";
+import React, {useContext, useEffect} from "react";
 import {firebaseAuthContext, FirebaseAuthContextType} from "@/lib/firebase/authentication";
 import {signOut} from "@firebase/auth";
-import {useRouter} from "next/navigation";
 import {Center, Divider, Flex, HStack, VStack} from "@chakra-ui/layout";
 import {
     Box,
@@ -20,6 +19,8 @@ import {AdminOnly, AuthState, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/Aut
 import {useDisclosure} from "@chakra-ui/hooks";
 import Link from "next/link";
 import {NotificationEnsure} from "@/lib/firebase/notification";
+import {Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
+import {MdComponent} from "@/components/error/ErrorMdComponent";
 
 
 function HangEntity(params: { text: string, onClick?: () => void, href?: string }) {
@@ -42,6 +43,18 @@ function HangEntity(params: { text: string, onClick?: () => void, href?: string 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
     const {isOpen, onOpen, onClose} = useDisclosure()
+    const {isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose} = useDisclosure()
+
+    function isPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches
+    }
+
+    useEffect(() => {
+        if (!isPWA()) {
+            // Show Modal
+            onModalOpen()
+        }
+    }, []);
 
     return (
         <>
@@ -56,6 +69,18 @@ export function HangBar() {
                     return null
                 }}/>
             </Flex>
+            <Modal isOpen={isModalOpen} onClose={onModalClose}>
+                <ModalOverlay/>
+                <ModalContent>
+                    <ModalCloseButton/>
+                    <ModalHeader>
+                        <Text></Text>
+                    </ModalHeader>
+                    <ModalBody>
+                        <MdComponent mdFileName={"pwa.md"}/>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
             <Drawer placement={"left"} isOpen={isOpen} onClose={onClose}>
                 <DrawerOverlay/>
                 <DrawerContent>
