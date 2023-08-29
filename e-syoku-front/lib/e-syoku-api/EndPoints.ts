@@ -14,9 +14,9 @@ import {
     orderSchema,
     paidResponse,
     paymentIdRequest,
-    paymentSessionSchema,
     paymentStatusResponse,
-    prettyGoodsSchema, prettyPaymentSessionSchema,
+    prettyGoodsSchema,
+    prettyPaymentSessionSchema,
     submitOrderResponse,
     ticketDisplayResponse,
     ticketIdRequest,
@@ -64,7 +64,9 @@ export const listenNotificationEndpoint = endpoint("listenNotification", z.objec
 export const callTicketStackEndpoint = endpoint("callTicketStack", z.object({
     shopId: uniqueId,
     count: z.number()
-}), defaultResponseFormat)
+}), defaultResponseFormat.and(z.object({
+    calledTicketIds: z.string().array()
+})))
 
 export const cmsRemainEndpoint = endpoint("cmsRemain", z.object({}).or(z.object({
     op: z.literal("add").or(z.literal("set")),
