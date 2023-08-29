@@ -73,6 +73,7 @@ async function handleRequest<R extends ResultOrPromise>(request: Request, respon
         const result = await body();
         if (result.statusCode === undefined) {
             if (result.result.isSuccess) {
+                // TODO LogにAuthData/Endpointの情報を含める
                 writeLog({
                     severity: "INFO",
                     ...result.result
