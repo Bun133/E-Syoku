@@ -33,7 +33,7 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
 
     useEffect(() => {
         return auth.onAuthStateChanged(user => {
-            if (!isLoaded) {
+            if (!isLoaded && user == null) {
                 setIsLoaded(true)
                 signUpAnonymously(auth)
             }
