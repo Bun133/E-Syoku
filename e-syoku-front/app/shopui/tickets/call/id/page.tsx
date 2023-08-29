@@ -1,7 +1,7 @@
 "use client"
 
 import {useSearchParams} from "next/navigation";
-import {Box, ModalContent, Spacer, Text} from "@chakra-ui/react";
+import {Box, ModalContent, Spacer, Switch, Text} from "@chakra-ui/react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {callTicketStackEndpoint, resolveTicketEndPoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
@@ -9,35 +9,32 @@ import {TicketDisplay} from "@/components/TicketDisplay";
 import Btn from "@/components/btn";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import {useEffect, useRef, useState} from "react";
-import {EndPointErrorResponse, useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
+import {EndPointErrorResponse, EndPointResponse, useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
 import {APIErrorModal} from "@/components/modal/APIErrorModal";
-import {PrettyTicket} from "@/lib/e-syoku-api/Types";
+import {PrettyTicket, TicketResponse} from "@/lib/e-syoku-api/Types";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {Modal, ModalBody, ModalCloseButton, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
 import {TicketComponent} from "@/components/Ticket";
+import {useToast} from "@chakra-ui/toast";
+import {AlertCircle} from "react-feather";
 
 const initialCount = 10
 
 export default function Page() {
     const params = useSearchParams()
     const shopId = params.get("shopId") ?? undefined
-    const callCount = useRef(initialCount)
-    const {fetch: callTicketStack} = useLazyEndpoint(callTicketStackEndpoint)
-    const {fetch: resolveTicket} = useLazyEndpoint(resolveTicketEndPoint)
+
     const reloadFunc = useRef<() => Promise<void> | null>()
     const apiError = useRef<EndPointErrorResponse<any>>()
     const readTicket = useRef<PrettyTicket>()
 
-    async function autoCall() {
-        if (shopId == undefined) {
-            return
-        }
-        const r = await callTicketStack({
-            shopId: shopId,
-            count: callCount.current
-        })
+    if (!shopId) {
+        return (
+            <Center>
+                <Text>ShopIdを指定してください</Text>
+            </Center>
+        )
     }
-
 
     return (
         <HStack w={"full"} h={"100%"}>
@@ -72,20 +69,16 @@ export default function Page() {
                 </Box>
             </VStack>
             <CallRight
-                initial={initialCount}
-                onCountChange={(toChange) => {
-                    callCount.current = toChange
-                    autoCall()
+                shopId={shopId}
+                onAutoCall={() => {
+                    reloadFunc.current?.()
                 }}
-                onBarcodeRead={async (barcode: string) => {
-                    const r = await resolveTicket({barcode: barcode})
-                    if (r) {
-                        if (r.isSuccess) {
-                            reloadFunc.current?.()
-                            readTicket.current = r.data.ticket
-                        } else {
-                            apiError.current = r
-                        }
+                onBarcodeRead={async (r: EndPointResponse<TicketResponse>) => {
+                    if (r.isSuccess) {
+                        reloadFunc.current?.()
+                        readTicket.current = r.data.ticket
+                    } else {
+                        apiError.current = r
                     }
                 }}
             />
@@ -95,18 +88,122 @@ export default function Page() {
     )
 }
 
+type AutoCallSettings = {
+    toAutoCall: false,
+} | {
+    toAutoCall: true,
+    toCallCount: number,
+}
+
+const defaultCallCount = 10
+
 function CallRight(params: {
-    initial: number,
-    onCountChange: (callCount: number) => void,
-    onBarcodeRead: (barcode: string) => Promise<void>
+    shopId: string,
+    onAutoCall: () => void,
+    onBarcodeRead: (r: EndPointResponse<TicketResponse>) => void
 }) {
 
-    const [callCount, setCallCount] = useState(params.initial)
-    const lastCount = useRef(params.initial)
+    const [callSettings, setCallSettings] = useState<AutoCallSettings>({toAutoCall: false})
+    const [editingCallSettings, setEditingCallSettings] = useState<AutoCallSettings>(callSettings)
 
-    function updateCount() {
-        params.onCountChange(callCount)
-        lastCount.current = callCount
+    const {fetch: callTicketStack} = useLazyEndpoint(callTicketStackEndpoint)
+    const {fetch: resolveTicket} = useLazyEndpoint(resolveTicketEndPoint)
+
+    const {isOpen, onClose, onOpen} = useDisclosure()
+
+    const toast = useToast()
+
+    async function callStack() {
+        console.log("callStack", callSettings)
+        if (callSettings.toAutoCall) {
+            const r = await callTicketStack({
+                shopId: params.shopId,
+                count: callSettings.toCallCount
+            })
+
+            if (r.isSuccess) {
+                // 画面上に呼び出し枚数の通知を出す
+                if (r.data.calledTicketIds.length > 0) {
+                    toast({
+                        icon: <AlertCircle/>,
+                        title: "呼び出し済み",
+                        description: `${r.data.calledTicketIds.length}枚の食券を呼び出しました`,
+                        status: "info"
+                    })
+                }
+            }
+
+            params.onAutoCall()
+        }
+    }
+
+    function editIncrementCallCount() {
+        if (editingCallSettings.toAutoCall) {
+            setEditingCallSettings({toAutoCall: true, toCallCount: editingCallSettings.toCallCount + 1})
+        }
+    }
+
+    function editDecrementCallCount() {
+        if (editingCallSettings.toAutoCall) {
+            if (editingCallSettings.toCallCount > 0) {
+                setEditingCallSettings({toAutoCall: true, toCallCount: editingCallSettings.toCallCount - 1})
+            }
+        }
+    }
+
+    function editIncrementIsDisabled() {
+        return !editingCallSettings.toAutoCall
+    }
+
+    function editDecrementIsDisabled() {
+        return !editingCallSettings.toAutoCall || (editingCallSettings.toAutoCall && editingCallSettings.toCallCount <= 0)
+    }
+
+    function callCountToString(callSetting: AutoCallSettings) {
+        if (callSetting.toAutoCall) {
+            return callSetting.toCallCount.toString()
+        } else {
+            return "未設定"
+        }
+    }
+
+    function openSettingModal() {
+        // Copy setting to editing setting
+        setEditingCallSettings(callSettings)
+        onOpen()
+    }
+
+    function editAutoCall(toAutoCall: boolean) {
+        if (toAutoCall) {
+            setEditingCallSettings({toAutoCall: true, toCallCount: defaultCallCount})
+        } else {
+            setEditingCallSettings({toAutoCall: false})
+        }
+    }
+
+    async function applyEditing() {
+        // Copy setting to editing setting
+        setCallSettings(editingCallSettings)
+        // Close modal
+        onClose()
+    }
+
+    useEffect(() => {
+        // on Update
+        // 変更後呼び出し処理
+        callStack()
+    }, [callSettings]);
+
+    function isApplyDisabled() {
+        // Compare callSetting and editingCallSetting
+        return JSON.stringify(callSettings) === JSON.stringify(editingCallSettings)
+    }
+
+    async function onBarcodeRead(barcode: string) {
+        const r = await resolveTicket({barcode: barcode})
+        params.onBarcodeRead(r)
+        // バーコード読み取り後呼び出し処理
+        await callStack()
     }
 
     return (
@@ -114,28 +211,72 @@ function CallRight(params: {
             <Spacer/>
             <Center w={"full"} mx={2}>
                 <VStack>
-                    <Text>常に呼ぶ人数</Text>
+                    <CallEnabledText toAutoCall={callSettings.toAutoCall}/>
                     <HStack>
-                        <Btn onClick={() => {
-                            setCallCount(callCount - 1)
-                        }} disabled={callCount <= 0}>-</Btn>
-                        <Text px={2}>{callCount}</Text>
-                        <Btn onClick={() => {
-                            setCallCount(callCount + 1)
-                        }}>+</Btn>
+                        <Text>常に呼ぶ人数：</Text>
+                        <Text>{callCountToString(callSettings)}</Text>
                     </HStack>
-                    <Btn onClick={updateCount} disabled={callCount === lastCount.current}>変更を確定</Btn>
+                    <Btn onClick={openSettingModal}>設定変更</Btn>
+
+
+                    <Modal isOpen={isOpen} onClose={onClose}>
+                        <ModalOverlay/>
+                        <ModalContent>
+                            <ModalCloseButton/>
+                            <ModalHeader>
+                                <Text>自動呼出し設定画面</Text>
+                            </ModalHeader>
+                            <ModalBody>
+                                <VStack>
+                                    <HStack>
+                                        <CallEnabledText toAutoCall={editingCallSettings.toAutoCall}/>
+                                        <Switch
+                                            defaultChecked={callSettings.toAutoCall}
+                                            onChange={(e) => {
+                                                editAutoCall(e.target.checked)
+                                            }}/>
+                                    </HStack>
+                                    <HStack>
+                                        <Btn onClick={editDecrementCallCount}
+                                             disabled={editDecrementIsDisabled()}>-</Btn>
+                                        <Text px={2}>{callCountToString(editingCallSettings)}</Text>
+                                        <Btn onClick={editIncrementCallCount}
+                                             disabled={editIncrementIsDisabled()}>+</Btn>
+                                    </HStack>
+                                    <Btn onClick={applyEditing} disabled={isApplyDisabled()}>変更を確定</Btn>
+                                </VStack>
+                            </ModalBody>
+                        </ModalContent>
+                    </Modal>
                 </VStack>
             </Center>
             <Spacer/>
             <VStack>
                 <Text>バーコード読み取り</Text>
                 <Spacer/>
-                <BarcodeReader onRead={params.onBarcodeRead} autoSelect={true}/>
+                <BarcodeReader onRead={onBarcodeRead} autoSelect={true}/>
             </VStack>
             <Spacer/>
         </VStack>
     )
+}
+
+function CallEnabledText(params: { toAutoCall: boolean }) {
+    if (params.toAutoCall) {
+        return (
+            <HStack>
+                <Text>自動呼出し：</Text>
+                <Text color={"green"}>設定済み</Text>
+            </HStack>
+        )
+    } else {
+        return (
+            <HStack>
+                <Text>自動呼出し：</Text>
+                <Text color={"red"}>未設定</Text>
+            </HStack>
+        )
+    }
 }
 
 function ReadModal(params: {
