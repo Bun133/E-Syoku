@@ -2,6 +2,7 @@
 
 import {
     Box,
+    Spacer,
     Spinner,
     Step,
     StepDescription,
@@ -13,12 +14,13 @@ import {
     StepStatus,
     StepTitle,
     Text,
-    useSteps
+    useSteps,
+    Wrap
 } from "@chakra-ui/react";
-import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
+import {Center, HStack, VStack} from "@chakra-ui/layout";
 import PageTitle from "@/components/pageTitle";
 import {useEffect, useRef, useState} from "react";
-import {Order, PrettyPaymentSession, PrettyTicket} from "@/lib/e-syoku-api/Types";
+import {GoodsWithRemainDataWaitingData, Order, PrettyPaymentSession, PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {
     listGoodsEndPoint,
@@ -47,11 +49,15 @@ type TicketData = {
 
 export default function Page() {
     const [order, setOrder] = useSavedState<OrderData>("order", undefined, updateActiveStep);
+    const [orderConfirmed, setOrderConfirmed] = useSavedState<{
+        flag: boolean
+    }>("orderConfirm", undefined, updateActiveStep);
     const [paymentId, setPaymentId] = useSavedState<PaymentData>("pid", undefined, updateActiveStep);
     const [ticketIds, setTicketIds] = useSavedState<TicketData>("tid", undefined, updateActiveStep);
 
     const steps = [
         {title: '商品選択', description: '注文する商品を選択'},
+        {title: '注文確認', description: '注文内容を確認'},
         {title: '注文情報送信', description: '注文情報を送信'},
         {title: '決済', description: '店舗でお支払い'},
         {title: '食券', description: '商品を受け取り'},
@@ -63,15 +69,19 @@ export default function Page() {
             return 0
         }
 
-        if (!paymentId) {
+        if (!orderConfirmed) {
             return 1
         }
 
-        if (!ticketIds) {
+        if (!paymentId) {
             return 2
         }
 
-        return 3
+        if (!ticketIds) {
+            return 3
+        }
+
+        return 4
     }
 
     function updateActiveStep() {
@@ -99,6 +109,21 @@ export default function Page() {
                 })
                 goToNext()
             }}/>
+        )
+    }
+
+    function renderOrderConfirm() {
+        if (!order) {
+            // TODO なんでここだけエラーになるのか
+            return null
+        }
+        return (
+            <OrderConfirm order={order.data}
+                          onConfirm={() => {
+                              setOrderConfirmed({flag: true})
+                              goToNext()
+                          }}
+            />
         )
     }
 
@@ -153,9 +178,10 @@ export default function Page() {
 
             <Box w={"full"} h={"full"}>
                 {activeStep === 0 && renderOrder()}
-                {activeStep === 1 && renderPostOrder()}
-                {activeStep === 2 && renderPayment()}
-                {activeStep === 3 && renderTicket()}
+                {activeStep === 1 && renderOrderConfirm()}
+                {activeStep === 2 && renderPostOrder()}
+                {activeStep === 3 && renderPayment()}
+                {activeStep === 4 && renderTicket()}
             </Box>
         </VStack>
     )
@@ -232,6 +258,64 @@ function Order(params: {
     )
 }
 
+function OrderConfirm(params: {
+    order: Order,
+    onConfirm: () => void
+}) {
+    return (
+        <VStack w={"full"} px={"5%"}>
+            <Text fontSize={"3xl"}>注文確認</Text>
+            <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"orange.300"}
+                 bgColor={"orange.100"}>
+                <HStack>
+                    <AlertTriangle color={"orange"} size={36}/>
+                    <Text fontSize={"3xl"}>
+                        注意
+                    </Text>
+                </HStack>
+
+                <NumberLeading num={1}>
+                    <Text>
+                        店舗にて代金をお支払いいただくまでは商品は確保されません
+                    </Text>
+                </NumberLeading>
+
+                <NumberLeading num={2}>
+                    <Text>
+                        代金をお支払いいただいた時点で在庫が切れ、商品をご用意出来ない場合があります
+                    </Text>
+                </NumberLeading>
+            </Box>
+
+            <VStack w={"full"}>
+                <HStack w={"full"}>
+                    <Text fontSize={"3xl"}>注文内容</Text>
+                    <Spacer/>
+                </HStack>
+
+            </VStack>
+
+            <Btn onClick={params.onConfirm}>注文確定</Btn>
+        </VStack>
+    )
+}
+
+function NumberLeading(params: {
+    num: number,
+    children: React.ReactNode
+}) {
+    return (
+        <HStack py={2}>
+            <Box bgColor={"red.500"} p={2} rounded={"full"}>
+                <Text color={"white"}>{params.num}</Text>
+            </Box>
+            <Wrap>
+                {params.children}
+            </Wrap>
+        </HStack>
+    )
+}
+
 function Payment(params: {
     paymentId: string,
     onPaid: (boundTicketId: string[]) => void
@@ -261,7 +345,8 @@ function Payment(params: {
 
                          return (
                              <VStack>
-                                 <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"orange.300"} bgColor={"orange.100"}>
+                                 <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"orange.300"}
+                                      bgColor={"orange.100"}>
                                      <HStack>
                                          <AlertTriangle color={"orange"} size={36}/>
                                          <Text fontSize={"3xl"}>
