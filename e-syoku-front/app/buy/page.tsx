@@ -2,6 +2,7 @@
 
 import {
     Box,
+    Container,
     Spacer,
     Spinner,
     Step,
@@ -17,7 +18,7 @@ import {
     useSteps,
     Wrap
 } from "@chakra-ui/react";
-import {Center, HStack, VStack} from "@chakra-ui/layout";
+import {AspectRatio, Center, Divider, HStack, VStack} from "@chakra-ui/layout";
 import PageTitle from "@/components/pageTitle";
 import {useEffect, useRef, useState} from "react";
 import {GoodsWithRemainDataWaitingData, Order, PrettyPaymentSession, PrettyTicket} from "@/lib/e-syoku-api/Types";
@@ -34,6 +35,8 @@ import {NOrderSelection} from "@/components/order/NOrderSelection";
 import {useSavedState} from "@/lib/useSavedState";
 import {AlertCircle, AlertTriangle} from "react-feather";
 import Btn from "@/components/btn";
+import {Card, CardBody, CardHeader} from "@chakra-ui/card";
+import {StorageImage} from "@/lib/firebase/storage";
 
 type OrderData = {
     data: Order
@@ -293,10 +296,92 @@ function OrderConfirm(params: {
                     <Spacer/>
                 </HStack>
 
+                <OrderSummary order={params.order}/>
             </VStack>
 
             <Btn onClick={params.onConfirm}>注文確定</Btn>
         </VStack>
+    )
+}
+
+function OrderSummary(params: {
+    order: Order
+}) {
+    function totalCost(data: GoodsWithRemainDataWaitingData[]) {
+        let totalCost = 0
+        for (const order of params.order) {
+            const goodsData = data.find(d => d.goods.goodsId === order.goodsId)
+            if (!goodsData) {
+                return undefined
+            }
+            totalCost += goodsData.goods.price * order.count
+        }
+        return totalCost
+    }
+
+
+    return (
+        <APIEndpoint endpoint={listGoodsEndPoint} query={{}} onEnd={(response) => {
+            const data: GoodsWithRemainDataWaitingData[] = response.data.data
+            const total = totalCost(data)
+
+
+            return (
+                <Container>
+                    {params.order.map(e => {
+                        const goodsData = data.find(d => d.goods.goodsId === e.goodsId)
+                        if (!goodsData) {
+                            return (
+                                <HStack key={e.goodsId} w={"full"}>
+                                    <Text>
+                                        読み込みに失敗しました
+                                    </Text>
+                                    <Text>
+                                        ×{e.count}個
+                                    </Text>
+                                </HStack>
+                            )
+                        }
+                        return (
+                            <Card>
+                                {goodsData.goods.imageRefPath && (
+                                    <CardHeader>
+                                        <AspectRatio ratio={1}>
+                                            <StorageImage storagePath={goodsData.goods.imageRefPath}/>
+                                        </AspectRatio>
+                                    </CardHeader>
+                                )}
+                                <CardBody>
+                                    <Text fontSize={"3xl"}>{goodsData.goods.name}</Text>
+                                    <Text fontSize={"2xl"}>
+                                        {goodsData.goods.price}円×{e.count}個
+                                    </Text>
+                                    <Divider/>
+                                    <HStack>
+                                        <Text fontSize={"3xl"}>
+                                            小計
+                                        </Text>
+                                        <Spacer/>
+                                        <Text fontSize={"3xl"}>
+                                            {goodsData.goods.price * e.count}円
+                                        </Text>
+                                    </HStack>
+                                </CardBody>
+                            </Card>
+                        )
+                    })}
+
+
+                    {total && (
+                        <HStack w={"full"} py={5}>
+                            <Text fontSize={"3xl"}>合計</Text>
+                            <Spacer/>
+                            <Text fontSize={"3xl"}>{total}円</Text>
+                        </HStack>
+                    )}
+                </Container>
+            )
+        }}/>
     )
 }
 
