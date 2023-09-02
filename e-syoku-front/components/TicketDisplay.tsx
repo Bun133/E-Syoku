@@ -1,8 +1,12 @@
 import {PrettyTicket} from "@/lib/e-syoku-api/Types";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
-import {useEffect, useRef} from "react";
-import {Box} from "@chakra-ui/react";
-import {ticketColor} from "@/components/Ticket";
+import {useEffect, useRef, useState} from "react";
+import {Box, Text} from "@chakra-ui/react";
+import {TicketCard, ticketColor} from "@/components/Ticket";
+import {useDisclosure} from "@chakra-ui/hooks";
+import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
+import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
+import {Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
 
 export type DisplaySelection = {
     processing: boolean,
@@ -57,6 +61,8 @@ function TicketDisplayRow(props: {
     const duration = 2000
     const currentIndex = useRef(0)
     const listElement = useRef<HTMLDivElement>(null)
+    const [isLookUpOpen, setLookUpOpen] = useState(false)
+    const lookUpTicketId = useRef<string>()
 
     function moveToElement(elementIndex: number) {
         if (listElement.current == null) return
@@ -94,15 +100,73 @@ function TicketDisplayRow(props: {
             <HStack spacing={"2rem"} overflowX={"scroll"} w={"full"} px={2} ref={listElement}>
                 {props.displays.map((display) => {
                     return (
-                        <Box key={display.uniqueId} backgroundColor={props.ticketColor} w={"8rem"} p={2}
-                             borderRadius={5} flexShrink={0} flexGrow={0}>
-                            <Center>
-                                <Heading>{display.ticketNum}</Heading>
-                            </Center>
-                        </Box>
+                        <TicketDisplayEntry ticketColor={props.ticketColor} ticketNum={display.ticketNum}
+                                            ticketId={display.uniqueId}
+                                            onClick={(ticketId: string) => {
+                                                setLookUpOpen(true)
+                                                lookUpTicketId.current = ticketId
+                                            }}/>
                     )
                 })}
             </HStack>
+            <TicketLookUpModal isOpen={isLookUpOpen} ticketId={lookUpTicketId.current} onClose={() => {
+                setLookUpOpen(false)
+                lookUpTicketId.current = undefined
+            }}/>
         </VStack>
+    )
+}
+
+function TicketDisplayEntry(params: {
+    ticketColor: string,
+    ticketNum: string,
+    ticketId: string,
+    onClick: (ticketId: string) => void
+}) {
+    return (
+        <Box key={params.ticketId} backgroundColor={params.ticketColor} w={"8rem"} p={2}
+             borderRadius={5} flexShrink={0} flexGrow={0} onClick={() => params.onClick(params.ticketId)}
+             cursor={"pointer"}>
+            <Center>
+                <Heading>{params.ticketNum}</Heading>
+            </Center>
+        </Box>
+    )
+}
+
+function TicketLookUpModal(params: {
+    isOpen: boolean,
+    ticketId: string | undefined,
+    onClose: () => void
+}) {
+    const {isOpen, onOpen, onClose} = useDisclosure()
+    useEffect(() => {
+        if (isOpen) return
+        if (params.isOpen && params.ticketId) onOpen()
+    }, [params.isOpen, params.ticketId]);
+
+    function onCloseProxy() {
+        params.onClose()
+        onClose()
+    }
+
+    return (
+        <Modal isOpen={isOpen} onClose={onCloseProxy}>
+            <ModalOverlay/>
+            <ModalContent>
+                <ModalCloseButton/>
+                <ModalHeader>
+                    <Text>食券詳細</Text>
+                </ModalHeader>
+                <ModalBody>
+                    <APIEndpoint endpoint={ticketStatusEndPoint} query={{ticketId: params.ticketId}}
+                                 onEnd={(response) => {
+                                     return (
+                                         <TicketCard ticket={response.data.ticket}/>
+                                     )
+                                 }}/>
+                </ModalBody>
+            </ModalContent>
+        </Modal>
     )
 }
