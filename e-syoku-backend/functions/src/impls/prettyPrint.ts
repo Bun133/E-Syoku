@@ -168,6 +168,7 @@ export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Prom
     }
 
     const pStatus = prettyPaymentStatus(payment.state)
+    const pCreatedTime = prettyTimeStamp(payment.paymentCreatedTime)
 
     const session: PrettyPaymentSession = {
         sessionId: payment.sessionId,
@@ -177,7 +178,8 @@ export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Prom
         orderContent: pOrder.data,
         state: pStatus,
         totalAmount: payment.totalAmount,
-        boundTicketId: payment.boundTicketId
+        boundTicketId: payment.boundTicketId,
+        paymentCreatedTime: pCreatedTime
     }
 
     return {
