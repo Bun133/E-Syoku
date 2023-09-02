@@ -52,6 +52,8 @@ export const paymentSessionSchema = z.object({
     paidDetail: paidDetailSchema.optional(),
     // 決済完了後に発行される食券のIDたち
     boundTicketId: uniqueId.array().optional(),
+    // 決済セッション作成時刻
+    paymentCreatedTime: timeStampSchema,
 })
 
 export type PaymentSession = z.infer<typeof paymentSessionSchema>

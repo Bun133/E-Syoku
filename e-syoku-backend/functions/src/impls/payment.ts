@@ -28,6 +28,7 @@ import {
 } from "./errors";
 import {deleteTickets, registerTicketsForPayment} from "./ticket";
 import {error} from "../utils/logger";
+import {Timestamp} from "firebase-admin/firestore";
 import DocumentReference = firestore.DocumentReference;
 
 /**
@@ -57,7 +58,8 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         sessionId: paymentSessionRef.id,
         state: "UNPAID",
         totalAmount: totalAmount.totalAmount!,
-        barcode: barcode
+        barcode: barcode,
+        paymentCreatedTime: Timestamp.now()
     }
 
     // DBに決済セッションのデータを保存
@@ -66,7 +68,8 @@ export async function internalCreatePaymentSession(ref: DBRefs, customer: AuthIn
         orderContent: paymentSession.orderContent,
         state: paymentSession.state,
         totalAmount: paymentSession.totalAmount,
-        barcode: barcode
+        barcode: barcode,
+        paymentCreatedTime: paymentSession.paymentCreatedTime
     })
     if (isSingleError(setRes)) {
         // 決済セッションのデータを保存できなかった
@@ -143,7 +146,8 @@ export function transformPaymentSession(sessionId: string, data: firestore.Docum
         boundTicketId: data.boundTicketId,
         state: data.state,
         totalAmount: data.totalAmount,
-        barcode: data.barcode
+        barcode: data.barcode,
+        paymentCreatedTime: data.paymentCreatedTime,
     }
 }
 
@@ -230,6 +234,7 @@ async function internalMarkPaymentAsPaid(refs: DBRefs, sessionId: string, paidDe
         orderContent: true,
         totalAmount: true,
         barcode: true,
+        paymentCreatedTime: true,
     }), paymentRef, {
         state: "PAID",
         paidDetail: paidDetail,
