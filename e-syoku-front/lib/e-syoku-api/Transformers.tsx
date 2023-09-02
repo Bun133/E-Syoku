@@ -10,3 +10,9 @@ export function orderDataTransform(orderData: PrettyOrder) {
         )
     })
 }
+
+
+export function utcSecToString(utcSec: number) {
+    const date = new Date(utcSec * 1000);
+    return date.toLocaleString();
+}

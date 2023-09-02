@@ -4,7 +4,7 @@ import React, {ReactNode} from "react";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
 import {Badge, Box, Text, UnorderedList} from "@chakra-ui/react";
 import {Center, Heading, VStack} from "@chakra-ui/layout";
-import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
+import {orderDataTransform, utcSecToString} from "@/lib/e-syoku-api/Transformers";
 
 export function ticketColor(status: PrettyTicketStatus): string {
     switch (status) {
@@ -108,9 +108,4 @@ export function TicketCard(params: { ticket: PrettyTicket }) {
             </CardBody>
         </Card>
     )
-}
-
-function utcSecToString(utcSec: number) {
-    const date = new Date(utcSec * 1000);
-    return date.toLocaleString();
 }
