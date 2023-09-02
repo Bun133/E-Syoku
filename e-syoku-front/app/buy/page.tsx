@@ -33,10 +33,12 @@ import {PaymentCard} from "@/components/Payment";
 import {TicketCard} from "@/components/Ticket";
 import {NOrderSelection} from "@/components/order/NOrderSelection";
 import {useSavedState} from "@/lib/useSavedState";
-import {AlertCircle, AlertTriangle} from "react-feather";
+import {AlertTriangle} from "react-feather";
 import Btn from "@/components/btn";
 import {Card, CardBody, CardHeader} from "@chakra-ui/card";
 import {StorageImage} from "@/lib/firebase/storage";
+import {WarningBox} from "@/components/messageBox/WarningBox";
+import {InfoBox} from "@/components/messageBox/InfoBox";
 
 type OrderData = {
     data: Order
@@ -268,15 +270,7 @@ function OrderConfirm(params: {
     return (
         <VStack w={"full"} px={"5%"}>
             <Text fontSize={"3xl"}>注文確認</Text>
-            <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"orange.300"}
-                 bgColor={"orange.100"}>
-                <HStack>
-                    <AlertTriangle color={"orange"} size={36}/>
-                    <Text fontSize={"3xl"}>
-                        注意
-                    </Text>
-                </HStack>
-
+            <WarningBox>
                 <NumberLeading num={1}>
                     <Text>
                         店舗にて代金をお支払いいただくまでは商品は確保されません
@@ -288,7 +282,7 @@ function OrderConfirm(params: {
                         代金をお支払いいただいた時点で在庫が切れ、商品をご用意出来ない場合があります
                     </Text>
                 </NumberLeading>
-            </Box>
+            </WarningBox>
 
             <VStack w={"full"}>
                 <HStack w={"full"}>
@@ -460,20 +454,14 @@ function Tickets(params: {
 
     return (
         <VStack>
-            <Box px={2} mx={2} borderWidth={2} borderRadius={8} borderColor={"blue.300"} bgColor={"blue.100"}>
-                <HStack>
-                    <AlertCircle color={"#3182ce"} size={24}/>
-                    <Text fontSize={"2xl"}>
-                        注意
-                    </Text>
-                </HStack>
+            <InfoBox>
                 <Text>
                     紙の食券をなくさないようご注意ください
                 </Text>
                 <Text>
                     当ウェブサイトで呼び出し順序の確認が出来ます。また、呼び出し通知の送信を行います
                 </Text>
-            </Box>
+            </InfoBox>
 
             <Box w={"30rem"}>
                 {params.ticketIds
