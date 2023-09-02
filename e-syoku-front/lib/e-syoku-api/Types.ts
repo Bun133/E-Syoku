@@ -195,7 +195,9 @@ export const prettyPaymentSessionSchema = z.object({
     paidDetail: paidDetailSchema.optional(),
     // 決済完了後に発行される食券のIDたち
     boundTicketId: uniqueId.array().optional(),
-    barcode: z.string()
+    barcode: z.string(),
+    // 決済セッション作成時刻
+    paymentCreatedTime: prettyTimeStampSchema,
 })
 
 export type PrettyPaymentSession = z.infer<typeof prettyPaymentSessionSchema>
