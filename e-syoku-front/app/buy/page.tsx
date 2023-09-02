@@ -343,7 +343,7 @@ function OrderSummary(params: {
                             )
                         }
                         return (
-                            <Card>
+                            <Card key={e.goodsId}>
                                 {goodsData.goods.imageRefPath && (
                                     <CardHeader>
                                         <AspectRatio ratio={1}>
