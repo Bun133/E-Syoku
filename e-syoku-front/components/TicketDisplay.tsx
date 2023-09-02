@@ -101,6 +101,7 @@ function TicketDisplayRow(props: {
                 {props.displays.map((display) => {
                     return (
                         <TicketDisplayEntry ticketColor={props.ticketColor} ticketNum={display.ticketNum}
+                                            key={display.uniqueId}
                                             ticketId={display.uniqueId}
                                             onClick={(ticketId: string) => {
                                                 setLookUpOpen(true)
