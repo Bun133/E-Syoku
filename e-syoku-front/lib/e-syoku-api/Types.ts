@@ -274,7 +274,7 @@ export const submitOrderResponse = defaultResponseFormat.and(z.object({
 }))
 
 export const listPaymentResponse = defaultResponseFormat.and(z.object({
-    payments: z.array(paymentSessionSchema)
+    payments: z.array(prettyPaymentSessionSchema)
 }))
 
 export const paymentStatusResponse = defaultResponseFormat.and(z.object({

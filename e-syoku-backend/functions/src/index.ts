@@ -38,7 +38,7 @@ import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, cmsPaymentListFunc, cmsRemainFunc, cmsTicketFunc} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
 import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
-import {PrettyGoods, PrettyTicket} from "./types/prettyPrint";
+import {PrettyGoods, PrettyPaymentSession, PrettyTicket} from "./types/prettyPrint";
 import {GoodsRemainData, WaitingData} from "./types/goods";
 
 
@@ -354,7 +354,10 @@ export const listPayments = standardFunction(async (request, response) => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // ユーザーに紐づいているすべての決済セッションのデータを取得します
             const payments = await getAllPayments(refs, authInstance.uid)
-            const suc: Success = {"isSuccess": true, "payments": payments}
+
+            const pPayments: PrettyPaymentSession[] = (await Promise.all(payments.map(async p => prettyPayment(refs, p)))).filter(isTypedSuccess).map(e => e.data)
+
+            const suc: Success = {"isSuccess": true, "payments": pPayments}
             return {
                 result: suc
             }
