@@ -1,8 +1,8 @@
 import {PrettyPaymentSession} from "@/lib/e-syoku-api/Types";
 import {Card, CardBody, CardFooter, CardHeader} from "@chakra-ui/card";
-import {Center, VStack} from "@chakra-ui/layout";
+import {Center, HStack, VStack} from "@chakra-ui/layout";
 import Barcode from "react-barcode";
-import {Text, UnorderedList} from "@chakra-ui/react";
+import {Box, Spacer, Text, UnorderedList} from "@chakra-ui/react";
 import {orderDataTransform} from "@/lib/e-syoku-api/Transformers";
 import React from "react";
 
@@ -15,21 +15,27 @@ export function PaymentCard(params: { payment: PrettyPaymentSession }) {
                 <Barcode value={payment.barcode}/>
             </Center></CardHeader>
             <CardBody>
-                <VStack>
+                <VStack alignItems={"flex-start"}>
                     <Text>
-                        顧客UserId:{payment.customerId}
+                        状態:{payment.state}
                     </Text>
-                    <Text>決済セッション:{payment.sessionId}</Text>
                     <Text>
-                        State:{payment.state}
+                        注文内容：
                     </Text>
-                    <UnorderedList>
-                        {orderDataTransform(payment.orderContent)}
-                    </UnorderedList>
+                    <HStack>
+                        <Box w={"1rem"}/>
+                        <UnorderedList>
+                            {orderDataTransform(payment.orderContent)}
+                        </UnorderedList>
+                    </HStack>
                 </VStack>
             </CardBody>
             <CardFooter>
-                支払金額: {payment.totalAmount}円
+                <HStack w={"full"}>
+                    <Text fontSize={"2xl"}>支払金額： </Text>
+                    <Spacer/>
+                    <Text fontSize={"2xl"}>{payment.totalAmount}円</Text>
+                </HStack>
             </CardFooter>
         </Card>
     )
