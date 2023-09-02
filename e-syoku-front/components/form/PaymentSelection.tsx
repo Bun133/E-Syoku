@@ -1,46 +1,37 @@
-import {PaymentSession} from "@/lib/e-syoku-api/Types";
-import {ReactNode} from "react";
-import {Divider, Heading, VStack} from "@chakra-ui/layout";
+import {PrettyPaymentSession} from "@/lib/e-syoku-api/Types";
+import {Divider, Heading, HStack, VStack} from "@chakra-ui/layout";
+import {Card, CardBody, CardFooter} from "@chakra-ui/card";
+import {Box, Container, Spacer, Text, UnorderedList} from "@chakra-ui/react";
 import Btn from "@/components/btn";
-import {Card, CardBody, CardHeader} from "@chakra-ui/card";
-import {Container, Spacer} from "@chakra-ui/react";
+import {orderDataTransform, utcSecToString} from "@/lib/e-syoku-api/Transformers";
 
 export function PaymentSelection(props: {
-    payments: PaymentSession[] | undefined,
-    onSelect: (ticket: PaymentSession) => void,
-    // for customizing select button
-    button?: (ticket: PaymentSession) => ReactNode
+    payments: PrettyPaymentSession[] | undefined
 }) {
-    const button = props.button !== undefined ?
-        ((session: PaymentSession) => (<div onClick={() => props.onSelect(session)}>{props.button!!(session)}</div>))
-        : ((session: PaymentSession) => undefined)
-
     return (
         <Container>
-            <Heading>未決済</Heading>
+            <Heading>未支払い</Heading>
             <Divider/>
             <VStack>
-                {props.payments !== undefined ? props.payments.filter((session) => session.state === "UNPAID").map((session: PaymentSession) => {
+                {props.payments !== undefined ? props.payments.filter((session) => session.state === "未支払い").map((session: PrettyPaymentSession) => {
                     return (
                         <PaymentCard
                             key={session.sessionId}
-                            session={session}
-                            button={button(session)}></PaymentCard>
+                            session={session}/>
                     )
                 }) : null}
             </VStack>
 
             <Spacer/>
 
-            <Heading>決済済</Heading>
+            <Heading>支払い済み</Heading>
             <Divider/>
             <VStack>
-                {props.payments !== undefined ? props.payments.filter((session) => session.state === "PAID").map((session: PaymentSession) => {
+                {props.payments !== undefined ? props.payments.filter((session) => session.state === "支払い済み").map((session: PrettyPaymentSession) => {
                     return (
                         <PaymentCard
                             key={session.sessionId}
-                            session={session}
-                            button={button(session)}></PaymentCard>
+                            session={session}/>
                     )
                 }) : null}
             </VStack>
@@ -48,25 +39,32 @@ export function PaymentSelection(props: {
     )
 }
 
-function PaymentCard(param: { session: PaymentSession, button?: ReactNode }) {
-    const button = param.button !== undefined ?
-        param.button :
-        (<Btn href={"/payment/id?id=" + param.session.sessionId}>
-            詳しく見る
-        </Btn>);
-
-
+function PaymentCard(param: { session: PrettyPaymentSession }) {
     return (
         <Card>
-            <CardHeader>{param.session.sessionId}</CardHeader>
-
             <CardBody>
-                <VStack>
-                    {param.session.state}
-                    <div className={"w-2"}></div>
-                    {button}
+                <VStack alignItems={"flex-start"}>
+                    <VStack alignItems={"flex-start"}>
+                        <Text>注文内容：</Text>
+                        <HStack w={"full"}>
+                            <Box w={"1rem"}/>
+                            <UnorderedList>
+                                {orderDataTransform(param.session.orderContent)}
+                            </UnorderedList>
+                        </HStack>
+                    </VStack>
+                    <Spacer/>
+                    <Text>時刻：{utcSecToString(param.session.paymentCreatedTime.utcSeconds)}</Text>
                 </VStack>
             </CardBody>
+            <CardFooter>
+                <HStack w={"full"}>
+                    <Spacer/>
+                    <Btn href={"/payment/id?id=" + param.session.sessionId}>
+                        詳しく見る
+                    </Btn>
+                </HStack>
+            </CardFooter>
         </Card>
     )
 }

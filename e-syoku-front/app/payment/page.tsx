@@ -14,7 +14,7 @@ export default function Page() {
             <APIEndpoint endpoint={listPaymentsEndPoint} query={{}} onEnd={(response, reload) => {
                 return (
                     <VStack>
-                        <PaymentSelection payments={response.data.payments} onSelect={console.log}></PaymentSelection>
+                        <PaymentSelection payments={response.data.payments}/>
                         <Spacer/>
                         <Btn onClick={reload}>再読み込み</Btn>
                     </VStack>
