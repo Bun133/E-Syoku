@@ -4,8 +4,6 @@ import {useEffect, useRef, useState} from "react";
 import {Box, Text} from "@chakra-ui/react";
 import {TicketCard, ticketColor} from "@/components/Ticket";
 import {useDisclosure} from "@chakra-ui/hooks";
-import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
-import {ticketStatusEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import {Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
 
 export type DisplaySelection = {
@@ -62,7 +60,7 @@ function TicketDisplayRow(props: {
     const currentIndex = useRef(0)
     const listElement = useRef<HTMLDivElement>(null)
     const [isLookUpOpen, setLookUpOpen] = useState(false)
-    const lookUpTicketId = useRef<string>()
+    const lookUpTicketData = useRef<PrettyTicket>()
 
     function moveToElement(elementIndex: number) {
         if (listElement.current == null) return
@@ -103,16 +101,16 @@ function TicketDisplayRow(props: {
                         <TicketDisplayEntry ticketColor={props.ticketColor} ticketNum={display.ticketNum}
                                             key={display.uniqueId}
                                             ticketId={display.uniqueId}
-                                            onClick={(ticketId: string) => {
+                                            onClick={() => {
                                                 setLookUpOpen(true)
-                                                lookUpTicketId.current = ticketId
+                                                lookUpTicketData.current = display
                                             }}/>
                     )
                 })}
             </HStack>
-            <TicketLookUpModal isOpen={isLookUpOpen} ticketId={lookUpTicketId.current} onClose={() => {
+            <TicketLookUpModal isOpen={isLookUpOpen} ticketData={lookUpTicketData.current} onClose={() => {
                 setLookUpOpen(false)
-                lookUpTicketId.current = undefined
+                lookUpTicketData.current = undefined
             }}/>
         </VStack>
     )
@@ -122,11 +120,11 @@ function TicketDisplayEntry(params: {
     ticketColor: string,
     ticketNum: string,
     ticketId: string,
-    onClick: (ticketId: string) => void
+    onClick: () => void
 }) {
     return (
         <Box key={params.ticketId} backgroundColor={params.ticketColor} w={"8rem"} p={2}
-             borderRadius={5} flexShrink={0} flexGrow={0} onClick={() => params.onClick(params.ticketId)}
+             borderRadius={5} flexShrink={0} flexGrow={0} onClick={params.onClick}
              cursor={"pointer"}>
             <Center>
                 <Heading>{params.ticketNum}</Heading>
@@ -137,14 +135,14 @@ function TicketDisplayEntry(params: {
 
 function TicketLookUpModal(params: {
     isOpen: boolean,
-    ticketId: string | undefined,
+    ticketData: PrettyTicket | undefined,
     onClose: () => void
 }) {
     const {isOpen, onOpen, onClose} = useDisclosure()
     useEffect(() => {
         if (isOpen) return
-        if (params.isOpen && params.ticketId) onOpen()
-    }, [params.isOpen, params.ticketId]);
+        if (params.isOpen && params.ticketData) onOpen()
+    }, [params.isOpen, params.ticketData]);
 
     function onCloseProxy() {
         params.onClose()
@@ -160,12 +158,7 @@ function TicketLookUpModal(params: {
                     <Text>食券詳細</Text>
                 </ModalHeader>
                 <ModalBody>
-                    <APIEndpoint endpoint={ticketStatusEndPoint} query={{ticketId: params.ticketId}}
-                                 onEnd={(response) => {
-                                     return (
-                                         <TicketCard ticket={response.data.ticket}/>
-                                     )
-                                 }}/>
+                    {params.ticketData && <TicketCard ticket={params.ticketData}/>}
                 </ModalBody>
             </ModalContent>
         </Modal>
