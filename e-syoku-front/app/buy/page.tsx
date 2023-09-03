@@ -106,74 +106,6 @@ export default function Page() {
         updateActiveStep()
     }, [])
 
-    function renderOrder() {
-        return (
-            <Order onSelectOrder={(order: Order) => {
-                setOrder({
-                    data: order
-                })
-                goToNext()
-            }}/>
-        )
-    }
-
-    function renderOrderConfirm() {
-        if (!order) {
-            // TODO なんでここだけエラーになるのか
-            return null
-        }
-        return (
-            <OrderConfirm order={order.data}
-                          onConfirm={() => {
-                              setOrderConfirmed({flag: true})
-                              goToNext()
-                          }}
-            />
-        )
-    }
-
-    function renderPostOrder() {
-        function body() {
-            return (
-                <Center>
-                    <Spinner/>
-                </Center>
-            )
-        }
-
-        return (
-            <APIEndpoint
-                endpoint={submitOrderEndPoint}
-                query={{order: order?.data}}
-                queryNotSatisfied={body}
-                onEnd={(response) => {
-                    setPaymentId({
-                        paymentSessionId: response.data.paymentSessionId
-                    })
-                    goToNext()
-                    return body()
-                }}/>
-        )
-    }
-
-    function renderPayment() {
-        return (
-            <Payment paymentId={paymentId!!.paymentSessionId} onPaid={(boundTicketId) => {
-                console.log("boundTicketId", boundTicketId)
-                setTicketIds({
-                    boundTicketIds: boundTicketId
-                })
-                goToNext()
-            }}/>
-        )
-    }
-
-    function renderTicket() {
-        return (
-            <Tickets ticketIds={ticketIds!!.boundTicketIds}/>
-        )
-    }
-
     return (
         <VStack>
             <PageTitle title={"商品購入"}/>
@@ -182,11 +114,32 @@ export default function Page() {
             </Center>
 
             <Box w={"full"} h={"full"}>
-                {activeStep === 0 && renderOrder()}
-                {activeStep === 1 && renderOrderConfirm()}
-                {activeStep === 2 && renderPostOrder()}
-                {activeStep === 3 && renderPayment()}
-                {activeStep === 4 && renderTicket()}
+                {activeStep === 0 && <Order onSelectOrder={(order: Order) => {
+                    setOrder({
+                        data: order
+                    })
+                    goToNext()
+                }}/>}
+                {activeStep === 1 && <OrderConfirm order={order?.data} onConfirm={() => {
+                    setOrderConfirmed({flag: true})
+                    goToNext()
+                }}
+                />}
+                {activeStep === 2 && <PostOrder order={order!!.data} orderConfirmed={orderConfirmed?.flag}
+                                                onPost={(paymentSessionId) => {
+                                                    goToNext()
+                                                    setPaymentId({
+                                                        paymentSessionId: paymentSessionId
+                                                    })
+                                                }}/>}
+                {activeStep === 3 && <Payment paymentId={paymentId!!.paymentSessionId} onPaid={(boundTicketId) => {
+                    console.log("boundTicketId", boundTicketId)
+                    setTicketIds({
+                        boundTicketIds: boundTicketId
+                    })
+                    goToNext()
+                }}/>}
+                {activeStep === 4 && <Tickets ticketIds={ticketIds!!.boundTicketIds}/>}
             </Box>
         </VStack>
     )
@@ -264,9 +217,10 @@ function Order(params: {
 }
 
 function OrderConfirm(params: {
-    order: Order,
+    order: Order | undefined,
     onConfirm: () => void
 }) {
+    if (!params.order) return null
     return (
         <VStack w={"full"} px={"5%"}>
             <Text fontSize={"3xl"}>注文確認</Text>
@@ -377,6 +331,37 @@ function OrderSummary(params: {
             )
         }}/>
     )
+}
+
+function PostOrder(params: {
+    order: Order,
+    orderConfirmed: boolean | undefined,
+    onPost: (paymentSessionId: string) => void
+}) {
+    function body() {
+        return (
+            <Center>
+                <Spinner/>
+            </Center>
+        )
+    }
+
+    console.log("query", params.order)
+    if (params.orderConfirmed === undefined) {
+        return body()
+    }
+
+    return (
+        <APIEndpoint
+            endpoint={submitOrderEndPoint}
+            query={{order: params.order}}
+            queryNotSatisfied={body}
+            onEnd={(response) => {
+                params.onPost(response.data.paymentSessionId)
+                return body()
+            }}/>
+    )
+
 }
 
 function NumberLeading(params: {
