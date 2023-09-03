@@ -107,16 +107,6 @@ export function HangBar() {
                                 <Text>アカウントメニュー</Text>
                                 <Divider/>
                             </VStack>
-                            <HStack>
-                                {auth.user !== undefined ? <UserCheck/> : <UserX/>}
-                                <AuthState comp={(info) => {
-                                    if (info !== undefined && info.authType !== undefined) {
-                                        return (<Text>AuthType:{info.authType}</Text>)
-                                    } else {
-                                        return null
-                                    }
-                                }}/>
-                            </HStack>
                             <VStack>
                                 <HangEntity text={"アカウント詳細"} href="/account" onClick={onClose}/>
                                 <HangEntity text={"ログアウト"} onClick={() => {
