@@ -59,6 +59,9 @@ export function NOrderSelection(params: {
     )
 }
 
+// 一度に注文できる最大数
+const maximumOrderCount = 5
+
 function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdate?: (count: number) => void }) {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const [count, setCount] = useState<number>(0)
@@ -81,6 +84,10 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
     }
 
     function isExceed(r: GoodsRemainData, count: number) {
+        return isExceedRemainData(r, count) || maximumOrderCount < count
+    }
+
+    function isExceedRemainData(r: GoodsRemainData, count: number) {
         // @ts-ignore
         if (r.remain != undefined) {
             // @ts-ignore
