@@ -21,8 +21,8 @@ export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
     // 前回のFetch結果が残ってる時にloadingで表示を更新しないフラグ
     disableLoading?: boolean
 }) {
-    const loadingFunc = param.loading ?? defaultLoading;
-    const queryErrorFunc = param.queryNotSatisfied ?? defaultQueryError;
+    const loadingFunc = param.loading ?? (() => <DefaultLoading/>);
+    const queryErrorFunc = param.queryNotSatisfied ?? (() => <DefaultQueryError/>);
 
     const {response, isLoaded, fetch: fetch} = useLazyEndpoint(param.endpoint)
     const isQueryNotSatisfied = useRef(false)
@@ -73,7 +73,7 @@ export function APIEndpoint<Q, R extends DefaultResponseFormat>(param: {
     return displayResponse()
 }
 
-function defaultLoading(): React.JSX.Element {
+function DefaultLoading(): React.JSX.Element {
     return (
         <Box h={"100%"}>
             <Center>
@@ -84,7 +84,7 @@ function defaultLoading(): React.JSX.Element {
     )
 }
 
-function defaultQueryError() {
+function DefaultQueryError() {
     return (
         <Container>
             <VStack>
