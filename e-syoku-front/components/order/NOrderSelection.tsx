@@ -1,7 +1,7 @@
 import {GoodsRemainData, GoodsWithRemainDataWaitingData, Order} from "@/lib/e-syoku-api/Types";
 import {AspectRatio, Heading, VStack} from "@chakra-ui/layout";
 import {Card, CardBody} from "@chakra-ui/card";
-import {Box, HStack, ModalContent, ModalHeader, SimpleGrid, Text} from "@chakra-ui/react";
+import {Box, HStack, ModalContent, ModalHeader, Text, Wrap, WrapItem} from "@chakra-ui/react";
 import {Modal, ModalBody, ModalCloseButton, ModalFooter, ModalOverlay} from "@chakra-ui/modal";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {useState} from "react";
@@ -43,15 +43,16 @@ export function NOrderSelection(params: {
 
     return (
         <VStack w={"full"} h={"full"}>
-            <SimpleGrid columns={2} spacing={10}>
+            <Wrap justify={"center"}>
                 {params.goods.map((g, i) => {
                     return (
-                        <Box key={i}>
-                            <GoodsOrderCard goods={g} onUpdate={(count) => updateOrderMap(g.goods.goodsId, count)}/>
-                        </Box>
+                        <WrapItem w={"calc(min(20rem,90dvw))"} p={2}>
+                            <GoodsOrderCard key={i} goods={g}
+                                            onUpdate={(count) => updateOrderMap(g.goods.goodsId, count)}/>
+                        </WrapItem>
                     )
                 })}
-            </SimpleGrid>
+            </Wrap>
 
             <Btn onClick={() => params.onOrder(generateOrder())} disabled={isDisabled()}>注文を確定する</Btn>
         </VStack>
@@ -94,7 +95,7 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
     }
 
     return (
-        <>
+        <Box w={"full"}>
             <Card onClick={onOpen} cursor={"pointer"}>
                 {
                     params.goods.goods.imageRefPath && (
@@ -134,10 +135,10 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
                             商品説明：{params.goods.goods.description}
                         </Text>
                         <Text>
-                            価格：{params.goods.goods.price}
+                            価格：{params.goods.goods.price}円
                         </Text>
                         <Text>
-                            受け取り待ち人数：{params.goods.waitingData.waiting}
+                            受け取り待ち人数：{params.goods.waitingData.waiting}人
                         </Text>
                     </ModalBody>
                     <ModalFooter>
@@ -155,6 +156,6 @@ function GoodsOrderCard(params: { goods: GoodsWithRemainDataWaitingData, onUpdat
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-        </>
+        </Box>
     )
 }
