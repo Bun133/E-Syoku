@@ -46,8 +46,8 @@ export function NOrderSelection(params: {
             <Wrap justify={"center"}>
                 {params.goods.map((g, i) => {
                     return (
-                        <WrapItem w={"calc(min(20rem,90dvw))"} p={2}>
-                            <GoodsOrderCard key={i} goods={g}
+                        <WrapItem key={i} w={"calc(min(20rem,90dvw))"} p={2}>
+                            <GoodsOrderCard goods={g}
                                             onUpdate={(count) => updateOrderMap(g.goods.goodsId, count)}/>
                         </WrapItem>
                     )
