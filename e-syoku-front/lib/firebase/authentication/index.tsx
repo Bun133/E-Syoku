@@ -27,15 +27,13 @@ export const firebaseAuthContext = createContext<FirebaseAuthContextType>({
 
 export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | undefined>()
-    const [isLoaded, setIsLoaded] = useState(false)
 
     const auth = getAuth(firebaseApp)
 
     useEffect(() => {
         return auth.onAuthStateChanged(user => {
-            if (!isLoaded && user == null) {
-                setIsLoaded(true)
-                signUpAnonymously(auth)
+            if (user == null) {
+                challengeLogin(auth)
             }
 
             console.log("User Instance changed to", user)
@@ -53,6 +51,24 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
         <firebaseAuthContext.Provider
             value={{user: user, isAuthenticated: !!user, auth: auth}}>{params.children}</firebaseAuthContext.Provider>
     )
+}
+
+/**
+ * 裏で別のタブでサイトを開くと、一度Authenticationが初期化されるので、我慢して待つ
+ * @param auth
+ */
+async function challengeLogin(auth: Auth) {
+    if (auth.currentUser == null) {
+        console.log("Challenge Login")
+        // wait for 1 sec
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        // retry
+        if (auth.currentUser == null) {
+            await signUpAnonymously(auth)
+        } else {
+            console.log("Login Success")
+        }
+    }
 }
 
 async function signUpAnonymously(auth: Auth) {
