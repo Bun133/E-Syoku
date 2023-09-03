@@ -95,7 +95,7 @@ export function HangBar() {
                             </VStack>
                             <VStack>
                                 <HangEntity text={"ホーム"} href="/" onClick={onClose}/>
-                                <HangEntity text={"新規注文"} href="/order" onClick={onClose}/>
+                                <HangEntity text={"新規注文"} href="/buy" onClick={onClose}/>
                                 <HangEntity text={"食券一覧"} href="/tickets" onClick={onClose}/>
                                 <HangEntity text={"決済一覧"} href="/payment" onClick={onClose}/>
                             </VStack>
