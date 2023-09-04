@@ -69,7 +69,7 @@ async function challengeLogin(auth: Auth): Promise<User | undefined> {
     return auth.currentUser
 }
 
-async function challengeAndLoginPush(auth: Auth, router: AppRouterInstance, currentPath: string) {
+export async function challengeAndLoginPush(auth: Auth, router: AppRouterInstance, currentPath: string) {
     const tried = await challengeLogin(auth)
     if (tried == undefined) {
         // not logged in
