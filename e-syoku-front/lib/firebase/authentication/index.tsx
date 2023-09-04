@@ -1,16 +1,10 @@
 "use client"
 
 import React, {createContext, useEffect, useState} from "react";
-import {
-    Auth,
-    browserLocalPersistence,
-    browserSessionPersistence,
-    getAuth,
-    setPersistence,
-    signInAnonymously,
-    User
-} from "@firebase/auth";
+import {Auth, browserLocalPersistence, browserSessionPersistence, getAuth, setPersistence, User} from "@firebase/auth";
 import {firebaseApp} from "@/lib/firebase";
+import {usePathname, useRouter} from "next/navigation";
+import {AppRouterInstance} from "next/dist/shared/lib/app-router-context";
 
 export type FirebaseAuthContextType = {
     user: User | undefined,
@@ -27,23 +21,25 @@ export const firebaseAuthContext = createContext<FirebaseAuthContextType>({
 
 export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | undefined>()
+    const router = useRouter()
+    const currentPath = usePathname()
 
     const auth = getAuth(firebaseApp)
 
     useEffect(() => {
         return auth.onAuthStateChanged(user => {
-            if (user == null) {
-                challengeLogin(auth)
-            }
-
             console.log("User Instance changed to", user)
-            if (user == null) setUser(undefined)
-            else setUser(user)
-            setPersistence(auth, browserLocalPersistence).then(() => {
-                console.log("Persistence set to", browserSessionPersistence)
-            }).catch(() => {
-                console.log("Persistence set failed")
-            })
+            if (user == null) {
+                setUser(undefined)
+                challengeAndLoginPush(auth, router, currentPath)
+            } else {
+                setUser(user)
+                setPersistence(auth, browserLocalPersistence).then(() => {
+                    console.log("Persistence set to", browserSessionPersistence)
+                }).catch(() => {
+                    console.log("Persistence set failed")
+                })
+            }
         })
     }, [auth])
 
@@ -57,36 +53,54 @@ export const FirebaseAuthProvider = (params: { children: React.ReactNode }) => {
  * 裏で別のタブでサイトを開くと、一度Authenticationが初期化されるので、我慢して待つ
  * @param auth
  */
-async function challengeLogin(auth: Auth) {
-    if (auth.currentUser == null) {
+async function challengeLogin(auth: Auth): Promise<User | undefined> {
+    if (!auth.currentUser) {
         console.log("Challenge Login")
-        // wait for 1 sec
+        // wait for 2 sec
+        // TODO onAuthStateChangedで状態を監視し続ける
         await new Promise(resolve => setTimeout(resolve, 2000))
         // retry
         if (auth.currentUser == null) {
-            await signUpAnonymously(auth)
+            return undefined
         } else {
-            console.log("Login Success")
+            return auth.currentUser
         }
     }
+    return auth.currentUser
 }
 
-async function signUpAnonymously(auth: Auth) {
-    if (auth.currentUser == null) {
-        // Anonymous SignUp
-
-        console.log("Sign Up Anonymously")
-        await signInAnonymously(auth)
+async function challengeAndLoginPush(auth: Auth, router: AppRouterInstance, currentPath: string) {
+    const tried = await challengeLogin(auth)
+    if (tried == undefined) {
+        // not logged in
+        pushRouterToLoginPage(router, currentPath)
     }
 }
 
 export function useFirebaseAuth() {
     const ctx = React.useContext(firebaseAuthContext)
+    const router = useRouter()
+    const currentPath = usePathname()
+
     return {
         ...ctx,
         waitForUser: async () => {
+            console.log("wait for user")
             const auth = getAuth(firebaseApp)
 
+            if (auth.currentUser) {
+                return auth.currentUser
+            }
+
+            const tried = await challengeLogin(auth)
+            if (tried != undefined) {
+                return tried
+            }
+
+            // ログインを促す
+            pushRouterToLoginPage(router, currentPath)
+
+            // TODO ログイン前のリクエストが無限に残り、ログイン後に一斉に送信されるのでは
             return new Promise<User>(resolve => {
                 if (auth.currentUser != null) {
                     resolve(auth.currentUser)
@@ -98,4 +112,14 @@ export function useFirebaseAuth() {
             },)
         }
     }
+}
+
+function pushRouterToLoginPage(router: AppRouterInstance, currentPath: string) {
+
+    // check if current path is login page, then ignore
+    if (currentPath == "/auth/login/") {
+        return
+    }
+
+    router.push("/auth/login/")
 }
