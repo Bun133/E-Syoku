@@ -1,9 +1,9 @@
 "use client"
-import {Menu, UserCheck, UserX} from "react-feather";
+import {Menu} from "react-feather";
 import React, {useContext, useEffect} from "react";
 import {firebaseAuthContext, FirebaseAuthContextType} from "@/lib/firebase/authentication";
 import {signOut} from "@firebase/auth";
-import {Center, Divider, Flex, HStack, VStack} from "@chakra-ui/layout";
+import {Center, Divider, Flex, VStack} from "@chakra-ui/layout";
 import {
     Box,
     Drawer,
@@ -15,7 +15,7 @@ import {
     DrawerOverlay,
     Text
 } from "@chakra-ui/react";
-import {AdminOnly, Authed, AuthState, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/AuthTypeProvider";
+import {AdminOnly, Authed, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/AuthTypeProvider";
 import {useDisclosure} from "@chakra-ui/hooks";
 import Link from "next/link";
 import {NotificationEnsure} from "@/lib/firebase/notification";
@@ -95,13 +95,13 @@ export function HangBar() {
                             </VStack>
                             <VStack>
                                 <HangEntity text={"ホーム"} href="/" onClick={onClose}/>
-                                <Authed types={["ANONYMOUS","ADMIN"]} success={()=>{
+                                <Authed types={["ANONYMOUS", "ADMIN"]} success={() => {
                                     return (
-                                        <>
-                                            <HangEntity text={"新規注文"} href="/buy" onClick={onClose}/>
-                                            <HangEntity text={"食券一覧"} href="/tickets" onClick={onClose}/>
-                                            <HangEntity text={"決済一覧"} href="/payment" onClick={onClose}/>
-                                        </>
+                                        <BuyingEntries onClose={onClose}/>
+                                    )
+                                }} fail={() => {
+                                    return (
+                                        <BuyingEntries onClose={onClose}/>
                                     )
                                 }}/>
                             </VStack>
@@ -131,8 +131,10 @@ export function HangBar() {
                                     <Divider/>
                                 </VStack>
                                 <VStack>
-                                    <HangEntity text={"食券呼び出し"} href="/shopui/tickets/call" onClick={onClose}/>
-                                    <HangEntity text={"食券一覧画面"} href="/shopui/tickets/display" onClick={onClose}/>
+                                    <HangEntity text={"食券呼び出し"} href="/shopui/tickets/call"
+                                                onClick={onClose}/>
+                                    <HangEntity text={"食券一覧画面"} href="/shopui/tickets/display"
+                                                onClick={onClose}/>
                                 </VStack>
                             </VStack>
                         </ShopOnly>
@@ -188,5 +190,15 @@ function NotificationErrorComp(params: { popup: () => void }) {
                 <Text>通知設定に失敗しました</Text>
             </Center>
         </Box>
+    )
+}
+
+function BuyingEntries(params:{onClose:()=>void}) {
+    return (
+        <>
+            <HangEntity text={"新規注文"} href="/buy" onClick={params.onClose}/>
+            <HangEntity text={"食券一覧"} href="/tickets" onClick={params.onClose}/>
+            <HangEntity text={"決済一覧"} href="/payment" onClick={params.onClose}/>
+        </>
     )
 }

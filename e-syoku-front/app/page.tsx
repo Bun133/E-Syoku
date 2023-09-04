@@ -21,16 +21,14 @@ export default function Home() {
             <Flex h={"full"} w={"67%"} direction={"column"} alignItems={"center"}>
                 <Authed types={["ANONYMOUS", "ADMIN"]} success={(type) => {
                     return (
-                        <>
-                            <LinkBtn href="/buy" text="新規購入"/>
-                            <Spacer/>
-                            <LinkBtn href="/payment" text="支払い一覧"/>
-                            <Spacer/>
-                            <LinkBtn href="/tickets" text="食券一覧"/>
-                            <Spacer/>
-                        </>
+                        <BuyingEntries/>
                     )
-                }}/>
+                }} fail={() => {
+                    return (
+                        <BuyingEntries/>
+                    )
+                }}
+                />
                 <LinkBtn href="/help/list" text="ヘルプ一覧"/>
                 <CashierOnly>
                     <Spacer/>
@@ -55,5 +53,18 @@ function LinkBtn(params: { href: string, text: string }) {
                 </Center>
             </Link>
         </Box>
+    )
+}
+
+function BuyingEntries() {
+    return (
+        <>
+            <LinkBtn href="/buy" text="新規購入"/>
+            <Spacer/>
+            <LinkBtn href="/payment" text="支払い一覧"/>
+            <Spacer/>
+            <LinkBtn href="/tickets" text="食券一覧"/>
+            <Spacer/>
+        </>
     )
 }
