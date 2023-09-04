@@ -15,7 +15,7 @@ import {
     DrawerOverlay,
     Text
 } from "@chakra-ui/react";
-import {AdminOnly, AuthState, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/AuthTypeProvider";
+import {AdminOnly, Authed, AuthState, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/AuthTypeProvider";
 import {useDisclosure} from "@chakra-ui/hooks";
 import Link from "next/link";
 import {NotificationEnsure} from "@/lib/firebase/notification";
@@ -95,9 +95,15 @@ export function HangBar() {
                             </VStack>
                             <VStack>
                                 <HangEntity text={"ホーム"} href="/" onClick={onClose}/>
-                                <HangEntity text={"新規注文"} href="/buy" onClick={onClose}/>
-                                <HangEntity text={"食券一覧"} href="/tickets" onClick={onClose}/>
-                                <HangEntity text={"決済一覧"} href="/payment" onClick={onClose}/>
+                                <Authed types={["ANONYMOUS","ADMIN"]} success={()=>{
+                                    return (
+                                        <>
+                                            <HangEntity text={"新規注文"} href="/buy" onClick={onClose}/>
+                                            <HangEntity text={"食券一覧"} href="/tickets" onClick={onClose}/>
+                                            <HangEntity text={"決済一覧"} href="/payment" onClick={onClose}/>
+                                        </>
+                                    )
+                                }}/>
                             </VStack>
                         </VStack>
 
