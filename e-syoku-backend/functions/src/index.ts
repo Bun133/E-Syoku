@@ -502,6 +502,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
 
 /**
  * TicketDisplayのデータをすべて読み取って返却します
+ * 完了済みのTicketは返却しません
  * Param:
  *  - shipId:string
  * Response:
@@ -518,7 +519,7 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             if (param.param == undefined) return {result: param.error}
             const shopId = param.param
 
-            const pTickets: TypedResult<PrettyTicket>[] = await Promise.all((await listTicketForShop(refs, shopId)).map(async e => prettyTicket(refs, e)))
+            const pTickets: TypedResult<PrettyTicket>[] = await Promise.all((await listTicketForShop(refs, shopId)).filter(e => e.status !== "RESOLVED").map(async e => prettyTicket(refs, e)))
 
             const data = pTickets.filter(isTypedSuccess).map((e: TypedSuccess<PrettyTicket>) => e.data)
 

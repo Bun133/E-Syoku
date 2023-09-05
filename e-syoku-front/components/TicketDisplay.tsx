@@ -10,14 +10,12 @@ export type DisplaySelection = {
     processing: boolean,
     called: boolean,
     informed: boolean,
-    resolved: boolean,
 }
 
 const defaultDisplaySelection: DisplaySelection = {
     processing: true,
     called: true,
     informed: false,
-    resolved: false,
 }
 
 export function TicketDisplay(params: {
@@ -37,14 +35,11 @@ export function TicketDisplay(params: {
             {selection.processing &&
                 <TicketDisplayRow title={"調理中"} displays={processing} ticketColor={ticketColor("調理中")}
                                   disableAutoScroll={params.disableAutoScroll}/>}
-            {selection.resolved &&
+            {selection.called &&
                 <TicketDisplayRow title={"受け渡し可能"} displays={called} ticketColor={ticketColor("受け取り待ち")}
                                   disableAutoScroll={params.disableAutoScroll}/>}
             {selection.informed &&
                 <TicketDisplayRow title={"お呼び出し"} displays={informed} ticketColor={ticketColor("お知らせ")}
-                                  disableAutoScroll={params.disableAutoScroll}/>}
-            {selection.resolved &&
-                <TicketDisplayRow title={"完了"} displays={resolved} ticketColor={ticketColor("完了")}
                                   disableAutoScroll={params.disableAutoScroll}/>}
         </VStack>
     )

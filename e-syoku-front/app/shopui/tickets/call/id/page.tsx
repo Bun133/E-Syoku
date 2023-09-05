@@ -48,12 +48,7 @@ export default function Page() {
 
                                      return (
                                          <VStack w={"full"} h={"full"}>
-                                             <TicketDisplay data={res.data.tickets} displaySelection={{
-                                                 processing: true,
-                                                 called: true,
-                                                 resolved: true,
-                                                 informed: true
-                                             }} disableAutoScroll={true}/>
+                                             <TicketDisplay data={res.data.tickets} disableAutoScroll={true}/>
                                              <Btn onClick={reload}>再読み込み</Btn>
                                          </VStack>
                                      )
