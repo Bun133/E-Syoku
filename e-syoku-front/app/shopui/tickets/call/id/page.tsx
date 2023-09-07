@@ -25,7 +25,7 @@ export default function Page() {
     const shopId = params.get("shopId") ?? undefined
 
     const reloadFunc = useRef<() => Promise<void> | null>()
-    const apiError = useRef<EndPointErrorResponse<any>>()
+    const [apiError,setAPIError] = useState<EndPointErrorResponse<any>>()
     const readTicket = useRef<PrettyTicket>()
 
     if (!shopId) {
@@ -73,12 +73,12 @@ export default function Page() {
                         reloadFunc.current?.()
                         readTicket.current = r.data.ticket
                     } else {
-                        apiError.current = r
+                        setAPIError(r)
                     }
                 }}
             />
             <ReadModal readTicket={readTicket.current}/>
-            <APIErrorModal error={apiError.current}/>
+            <APIErrorModal error={apiError}/>
         </HStack>
     )
 }

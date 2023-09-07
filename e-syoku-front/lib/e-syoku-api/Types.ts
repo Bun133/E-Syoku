@@ -228,7 +228,7 @@ export const defaultResponseFormat = resultSchema
 export type DefaultResponseFormat = z.infer<typeof defaultResponseFormat>
 
 export const ticketResponse = defaultResponseFormat.and(z.object({
-    ticket: prettyTicketSchema
+    ticket: prettyTicketSchema.optional()
 }))
 
 export type TicketResponse = z.infer<typeof ticketResponse>
