@@ -63,7 +63,8 @@ export const listenNotificationEndpoint = endpoint("listenNotification", z.objec
 
 export const callTicketStackEndpoint = endpoint("callTicketStack", z.object({
     shopId: uniqueId,
-    count: z.number()
+    count: z.number(),
+    thresholdMin:z.number()
 }), defaultResponseFormat.and(z.object({
     calledTicketIds: z.string().array()
 })))

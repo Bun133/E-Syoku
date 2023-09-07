@@ -10,7 +10,8 @@ import {
     errorResult,
     failedToGetItemDataError,
     failedToRegisterTicketError,
-    injectError, isError,
+    injectError,
+    isError,
     isSingleError,
     isSuccess,
     isTypedSuccess,
@@ -332,8 +333,9 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
  * @param messaging
  * @param shopId
  * @param count
+ * @param ignoreThreshold
  */
-export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, shopId: string, count: number): Promise<Success & {
+export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, shopId: string, count: number, ignoreThreshold: number): Promise<Success & {
     calledTicketIds: string[]
 }> {
     const ticketData: Ticket[] = (await listTicketForShop(ref, shopId)).sort((a, b) => {
@@ -343,7 +345,7 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
 
     let calledTicketCount: number = 0
     ticketData.forEach((e) => {
-        if (e.status === "CALLED") {
+        if (e.status === "CALLED" && !isElapsedIgnoreThreshold(e,ignoreThreshold)){
             calledTicketCount++
         }
     })
@@ -393,4 +395,9 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
         }
         return suc
     }
+}
+
+function isElapsedIgnoreThreshold(ticket:Ticket,ignoreThresholdMin:number):boolean{
+    const diff = (Date.now() - ticket.lastStatusUpdated.toMillis()) / 1000 / 60
+    return diff > ignoreThresholdMin
 }

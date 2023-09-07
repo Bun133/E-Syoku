@@ -669,8 +669,10 @@ export const callTicketStack = standardFunction(async (req, res) => {
             if (count.param == undefined) return {result: count.error}
             const shopId = requireParameter("shopId", z.string(), req)
             if (shopId.param == undefined) return {result: shopId.error}
+            const ignoreThresholdMin = requireParameter("thresholdMin", z.number(), req)
+            if (ignoreThresholdMin.param == undefined) return {result: ignoreThresholdMin.error}
 
-            const res = await callTicketStackFunc(refs, messaging, shopId.param, count.param)
+            const res = await callTicketStackFunc(refs, messaging, shopId.param, count.param,ignoreThresholdMin.param)
             return {
                 result: res
             }

@@ -25,7 +25,7 @@ export default function Page() {
     const shopId = params.get("shopId") ?? undefined
 
     const reloadFunc = useRef<() => Promise<void> | null>()
-    const [apiError,setAPIError] = useState<EndPointErrorResponse<any>>()
+    const [apiError, setAPIError] = useState<EndPointErrorResponse<any>>()
     const readTicket = useRef<PrettyTicket>()
 
     if (!shopId) {
@@ -88,10 +88,14 @@ type AutoCallSettings = {
 } | {
     toAutoCall: true,
     toCallCount: number,
+    // 指定時間経過後も受け取りに来ないお客さんは、呼び出し人数カウントから除外する
+    ignoreTimeThresholdMin: number
 }
 
 const defaultCallCount = 10
 const maxCallCount = 20
+
+const defaultIgnoreTimeThresholdMin = 30
 
 function CallRight(params: {
     shopId: string,
@@ -114,7 +118,8 @@ function CallRight(params: {
         if (callSettings.toAutoCall) {
             const r = await callTicketStack({
                 shopId: params.shopId,
-                count: callSettings.toCallCount
+                count: callSettings.toCallCount,
+                thresholdMin: callSettings.ignoreTimeThresholdMin
             })
 
             if (r.isSuccess) {
@@ -135,14 +140,22 @@ function CallRight(params: {
 
     function editIncrementCallCount() {
         if (editingCallSettings.toAutoCall) {
-            setEditingCallSettings({toAutoCall: true, toCallCount: editingCallSettings.toCallCount + 1})
+            setEditingCallSettings({
+                toAutoCall: true,
+                toCallCount: editingCallSettings.toCallCount + 1,
+                ignoreTimeThresholdMin: editingCallSettings.ignoreTimeThresholdMin
+            })
         }
     }
 
     function editDecrementCallCount() {
         if (editingCallSettings.toAutoCall) {
             if (editingCallSettings.toCallCount > 0) {
-                setEditingCallSettings({toAutoCall: true, toCallCount: editingCallSettings.toCallCount - 1})
+                setEditingCallSettings({
+                    toAutoCall: true,
+                    toCallCount: editingCallSettings.toCallCount - 1,
+                    ignoreTimeThresholdMin: editingCallSettings.ignoreTimeThresholdMin
+                })
             }
         }
     }
@@ -163,6 +176,44 @@ function CallRight(params: {
         }
     }
 
+    function editIncrementThreshold() {
+        if (editingCallSettings.toAutoCall) {
+            setEditingCallSettings({
+                toAutoCall: true,
+                toCallCount: editingCallSettings.toCallCount,
+                ignoreTimeThresholdMin: editingCallSettings.ignoreTimeThresholdMin + 1
+            })
+        }
+    }
+
+    function editDecrementThreshold() {
+        if (editingCallSettings.toAutoCall) {
+            if (editingCallSettings.ignoreTimeThresholdMin > 0) {
+                setEditingCallSettings({
+                    toAutoCall: true,
+                    toCallCount: editingCallSettings.toCallCount,
+                    ignoreTimeThresholdMin: editingCallSettings.ignoreTimeThresholdMin - 1
+                })
+            }
+        }
+    }
+
+    function editIncrementThresholdIsDisabled() {
+        return !editingCallSettings.toAutoCall
+    }
+
+    function editDecrementThresholdIsDisabled() {
+        return !editingCallSettings.toAutoCall
+    }
+
+    function thresholdToString(callSetting: AutoCallSettings) {
+        if (callSetting.toAutoCall) {
+            return callSetting.ignoreTimeThresholdMin.toString()
+        } else {
+            return "未設定"
+        }
+    }
+
     function openSettingModal() {
         // Copy setting to editing setting
         setEditingCallSettings(callSettings)
@@ -171,7 +222,11 @@ function CallRight(params: {
 
     function editAutoCall(toAutoCall: boolean) {
         if (toAutoCall) {
-            setEditingCallSettings({toAutoCall: true, toCallCount: defaultCallCount})
+            setEditingCallSettings({
+                toAutoCall: true,
+                toCallCount: defaultCallCount,
+                ignoreTimeThresholdMin: defaultIgnoreTimeThresholdMin
+            })
         } else {
             setEditingCallSettings({toAutoCall: false})
         }
@@ -238,6 +293,13 @@ function CallRight(params: {
                                         <Text px={2}>{callCountToString(editingCallSettings)}</Text>
                                         <Btn onClick={editIncrementCallCount}
                                              disabled={editIncrementIsDisabled()}>+</Btn>
+                                    </HStack>
+                                    <HStack>
+                                        <Btn onClick={editDecrementThreshold}
+                                             disabled={editDecrementThresholdIsDisabled()}>-</Btn>
+                                        <Text px={2}>{thresholdToString(editingCallSettings)}</Text>
+                                        <Btn onClick={editIncrementThreshold}
+                                             disabled={editIncrementThresholdIsDisabled()}>+</Btn>
                                     </HStack>
                                     <Btn onClick={applyEditing} disabled={isApplyDisabled()}>変更を確定</Btn>
                                 </VStack>
