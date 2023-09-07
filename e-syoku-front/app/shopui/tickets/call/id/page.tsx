@@ -91,6 +91,7 @@ type AutoCallSettings = {
 }
 
 const defaultCallCount = 10
+const maxCallCount = 20
 
 function CallRight(params: {
     shopId: string,
@@ -147,7 +148,7 @@ function CallRight(params: {
     }
 
     function editIncrementIsDisabled() {
-        return !editingCallSettings.toAutoCall
+        return !editingCallSettings.toAutoCall || editingCallSettings.toCallCount >= maxCallCount
     }
 
     function editDecrementIsDisabled() {
