@@ -170,7 +170,7 @@ function CallRight(params: {
 
     function callCountToString(callSetting: AutoCallSettings) {
         if (callSetting.toAutoCall) {
-            return callSetting.toCallCount.toString()
+            return callSetting.toCallCount.toString() + "人"
         } else {
             return "未設定"
         }
@@ -208,7 +208,7 @@ function CallRight(params: {
 
     function thresholdToString(callSetting: AutoCallSettings) {
         if (callSetting.toAutoCall) {
-            return callSetting.ignoreTimeThresholdMin.toString()
+            return callSetting.ignoreTimeThresholdMin.toString() + "分"
         } else {
             return "未設定"
         }
@@ -267,6 +267,10 @@ function CallRight(params: {
                         <Text>常に呼ぶ人数：</Text>
                         <Text>{callCountToString(callSettings)}</Text>
                     </HStack>
+                    <HStack>
+                        <Text>放置基準時間：</Text>
+                        <Text>{thresholdToString(callSettings)}</Text>
+                    </HStack>
                     <Btn onClick={openSettingModal}>設定変更</Btn>
 
 
@@ -288,18 +292,26 @@ function CallRight(params: {
                                             }}/>
                                     </HStack>
                                     <HStack>
-                                        <Btn onClick={editDecrementCallCount}
-                                             disabled={editDecrementIsDisabled()}>-</Btn>
-                                        <Text px={2}>{callCountToString(editingCallSettings)}</Text>
-                                        <Btn onClick={editIncrementCallCount}
-                                             disabled={editIncrementIsDisabled()}>+</Btn>
+                                        <Text>常に呼び出す人数</Text>
+                                        <Spacer minWidth={"2rem"}/>
+                                        <HStack>
+                                            <Btn onClick={editDecrementCallCount}
+                                                 disabled={editDecrementIsDisabled()}>-</Btn>
+                                            <Text px={2}>{callCountToString(editingCallSettings)}</Text>
+                                            <Btn onClick={editIncrementCallCount}
+                                                 disabled={editIncrementIsDisabled()}>+</Btn>
+                                        </HStack>
                                     </HStack>
                                     <HStack>
-                                        <Btn onClick={editDecrementThreshold}
-                                             disabled={editDecrementThresholdIsDisabled()}>-</Btn>
-                                        <Text px={2}>{thresholdToString(editingCallSettings)}</Text>
-                                        <Btn onClick={editIncrementThreshold}
-                                             disabled={editIncrementThresholdIsDisabled()}>+</Btn>
+                                        <Text>放置基準時間</Text>
+                                        <Spacer minWidth={"2rem"}/>
+                                        <HStack>
+                                            <Btn onClick={editDecrementThreshold}
+                                                 disabled={editDecrementThresholdIsDisabled()}>-</Btn>
+                                            <Text px={2}>{thresholdToString(editingCallSettings)}</Text>
+                                            <Btn onClick={editIncrementThreshold}
+                                                 disabled={editIncrementThresholdIsDisabled()}>+</Btn>
+                                        </HStack>
                                     </HStack>
                                     <Btn onClick={applyEditing} disabled={isApplyDisabled()}>変更を確定</Btn>
                                 </VStack>
