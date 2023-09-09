@@ -315,7 +315,8 @@ export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS", "CASHIER"])
 export type AuthType = z.infer<typeof authType>
 
 export const authStateResponse = defaultResponseFormat.and(z.object({
-    authType: authType.optional()
+    authType: authType.optional(),
+    shopId: z.string().optional(),
 }))
 
 export const grantPermissionRequest = z.object({

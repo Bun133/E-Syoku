@@ -545,9 +545,18 @@ export const ticketDisplay = standardFunction(async (req, res) => {
 export const authState = standardFunction(async (req, res) => {
     await onPost(req, res, async () => {
         return authed(auth, refs, req, res, (authInstance) => {
-            const suc: Success = {
-                isSuccess: true,
-                authType: authInstance.authType
+            let suc: Success
+            if (authInstance.authType === "SHOP") {
+                suc = {
+                    isSuccess: true,
+                    authType: authInstance.authType,
+                    shopId: authInstance.shopId
+                }
+            }else{
+                suc = {
+                    isSuccess: true,
+                    authType: authInstance.authType,
+                }
             }
             return {
                 result: suc,
@@ -672,7 +681,7 @@ export const callTicketStack = standardFunction(async (req, res) => {
             const ignoreThresholdMin = requireParameter("thresholdMin", z.number(), req)
             if (ignoreThresholdMin.param == undefined) return {result: ignoreThresholdMin.error}
 
-            const res = await callTicketStackFunc(refs, messaging, shopId.param, count.param,ignoreThresholdMin.param)
+            const res = await callTicketStackFunc(refs, messaging, shopId.param, count.param, ignoreThresholdMin.param)
             return {
                 result: res
             }
