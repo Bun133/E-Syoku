@@ -23,6 +23,10 @@ export default function Home() {
                     return (
                         <BuyingEntries/>
                     )
+                }} notLoaded={() => {
+                    return (
+                        <BuyingEntries/>
+                    )
                 }}/>
                 <CashierOnly>
                     <LinkBtn href="/shopui/payment/scan" text="決済取扱"/>
