@@ -26,7 +26,7 @@ export default function Page() {
 
     const reloadFunc = useRef<() => Promise<void> | null>()
     const [apiError, setAPIError] = useState<EndPointErrorResponse<any>>()
-    const readTicket = useRef<PrettyTicket>()
+    const [readTicket,setReadTicket] = useState<PrettyTicket>()
 
     if (!shopId) {
         return (
@@ -71,13 +71,13 @@ export default function Page() {
                 onBarcodeRead={async (r: EndPointResponse<TicketResponse>) => {
                     if (r.isSuccess) {
                         reloadFunc.current?.()
-                        readTicket.current = r.data.ticket
+                        setReadTicket(r.data.ticket)
                     } else {
                         setAPIError(r)
                     }
                 }}
             />
-            <ReadModal readTicket={readTicket.current}/>
+            <ReadModal readTicket={readTicket}/>
             <APIErrorModal error={apiError}/>
         </HStack>
     )
