@@ -3,14 +3,12 @@ import {AuthState} from "@/lib/e-syoku-api/AuthTypeProvider";
 import {Center, Heading} from "@chakra-ui/layout";
 import {Spinner, VStack} from "@chakra-ui/react";
 import {useRouter} from "next/navigation";
-import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {listShopsEndPoint} from "@/lib/e-syoku-api/EndPoints";
 import Btn from "@/components/btn";
 
 export default function Page() {
     const router = useRouter()
-    const auth = useFirebaseAuth()
     return (
         <AuthState comp={(type) => {
             if (!type) {
@@ -20,10 +18,14 @@ export default function Page() {
                     </Center>
                 )
             } else {
-                if (type.authType === "SHOP") {
-                    router.push(`/shopui/tickets/call/id?shopId=${auth.user!!.uid}`)
+                if (!(type.authType === "SHOP" || type.authType === "ADMIN")) {
+                    router.push(`/`)
                     return <></>
-                } else if (type.authType === "ADMIN") {
+                }
+                if (type.authType === "SHOP" && type.shopId) {
+                    router.push(`/shopui/tickets/call/id?shopId=${type.shopId}`)
+                    return <></>
+                } else {
                     return (
                         <VStack>
                             <Heading>店舗選択</Heading>
@@ -42,9 +44,6 @@ export default function Page() {
                             }}/>
                         </VStack>
                     )
-                } else {
-                    router.push(`/`)
-                    return <></>
                 }
             }
         }}/>
