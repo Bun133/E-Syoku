@@ -24,7 +24,7 @@ export function TicketDisplay(params: {
     disableAutoScroll?: boolean
 }) {
     const selection = params.displaySelection ?? defaultDisplaySelection
-    const sorted = params.data.sort()
+    const sorted = params.data.map(e => e.ticketNum).sort().map(e => params.data.find(t => t.ticketNum === e)!!)
     const processing = sorted.filter(e => e.status === "注文済み")
     const called = sorted.filter(e => e.status === "受け取り待ち")
     const informed = sorted.filter(e => e.status === "お知らせ")
