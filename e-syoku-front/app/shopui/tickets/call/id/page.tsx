@@ -251,7 +251,7 @@ function CallRight(params: {
     }
 
     async function onBarcodeRead(barcode: string) {
-        const r = await resolveTicket({barcode: barcode})
+        const r = await resolveTicket({barcode: barcode, shopId: params.shopId})
         params.onBarcodeRead(r)
         // バーコード読み取り後呼び出し処理
         await callStack()
@@ -331,7 +331,9 @@ function CallRight(params: {
     )
 }
 
-function CallEnabledText(params: { toAutoCall: boolean }) {
+function CallEnabledText(params: {
+    toAutoCall: boolean
+}) {
     if (params.toAutoCall) {
         return (
             <HStack>

@@ -21,16 +21,16 @@ import {
     ticketDisplayResponse,
     ticketIdRequest,
     ticketResponse,
-    ticketSpecifyRequest,
+    shopTicketSpecifyRequest,
     uniqueId
 } from "@/lib/e-syoku-api/Types";
 
 export const ticketStatusEndPoint = endpoint("ticketStatus", ticketIdRequest, ticketResponse)
 export const listTicketsEndPoint = endpoint("listTickets", z.object({}), listTicketResponse)
 export const listShopsEndPoint = endpoint("listShops", z.object({}), listShopResponse)
-export const callTicketEndPoint = endpoint("callTicket", ticketSpecifyRequest, ticketResponse)
-export const cancelCallingEndPoint = endpoint("cancelCalling", ticketSpecifyRequest, ticketResponse)
-export const resolveTicketEndPoint = endpoint("resolveTicket", ticketSpecifyRequest, ticketResponse)
+export const callTicketEndPoint = endpoint("callTicket", shopTicketSpecifyRequest, ticketResponse)
+export const cancelCallingEndPoint = endpoint("cancelCalling", shopTicketSpecifyRequest, ticketResponse)
+export const resolveTicketEndPoint = endpoint("resolveTicket", shopTicketSpecifyRequest, ticketResponse)
 
 export const listGoodsEndPoint = endpoint("listGoods", z.object({}), listGoodsResponse)
 

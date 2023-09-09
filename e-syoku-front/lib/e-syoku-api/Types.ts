@@ -250,9 +250,10 @@ export const registerTicketResponse = defaultResponseFormat.and(z.object({
 export const ticketIdRequest = z.object({
     ticketId: uniqueId,
 })
-export const ticketSpecifyRequest = z.object({
+export const shopTicketSpecifyRequest = (z.object({
     barcode: z.string()
-}).or(ticketIdRequest)
+}).or(ticketIdRequest))
+    .and(z.object({shopId: uniqueId}))
 
 export const waitingDataSchema = z.object({waiting: z.number()})
 
