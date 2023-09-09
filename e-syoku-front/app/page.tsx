@@ -23,21 +23,15 @@ export default function Home() {
                     return (
                         <BuyingEntries/>
                     )
-                }} fail={() => {
-                    return (
-                        <BuyingEntries/>
-                    )
-                }}
-                />
-                <LinkBtn href="/help/list" text="ヘルプ一覧"/>
+                }}/>
                 <CashierOnly>
-                    <Spacer/>
                     <LinkBtn href="/shopui/payment/scan" text="決済取扱"/>
                 </CashierOnly>
                 <ShopOnly>
-                    <Spacer/>
                     <LinkBtn href="/shopui/tickets/call" text="食券呼び出し"/>
                 </ShopOnly>
+                <Spacer/>
+                <LinkBtn href="/help/list" text="ヘルプ一覧"/>
             </Flex>
         </Center>
     )
