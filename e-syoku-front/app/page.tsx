@@ -30,11 +30,12 @@ export default function Home() {
                 }}/>
                 <CashierOnly>
                     <LinkBtn href="/shopui/payment/scan" text="決済取扱"/>
+                    <Spacer/>
                 </CashierOnly>
                 <ShopOnly>
                     <LinkBtn href="/shopui/tickets/call" text="食券呼び出し"/>
+                    <Spacer/>
                 </ShopOnly>
-                <Spacer/>
                 <LinkBtn href="/help/list" text="ヘルプ一覧"/>
             </Flex>
         </Center>
