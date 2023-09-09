@@ -55,6 +55,7 @@ const helpEntries: HelpEntry[] = [
     errorMd("INPUT_WRONG_BARCODE"),
     errorMd("TICKET_STATUS_INVALID"),
     errorMd("INTERNAL_BARCODE_BIND_NOT_FOUND"),
+    errorMd("TICKET_NOT_SHOP_MATCH"),
     hintMd("HowToOrder.md", "注文方法について"),
     hintMd("HowToCheckTicket.md", "食券を確認したい"),
     hintMd("HowToPay.md", "支払方法について"),
