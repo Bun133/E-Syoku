@@ -6,7 +6,8 @@ import {useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 
 export const AuthTypeInfoSchema = z.object({
-    authType: authType.optional()
+    authType: authType.optional(),
+    shopId: z.string().optional(),
 })
 
 export type AuthTypeInfo = z.infer<typeof AuthTypeInfoSchema>
@@ -26,7 +27,7 @@ export const AuthTypeProvider = (params: { children: React.ReactNode }) => {
             fetch({}).then((data) => {
                 if (data) {
                     if (data.isSuccess) {
-                        setValue({authType: data.data.authType})
+                        setValue({authType: data.data.authType, shopId: data.data.shopId})
                     } else {
                         setValue({authType: undefined})
                     }
