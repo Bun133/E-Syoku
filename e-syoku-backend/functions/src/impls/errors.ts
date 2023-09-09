@@ -200,3 +200,8 @@ export const paymentIdNotFoundError = inputWrongError("PaymentId|Barcode", "決�
 export const prettyTicketFailed = internalError("TicketデータをPretty化に失敗しました", "PRETTY_TICKET_FAILED")
 
 export const cmsRemainTypeNotMatch = cmsError("RemainTypeがremainNumberSchemaに合致しません", "REMAIN_TYPE_NOT_MATCH")
+
+export const ticketNotShopMatchError:ErrorType = {
+    error:"チケットが紐づいている店舗が操作している店舗と合致しません",
+    errorCode:"TICKET_NOT_SHOP_MATCH"
+}

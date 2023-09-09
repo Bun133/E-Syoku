@@ -185,6 +185,8 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
                 let barcode = requireOptionalParameter("barcode", z.string().optional(), request);
                 let ticketIdParam = requireOptionalParameter("ticketId", z.string().optional(), request);
+                let shopId = requireParameter("shopId", z.string(), request);
+                if (shopId.param === undefined) return {result: shopId.error}
 
                 let ticketId: string | undefined
 
@@ -208,7 +210,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
                 if (ticketId) {
                     // チケットのステータスを変更します
-                    let called = await updateTicketStatusByIds(refs, messaging, ticketId, fromStatus, toStatus, undefined, sendNotification)
+                    let called = await updateTicketStatusByIds(refs, messaging, ticketId, shopId.param, fromStatus, toStatus, undefined, sendNotification)
                     if (!called.isSuccess) {
                         const err: Error = errorResult(called)
                         return {
@@ -552,7 +554,7 @@ export const authState = standardFunction(async (req, res) => {
                     authType: authInstance.authType,
                     shopId: authInstance.shopId
                 }
-            }else{
+            } else {
                 suc = {
                     isSuccess: true,
                     authType: authInstance.authType,
