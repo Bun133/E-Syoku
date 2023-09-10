@@ -5,15 +5,17 @@ import Btn from "@/components/btn";
 import {useFirebaseAuth} from "@/lib/firebase/authentication";
 import {Auth, GoogleAuthProvider, signInWithPopup} from "@firebase/auth";
 import {Loader} from "react-feather";
-import {Center} from "@chakra-ui/layout";
-import {Text} from "@chakra-ui/react";
+import {Center, VStack} from "@chakra-ui/layout";
+import {Checkbox, Spacer, Text} from "@chakra-ui/react";
 import {InfoBox} from "@/components/messageBox/InfoBox";
 import {useRouter} from "next/navigation";
+import {useState} from "react";
 
 export default function Page() {
     const context = useFirebaseAuth()
     const auth = context.auth
     const router = useRouter()
+    const [agreed, setAgreed] = useState(false)
 
 
     if (!auth) {
@@ -39,15 +41,27 @@ export default function Page() {
                 </Text>
             </InfoBox>
             <Center p={2}>
-                <Btn onClick={async () => {
-                    await loginWithGoogle(auth)
-                    router.push("/")
-                }}>Googleでログイン</Btn>
+                <VStack>
+                    <Btn href={"/terms"}>利用規約を読む</Btn>
+                    <Checkbox onChange={e => setAgreed(e.target.checked)} checked={false}>利用規約に同意する</Checkbox>
+                    <Spacer/>
+                    <Btn onClick={async () => {
+                        if (await loginWithGoogle(auth)) {
+                            router.push("/")
+                        }
+                    }} disabled={!agreed}>Googleでログイン</Btn>
+                </VStack>
             </Center>
         </div>
     )
 }
 
 async function loginWithGoogle(auth: Auth) {
-    return await signInWithPopup(auth, new GoogleAuthProvider())
+    try {
+        await signInWithPopup(auth, new GoogleAuthProvider())
+        return true
+    } catch (e) {
+        console.error(e)
+    }
+    return false
 }
