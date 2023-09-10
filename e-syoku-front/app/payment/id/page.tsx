@@ -28,7 +28,7 @@ export default function Page() {
                                         決済前のため、商品は確保されていません
                                     </Text>
                                     <Text>
-                                        店頭にて決済をお願いします
+                                        決済用レジにて決済をお願いします
                                     </Text>
                                 </WarningBox>
                             )}
