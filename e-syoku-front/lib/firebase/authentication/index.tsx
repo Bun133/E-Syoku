@@ -116,8 +116,8 @@ export function useFirebaseAuth() {
 
 function pushRouterToLoginPage(router: AppRouterInstance, currentPath: string) {
 
-    // check if current path is login page, then ignore
-    if (currentPath == "/auth/login/") {
+    // check if current path is login page or pwa page, then ignore
+    if (currentPath.includes("login") || currentPath.includes("pwa")) {
         return
     }
 

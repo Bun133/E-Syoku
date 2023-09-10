@@ -19,11 +19,14 @@ import {AdminOnly, Authed, CashierOnly, ShopOnly} from "@/lib/e-syoku-api/AuthTy
 import {useDisclosure} from "@chakra-ui/hooks";
 import Link from "next/link";
 import {NotificationEnsure} from "@/lib/firebase/notification";
-import {Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
-import {MdComponent} from "@/components/error/ErrorMdComponent";
+import {usePathname, useRouter} from "next/navigation";
 
 
-function HangEntity(params: { text: string, onClick?: () => void, href?: string }) {
+function HangEntity(params: {
+    text: string,
+    onClick?: () => void,
+    href?: string
+}) {
     if (params.href) {
         return (
             <Link href={params.href}>
@@ -43,7 +46,8 @@ function HangEntity(params: { text: string, onClick?: () => void, href?: string 
 export function HangBar() {
     const auth = useContext(firebaseAuthContext)
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const {isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose} = useDisclosure()
+    const router = useRouter()
+    const currentPath = usePathname()
 
     function isPWA() {
         return window.matchMedia('(display-mode: standalone)').matches
@@ -51,10 +55,10 @@ export function HangBar() {
 
     useEffect(() => {
         if (!isPWA()) {
-            // Show Modal
-            onModalOpen()
+            // Show PWA Page
+            router.push("/pwa")
         }
-    }, []);
+    }, [currentPath]);
 
     return (
         <>
@@ -69,18 +73,6 @@ export function HangBar() {
                     return null
                 }}/>
             </Flex>
-            <Modal isOpen={isModalOpen} onClose={onModalClose}>
-                <ModalOverlay/>
-                <ModalContent>
-                    <ModalCloseButton/>
-                    <ModalHeader>
-                        <Text></Text>
-                    </ModalHeader>
-                    <ModalBody>
-                        <MdComponent mdFileName={"pwa.md"}/>
-                    </ModalBody>
-                </ModalContent>
-            </Modal>
             <Drawer placement={"left"} isOpen={isOpen} onClose={onClose}>
                 <DrawerOverlay/>
                 <DrawerContent>
@@ -183,7 +175,9 @@ async function logOut(auth: FirebaseAuthContextType) {
     }
 }
 
-function NotificationErrorComp(params: { popup: () => void }) {
+function NotificationErrorComp(params: {
+    popup: () => void
+}) {
     return (
         <Box backgroundColor={"red"} onClick={params.popup} p={1} cursor={"pointer"}>
             <Center>
@@ -193,7 +187,9 @@ function NotificationErrorComp(params: { popup: () => void }) {
     )
 }
 
-function BuyingEntries(params:{onClose:()=>void}) {
+function BuyingEntries(params: {
+    onClose: () => void
+}) {
     return (
         <>
             <HangEntity text={"新規注文"} href="/buy" onClick={params.onClose}/>
