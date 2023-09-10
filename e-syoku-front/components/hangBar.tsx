@@ -54,7 +54,7 @@ export function HangBar() {
     }
 
     useEffect(() => {
-        if (!isPWA() && !process.env.NEXT_PUBLIC_IS_DEV) {
+        if (!isPWA() && process.env.NEXT_PUBLIC_IS_DEV !== "true") {
             // Show PWA Page
             router.push("/pwa")
         }
