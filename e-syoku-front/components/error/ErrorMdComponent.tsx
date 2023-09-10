@@ -21,9 +21,7 @@ export function MdComponent(params: { mdFileName: string }) {
 }
 
 async function MdAsync(params: { mdFileName: string }) {
-    let d = await fetch(`/mds/${params.mdFileName}`, {
-        cache: "force-cache",
-    })
+    let d = await fetch(`/mds/${params.mdFileName}`)
     let text = await d.text()
 
     return (
