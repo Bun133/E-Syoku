@@ -5,7 +5,7 @@ import {Center, Heading, VStack} from "@chakra-ui/layout";
 import Btn from "@/components/btn";
 import {useSearchParams} from "next/navigation";
 import PageTitle from "@/components/pageTitle";
-import {TicketDisplay} from "@/components/TicketDisplay";
+import {TicketDisplay, TicketDisplayAbstract} from "@/components/TicketDisplay";
 
 export default function Page() {
     const params = useSearchParams()
@@ -19,7 +19,7 @@ export default function Page() {
 
                              return (
                                  <VStack>
-                                     <TicketDisplay data={response.data.tickets}/>
+                                     <TicketDisplay tickets={response.data.tickets}/>
                                      <Btn onClick={reload}>再読み込み</Btn>
                                  </VStack>
                              )

@@ -1,10 +1,14 @@
-import {PrettyTicket} from "@/lib/e-syoku-api/Types";
+import {PrettyGoods, PrettyTicket, ShopDetail, Ticket} from "@/lib/e-syoku-api/Types";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {useEffect, useRef, useState} from "react";
-import {Box, Text} from "@chakra-ui/react";
+import {Box, Spinner, Text} from "@chakra-ui/react";
 import {TicketCard, ticketColor} from "@/components/Ticket";
 import {useDisclosure} from "@chakra-ui/hooks";
 import {Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay} from "@chakra-ui/modal";
+import {pretty} from "@/lib/e-syoku-api/Transformers";
+import {useLazyEndpoint} from "@/lib/e-syoku-api/Axios";
+import {listGoodsEndPoint, listShopsEndPoint} from "@/lib/e-syoku-api/EndPoints";
+import {APIErrorModal} from "@/components/modal/APIErrorModal";
 
 export type DisplaySelection = {
     processing: boolean,
@@ -19,16 +23,62 @@ const defaultDisplaySelection: DisplaySelection = {
 }
 
 export function TicketDisplay(params: {
-    data: PrettyTicket[],
+    tickets: Ticket[],
+    displaySelection?: DisplaySelection,
+    disableAutoScroll?: boolean
+}) {
+    const {fetch: fetchGoods, response: goodsData} = useLazyEndpoint(listGoodsEndPoint)
+    const {fetch: fetchShops, response: shopData} = useLazyEndpoint(listShopsEndPoint)
+
+    useEffect(() => {
+        fetchGoods({})
+        fetchShops({})
+    }, []);
+
+    if (!goodsData || !shopData) {
+        return (
+            <Center>
+                <Spinner/>
+            </Center>
+        )
+    }
+
+    if (!goodsData.isSuccess) {
+        return (
+            <APIErrorModal error={goodsData}/>
+        )
+    }
+
+
+    if (!shopData.isSuccess) {
+        return (
+            <APIErrorModal error={shopData}/>
+        )
+    }
+
+
+    return (
+        <TicketDisplayAbstract tickets={params.tickets}
+                               goodsData={goodsData.data!.data.map(e => e.goods)}
+                               shopData={shopData.data!.shops}
+                               displaySelection={params.displaySelection}
+                               disableAutoScroll={params.disableAutoScroll}/>
+    )
+}
+
+export function TicketDisplayAbstract(params: {
+    tickets: Ticket[],
+    goodsData: PrettyGoods[],
+    shopData: ShopDetail[],
     displaySelection?: DisplaySelection,
     disableAutoScroll?: boolean
 }) {
     const selection = params.displaySelection ?? defaultDisplaySelection
-    const sorted = params.data.sort((a, b) => a.issueTime.utcSeconds - b.issueTime.utcSeconds)
-    const processing = sorted.filter(e => e.status === "注文済み")
+    const pTickets: PrettyTicket[] = (params.tickets.map((e) => pretty(e, params.goodsData, params.shopData)).filter(e => e != undefined)) as PrettyTicket[]
+    const sorted = pTickets.sort((a, b) => a.issueTime.utcSeconds - b.issueTime.utcSeconds)
+    const processing = sorted.filter(e => e.status === "調理中")
     const called = sorted.filter(e => e.status === "受け取り待ち")
     const informed = sorted.filter(e => e.status === "お知らせ")
-    const resolved = sorted.filter(e => e.status === "完了")
 
     return (
         <VStack w={"full"} h={"full"} flexShrink={1}>

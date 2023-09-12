@@ -11,6 +11,8 @@ const timeStampSchema = z.object({
     _nanoseconds: z.number()
 })
 
+export type  TimeStamp = z.infer<typeof timeStampSchema>
+
 export const orderSchema = z.array(z.object({
     // 商品ID
     goodsId: uniqueId,
@@ -36,7 +38,9 @@ export const ticketType = z.object({
     // 決済セッションID
     paymentSessionId: uniqueId,
     // 食券ステータスデータ
-    status: ticketStatus
+    status: ticketStatus,
+    // 最後にステータスが変更された時刻
+    lastStatusUpdated: timeStampSchema
 })
 
 export type Ticket = z.infer<typeof ticketType>
@@ -308,7 +312,7 @@ export const ticketDisplayData = z.object({
 
 export type TicketDisplayData = z.infer<typeof ticketDisplayData>
 export const ticketDisplayResponse = defaultResponseFormat.and(z.object({
-    tickets: z.array(prettyTicketSchema)
+    tickets: z.array(ticketType)
 }))
 
 export const authType = z.enum(["ADMIN", "SHOP", "ANONYMOUS", "CASHIER"])

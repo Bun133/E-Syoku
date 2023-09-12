@@ -5,7 +5,7 @@ import {Box, ModalContent, Spacer, Switch, Text} from "@chakra-ui/react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {callTicketStackEndpoint, resolveTicketEndPoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
-import {TicketDisplay} from "@/components/TicketDisplay";
+import {TicketDisplay, TicketDisplayAbstract} from "@/components/TicketDisplay";
 import Btn from "@/components/btn";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import {useEffect, useRef, useState} from "react";
@@ -48,7 +48,7 @@ export default function Page() {
 
                                      return (
                                          <VStack w={"full"} h={"full"}>
-                                             <TicketDisplay data={res.data.tickets} disableAutoScroll={true}/>
+                                             <TicketDisplay tickets={res.data.tickets} disableAutoScroll={true}/>
                                              <Btn onClick={reload}>再読み込み</Btn>
                                          </VStack>
                                      )
