@@ -14,6 +14,7 @@ export default function Page() {
                     {data.data.shops.map((e) => {
                         return (
                             <APIEndpoint key={e.shopId} endpoint={ticketDisplayEndpoint} query={{shopId: e.shopId}}
+                                         refetch={{interval: 30}}
                                          onEnd={(display) => {
                                              return <TicketDisplay tickets={display.data.tickets}/>
                                          }}/>
