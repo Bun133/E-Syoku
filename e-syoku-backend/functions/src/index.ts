@@ -29,7 +29,7 @@ import {
     paymentNotFoundError,
     ticketNotSpecifiedError
 } from "./impls/errors";
-import {Error, SingleError, Success, TypedResult, TypedSingleResult, TypedSuccess} from "./types/errors";
+import {Error, SingleError, Success, TypedSingleResult} from "./types/errors";
 import {listAllShop} from "./impls/shop";
 import {PaidDetail, PaymentSession} from "./types/payment";
 import {Timestamp} from "firebase-admin/firestore";
@@ -210,7 +210,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
 
                 if (ticketId) {
                     // チケットのステータスを変更します
-                    let called = await updateTicketStatusByIds(refs, messaging, ticketId, shopId.param, fromStatus, toStatus, undefined, sendNotification)
+                    let called = await updateTicketStatusByIds(refs, auth, messaging, ticketId, shopId.param, fromStatus, toStatus, undefined, sendNotification)
                     if (!called.isSuccess) {
                         const err: Error = errorResult(called)
                         return {
@@ -508,7 +508,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
  * Param:
  *  - shipId:string
  * Response:
- *  - displays:TicketDisplayData[]
+ *  - displays:Ticket[]
  * Permission:
  *  - ADMIN
  *  - CASHIER
@@ -521,9 +521,8 @@ export const ticketDisplay = standardFunction(async (req, res) => {
             if (param.param == undefined) return {result: param.error}
             const shopId = param.param
 
-            const pTickets: TypedResult<PrettyTicket>[] = await Promise.all((await listTicketForShop(refs, shopId)).filter(e => e.status !== "RESOLVED").map(async e => prettyTicket(refs, e)))
 
-            const data = pTickets.filter(isTypedSuccess).map((e: TypedSuccess<PrettyTicket>) => e.data)
+            const data = (await listTicketForShop(refs, shopId)).filter(e => e.status !== "RESOLVED")
 
             const suc: Success = {
                 isSuccess: true,
@@ -683,7 +682,7 @@ export const callTicketStack = standardFunction(async (req, res) => {
             const ignoreThresholdMin = requireParameter("thresholdMin", z.number(), req)
             if (ignoreThresholdMin.param == undefined) return {result: ignoreThresholdMin.error}
 
-            const res = await callTicketStackFunc(refs, messaging, shopId.param, count.param, ignoreThresholdMin.param)
+            const res = await callTicketStackFunc(refs, auth, messaging, shopId.param, count.param, ignoreThresholdMin.param)
             return {
                 result: res
             }

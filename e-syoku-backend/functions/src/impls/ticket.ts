@@ -24,6 +24,7 @@ import {createNewTicket} from "./ticketNumInfos";
 import {NotificationData, sendMessage} from "./notification";
 import {Messaging} from "firebase-admin/lib/messaging";
 import {Goods} from "../types/goods";
+import {Auth} from "firebase-admin/lib/auth";
 import DocumentReference = firestore.DocumentReference;
 import Transaction = firestore.Transaction;
 
@@ -79,23 +80,25 @@ export async function listTicketForShop(ref: DBRefs, shopId: string): Promise<Ar
     return await parseQueryDataAll<Ticket>(ticketSchema, ref.tickets.where("shopId", "==", shopId), (ref, data) => ticketParser(ref.id, data))
 }
 
-export async function updateTicketStatusByIds(ref: DBRefs, messaging: Messaging, ticketId: string, shopId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Success & {
+export async function updateTicketStatusByIds(ref: DBRefs, auth: Auth, messaging: Messaging, ticketId: string, shopId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData): Promise<Success & {
     targetTicket: Ticket
 } | SingleError> {
-    return await internalUpdateTicketStatus(ref, messaging, ref.tickets.doc(ticketId), shopId, fromStatus, toStatus, transaction, sendNotification)
+    return await internalUpdateTicketStatus(ref, auth, messaging, ref.tickets.doc(ticketId), shopId, fromStatus, toStatus, transaction, sendNotification)
 }
 
 /**
  * チケットのステータスを[fromStatus]から[toStatus]に変更します
  * @param ref
+ * @param auth
  * @param messaging
  * @param ticketRef
+ * @param shopId
  * @param fromStatus
  * @param toStatus
  * @param transaction
  * @param sendNotification
  */
-async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, ticketRef: DocumentReference, shopId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData)
+async function internalUpdateTicketStatus(ref: DBRefs, auth: Auth, messaging: Messaging, ticketRef: DocumentReference, shopId: string, fromStatus: TicketStatus, toStatus: TicketStatus, transaction?: Transaction, sendNotification?: NotificationData)
     : Promise<Success & {
     targetTicket: Ticket
 } | SingleError> {
@@ -140,6 +143,8 @@ async function internalUpdateTicketStatus(ref: DBRefs, messaging: Messaging, tic
         // 通知を送信する場合は送信処理を行います
         if (sendNotification) {
             await sendMessage(ref, messaging, ticket.data.customerId, sendNotification)
+            // TODO
+            // await sendMailNotification(auth, ticket.data)
         }
         const suc: Success & {
             targetTicket: Ticket
@@ -340,12 +345,13 @@ async function associatedWithShop(ref: DBRefs, payment: PaymentSession): Promise
  *
  * なんか失敗しても、無視します。(呼べない分にはセーフ)
  * @param ref
+ * @param auth
  * @param messaging
  * @param shopId
  * @param count
  * @param ignoreThreshold
  */
-export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, shopId: string, count: number, ignoreThreshold: number): Promise<Success & {
+export async function callTicketStackFunc(ref: DBRefs, auth: Auth, messaging: Messaging, shopId: string, count: number, ignoreThreshold: number): Promise<Success & {
     calledTicketIds: string[]
 }> {
     const ticketData: Ticket[] = (await listTicketForShop(ref, shopId)).sort((a, b) => {
@@ -387,7 +393,7 @@ export async function callTicketStackFunc(ref: DBRefs, messaging: Messaging, sho
                 clickUrl: `https://e-syoku.web.app/tickets/id?id=${e.uniqueId}`,
             }
 
-            const result = await updateTicketStatusByIds(ref, messaging, e.uniqueId, shopId, "PROCESSING", "CALLED", undefined, calledNotificationData)
+            const result = await updateTicketStatusByIds(ref, auth, messaging, e.uniqueId, shopId, "PROCESSING", "CALLED", undefined, calledNotificationData)
             return {
                 ticketId: e.uniqueId,
                 result: result
