@@ -80,8 +80,6 @@ export default function Page() {
                             paidMeans: paidMeans,
                             paymentId: paymentId,
                             paymentBarcode: barcode,
-                            // TODO remarkを簡単に入力できるように
-                            remark: "テストです！"
                         })
 
                         if (res.isSuccess) {
