@@ -64,7 +64,7 @@ const messaging = admin.messaging();
  *  - ANONYMOUS
  */
 export const ticketStatus = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "ticketStatus", async () => {
         return authedWithType(["ADMIN", "CASHIER", "SHOP", "ANONYMOUS"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let ticketId = requireParameter("ticketId", z.string(), request);
             if (ticketId.param === undefined) return {result: ticketId.error}
@@ -103,7 +103,7 @@ export const ticketStatus = standardFunction(async (request, response) => {
  *  - ANONYMOUS
  */
 export const listTickets = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "listTickets", async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "ADMIN", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // 要求ユーザーのすべてのチケットを取得します
             let allTickets = await listTicketForUser(refs, authInstance.uid);
@@ -134,7 +134,7 @@ export const listTickets = standardFunction(async (request, response) => {
  *  - ANONYMOUS
  */
 export const listShops = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "listShops", async () => {
         return await authedWithType(["ADMIN", "CASHIER", "ANONYMOUS", "SHOP"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             let shops = await listAllShop(refs);
 
@@ -153,19 +153,19 @@ export const listShops = standardFunction(async (request, response) => {
  * Change Ticket State from "PROCESSING" to "CALLED"
  */
 export const callTicket =
-    ticketStateChangeEndpoint("PROCESSING", "CALLED", "Successfully called")
+    ticketStateChangeEndpoint("PROCESSING", "CALLED", "Successfully called", "callTicket")
 
 /**
  * Change Ticket State from "CALLED" to "PROCESSING"
  */
 export const cancelCalling =
-    ticketStateChangeEndpoint("CALLED", "PROCESSING", "Successfully the call is cancelled")
+    ticketStateChangeEndpoint("CALLED", "PROCESSING", "Successfully the call is cancelled", "cancelCalling")
 
 /**
  * Change Ticket State from "CALLED" to "RESOLVED"
  */
 export const resolveTicket =
-    ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved")
+    ticketStateChangeEndpoint("CALLED", "RESOLVED", "Successfully the call is resolved", "resolveTicket")
 
 /**
  * [fromStatus]から[toStatus]へチケットのステータスを変更するようなエンドポイントを作成します
@@ -179,9 +179,9 @@ export const resolveTicket =
  *  - ADMIN
  *  - SHOP
  */
-function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string, sendNotification?: NotificationData): HttpsFunction {
+function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketStatus, successMessage: string, endpointName: string, sendNotification?: NotificationData): HttpsFunction {
     return standardFunction(async (request, response) => {
-        await onPost(request, response, async () => {
+        await onPost(request, response, auth, endpointName, async () => {
             return authedWithType(["SHOP", "ADMIN"], auth, refs, request, response, async (_: AuthInstance) => {
                 let barcode = requireOptionalParameter("barcode", z.string().optional(), request);
                 let ticketIdParam = requireOptionalParameter("ticketId", z.string().optional(), request);
@@ -261,7 +261,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
  *  - ANONYMOUS
  */
 export const listGoods = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "listGoods", async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // すべてのGoodsのデータを取得
             const goods = await getAllGoods(refs)
@@ -316,7 +316,7 @@ export const listGoods = standardFunction(async (request, response) => {
  *  - ANONYMOUS
  */
 export const submitOrder = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "submitOrder", async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             const order = requireParameter("order", orderSchema, request)
             if (order.param == undefined) return {result: order.error};
@@ -352,7 +352,7 @@ export const submitOrder = standardFunction(async (request, response) => {
  *  - ANONYMOUS
  */
 export const listPayments = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "listPayments", async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // ユーザーに紐づいているすべての決済セッションのデータを取得します
             const payments = await getAllPayments(refs, authInstance.uid)
@@ -381,7 +381,7 @@ export const listPayments = standardFunction(async (request, response) => {
  *  - ANONYMOUS
  */
 export const paymentStatus = standardFunction(async (request, response) => {
-    await onPost(request, response, async () => {
+    await onPost(request, response, auth, "paymentStatus", async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // id
             const id = requireOptionalParameter("paymentId", z.string().optional(), request)
@@ -461,7 +461,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
  *  - CASHIER
  */
 export const markPaymentPaid = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "markPaymentPaid", async () => {
         return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             let paidAmount = requireParameter("paidAmount", z.number(), req)
             if (paidAmount.param == undefined) return {result: paidAmount.error}
@@ -515,7 +515,7 @@ export const markPaymentPaid = standardFunction(async (req, res) => {
  *  - SHOP
  */
 export const ticketDisplay = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "ticketDisplay", async () => {
         return authedWithType(["SHOP", "CASHIER", "ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const param = requireParameter("shopId", z.string(), req)
             if (param.param == undefined) return {result: param.error}
@@ -544,7 +544,7 @@ export const ticketDisplay = standardFunction(async (req, res) => {
  *  All
  */
 export const authState = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "authState", async () => {
         return authed(auth, refs, req, res, (authInstance) => {
             let suc: Success
             if (authInstance.authType === "SHOP") {
@@ -587,7 +587,7 @@ export const authState = standardFunction(async (req, res) => {
  *  - ADMIN
  */
 export const grantPermission = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "grantPermission", async () => {
         return authedWithType(["ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const uid = requireParameter("uid", z.string(), req)
             if (uid.param == undefined) return {result: uid.error}
@@ -618,7 +618,7 @@ export const grantPermission = standardFunction(async (req, res) => {
  *  - CASHIER
  */
 export const bindBarcode = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "bindBarcode", async () => {
         return authedWithType(["ADMIN", "CASHIER"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const ticketId = requireParameter("ticketId", z.string().array().nonempty(), req)
             if (ticketId.param == undefined) return {result: ticketId.error}
@@ -644,12 +644,12 @@ export const bindBarcode = standardFunction(async (req, res) => {
  * Permission:
  *  - ADMIN
  */
-export const cmsTicket = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
+export const cmsTicket = cmsFunction(auth, refs, "cmsTicket",async (authInstance: AuthInstance, req, res) => {
     return await cmsTicketFunc(refs, req)
 })
 
 export const listenNotification = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "listenNotification", async () => {
         return authed(auth, refs, req, res, async (authInstance) => {
             const token = requireParameter("token", z.string(), req)
             if (token.param == undefined) return {result: token.error}
@@ -673,7 +673,7 @@ export const listenNotification = standardFunction(async (req, res) => {
  * 指定された人数まで自動的に呼び出します
  */
 export const callTicketStack = standardFunction(async (req, res) => {
-    await onPost(req, res, async () => {
+    await onPost(req, res, auth, "callTicketStack", async () => {
         return authedWithType(["ADMIN", "SHOP"], auth, refs, req, res, async (authInstance: AuthInstance) => {
             const count = requireParameter("count", z.number(), req)
             if (count.param == undefined) return {result: count.error}
@@ -701,7 +701,7 @@ export const callTicketStack = standardFunction(async (req, res) => {
  * Permission:
  *  - ADMIN
  */
-export const cmsRemain = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
+export const cmsRemain = cmsFunction(auth, refs, "cmsRemain", async (authInstance: AuthInstance, req, res) => {
     return await cmsRemainFunc(refs, req)
 })
 
@@ -714,6 +714,6 @@ export const cmsRemain = cmsFunction(auth, refs, async (authInstance: AuthInstan
  * Permission:
  *  - ADMIN
  */
-export const cmsPaymentList = cmsFunction(auth, refs, async (authInstance: AuthInstance, req, res) => {
+export const cmsPaymentList = cmsFunction(auth, refs, "cmsPaymentList", async (authInstance: AuthInstance, req, res) => {
     return await cmsPaymentListFunc(refs, req)
 })

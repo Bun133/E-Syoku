@@ -5,6 +5,7 @@ import {safeAs} from "./safeAs";
 import {Error as EError, Result} from "../types/errors";
 import {error, logTrace, writeLog} from "./logger";
 import {errorResult, injectError, internalErrorThrownError} from "../impls/errors";
+import {Auth} from "firebase-admin/lib/auth";
 
 /**
  * Require a parameter from the request
@@ -57,49 +58,56 @@ export function requireOptionalParameter<Z>(paramName: string, type: ZodType<Z>,
 
 export type EndpointResult = {
     result: Result,
-    statusCode?: number
 }
 
 export type ResultOrPromise = EndpointResult | Promise<EndpointResult>
 
-async function handleRequest<R extends ResultOrPromise>(request: Request, response: Response, body: () => R) {
+async function getUid(req: Request, auth: Auth): Promise<string | undefined> {
+    let token = req.headers.authorization;
+    if (!token) return undefined
+    token = token.replace("Bearer ", "");
+    try {
+        const data = await auth.verifyIdToken(token);
+        return data.uid
+    } catch (e) {
+        writeLog({
+            severity: "ERROR",
+            error: e,
+            message: "Failed to get Uid"
+        })
+        return undefined
+    }
+}
+
+async function handleRequest<R extends ResultOrPromise>(request: Request, response: Response, auth: Auth, endpointName: string, body: () => R) {
     if (response.writableFinished) {
         // response already sent
         error("in handleRequest, response already sent")
         logTrace()
         return
     }
+
+    const uid = await getUid(request, auth)
+
     try {
         const result = await body();
-        if (result.statusCode === undefined) {
-            if (result.result.isSuccess) {
-                // TODO LogにAuthData/Endpointの情報を含める
-                writeLog({
-                    severity: "INFO",
-                    ...result.result
-                })
-                response.status(200).send(result.result).end();
-            } else {
-                writeLog({
-                    severity: "ERROR",
-                    ...result.result
-                })
-                response.status(500).send(result.result).end();
-            }
+        if (result.result.isSuccess) {
+            writeLog({
+                severity: "INFO",
+                response: result.result,
+                endpointName:endpointName,
+                uid: uid
+            })
+            response.status(200).send(result.result).end();
         } else {
-            const firstDigit = Number(result.statusCode.toString()[0])
-            if (firstDigit === 4 || firstDigit === 5) {
-                writeLog({
-                    severity: "ERROR",
-                    ...result.result
-                })
-            } else {
-                writeLog({
-                    severity: "INFO",
-                    ...result.result
-                })
-            }
-            response.status(result.statusCode).send(result.result).end();
+            writeLog({
+                severity: "ERROR",
+                response: result.result,
+                path: request.path,
+                endpointName:endpointName,
+                uid: uid
+            })
+            response.status(500).send(result.result).end();
         }
     } catch (e) {
         const rawErrorMessage = e instanceof Error ? e.message : "Not ES6 Error"
@@ -120,15 +128,9 @@ async function handleRequest<R extends ResultOrPromise>(request: Request, respon
     }
 }
 
-export async function onPost<R extends ResultOrPromise>(req: Request, res: Response, body: () => R): Promise<void> {
+export async function onPost<R extends ResultOrPromise>(req: Request, res: Response, auth: Auth, endpointName: string, body: () => R): Promise<void> {
     if (req.method === "POST") {
-        await handleRequest(req, res, body)
-    }
-}
-
-export async function onGet<R extends ResultOrPromise>(req: Request, res: Response, body: () => R): Promise<void> {
-    if (req.method === "GET") {
-        await handleRequest(req, res, body)
+        await handleRequest(req, res, auth, endpointName, body)
     }
 }
 
