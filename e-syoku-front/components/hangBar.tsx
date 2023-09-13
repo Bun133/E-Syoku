@@ -47,18 +47,6 @@ export function HangBar() {
     const auth = useContext(firebaseAuthContext)
     const {isOpen, onOpen, onClose} = useDisclosure()
     const router = useRouter()
-    const currentPath = usePathname()
-
-    function isPWA() {
-        return window.matchMedia('(display-mode: standalone)').matches
-    }
-
-    useEffect(() => {
-        if (!isPWA() && process.env.NEXT_PUBLIC_IS_DEV !== "true") {
-            // Show PWA Page
-            router.push("/pwa")
-        }
-    }, [currentPath]);
 
     return (
         <>

@@ -1,9 +1,10 @@
 "use client"
 import {MdComponent} from "@/components/error/ErrorMdComponent";
-import {VStack} from "@chakra-ui/layout";
+import {HStack, VStack} from "@chakra-ui/layout";
 import Btn from "@/components/btn";
 import {useEffect, useState} from "react";
 import {useSearchParams} from "next/navigation";
+import {Text} from "@chakra-ui/react";
 
 export default function Page() {
     // force client-side rendering
@@ -13,15 +14,20 @@ export default function Page() {
         return window.matchMedia('(display-mode: standalone)').matches
     }
 
-    const [homeBtn, setHomeBtn] = useState(false)
+    const [pwa, setPwa] = useState(false)
     useEffect(() => {
-        setHomeBtn(isPWA())
+        setPwa(isPWA())
     }, [])
 
     return (
         <VStack>
             <MdComponent mdFileName={"pwa.md"}/>
-            {homeBtn && <Btn href={"/"}>ホームへ</Btn>}
+            <HStack>
+                <Text>現在の環境：</Text>
+                {pwa ? <Text color={"green"}>アプリ環境です</Text> :
+                    <Text color={"red"}>アプリ環境ではありません</Text>}
+            </HStack>
+            <Btn href={"/"}>ホームへ</Btn>
         </VStack>
     )
 }

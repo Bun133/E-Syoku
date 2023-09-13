@@ -10,6 +10,7 @@ import {RenderProps} from "@chakra-ui/toast/dist/toast.types";
 import {Box, CloseButton, Flex, Spacer, Text} from "@chakra-ui/react";
 import Btn from "@/components/btn";
 import {Info} from "react-feather";
+import {useRouter} from "next/navigation";
 
 export const cloudMessagingContext = createContext<Messaging | undefined>(undefined)
 
@@ -41,6 +42,11 @@ export function NotificationEnsure(params: {
     const auth = useFirebaseAuth()
     const toast = useToast()
     const listenerRegistered = useRef(false)
+    const router = useRouter()
+
+    function isPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches;
+    }
 
     async function requestPermission() {
         if (Notification.permission !== "granted") {
@@ -107,7 +113,11 @@ export function NotificationEnsure(params: {
     return (
         <>
             {params.comp(token, () => {
-                requestPermission()
+                if (isPWA()) {
+                    requestPermission()
+                } else {
+                    router.push("/pwa")
+                }
             })}
         </>
     )
