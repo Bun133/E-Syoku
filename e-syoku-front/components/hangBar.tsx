@@ -99,7 +99,6 @@ export function HangBar() {
                                     logOut(auth)
                                     onClose()
                                 }}/>
-                                <HangEntity text={"本登録"} href="/auth/register" onClick={onClose}/>
                                 <HangEntity text={"ログイン"} href="/auth/login" onClick={onClose}/>
                             </VStack>
                         </VStack>
