@@ -5,7 +5,7 @@ import {Box, ModalContent, Spacer, Switch, Text} from "@chakra-ui/react";
 import {Center, Heading, HStack, VStack} from "@chakra-ui/layout";
 import {APIEndpoint} from "@/lib/e-syoku-api/APIEndpointComponent";
 import {callTicketStackEndpoint, resolveTicketEndPoint, ticketDisplayEndpoint} from "@/lib/e-syoku-api/EndPoints";
-import {TicketDisplay, TicketDisplayAbstract} from "@/components/TicketDisplay";
+import {TicketDisplay} from "@/components/TicketDisplay";
 import Btn from "@/components/btn";
 import {BarcodeReader} from "@/components/reader/BarcodeReader";
 import {useEffect, useRef, useState} from "react";
@@ -25,8 +25,10 @@ export default function Page() {
     const shopId = params.get("shopId") ?? undefined
 
     const reloadFunc = useRef<() => Promise<void> | null>()
+    const callStackFunc = useRef<() => Promise<void> | null>()
+
     const [apiError, setAPIError] = useState<EndPointErrorResponse<any>>()
-    const [readTicket,setReadTicket] = useState<PrettyTicket>()
+    const [readTicket, setReadTicket] = useState<PrettyTicket>()
 
     if (!shopId) {
         return (
@@ -34,6 +36,11 @@ export default function Page() {
                 <Text>ShopIdを指定してください</Text>
             </Center>
         )
+    }
+
+    async function reloadBody() {
+        await callStackFunc.current?.()
+        await reloadFunc.current?.()
     }
 
     return (
@@ -49,7 +56,7 @@ export default function Page() {
                                      return (
                                          <VStack w={"full"} h={"full"}>
                                              <TicketDisplay tickets={res.data.tickets} disableAutoScroll={true}/>
-                                             <Btn onClick={reload}>再読み込み</Btn>
+                                             <Btn onClick={reloadBody}>再読み込み</Btn>
                                          </VStack>
                                      )
                                  }}
@@ -66,7 +73,7 @@ export default function Page() {
             <CallRight
                 shopId={shopId}
                 onAutoCall={() => {
-                    reloadFunc.current?.()
+                    reloadBody()
                 }}
                 onBarcodeRead={async (r: EndPointResponse<TicketResponse>) => {
                     if (r.isSuccess) {
@@ -75,6 +82,9 @@ export default function Page() {
                     } else {
                         setAPIError(r)
                     }
+                }}
+                setCallStackFunc={(func) => {
+                    callStackFunc.current = func
                 }}
             />
             <ReadModal readTicket={readTicket}/>
@@ -100,7 +110,8 @@ const defaultIgnoreTimeThresholdMin = 30
 function CallRight(params: {
     shopId: string,
     onAutoCall: () => void,
-    onBarcodeRead: (r: EndPointResponse<TicketResponse>) => void
+    onBarcodeRead: (r: EndPointResponse<TicketResponse>) => void,
+    setCallStackFunc: (func: () => Promise<void>) => void
 }) {
 
     const [callSettings, setCallSettings] = useState<AutoCallSettings>({toAutoCall: false})
@@ -243,6 +254,7 @@ function CallRight(params: {
         // on Update
         // 変更後呼び出し処理
         callStack()
+        params.setCallStackFunc(callStack)
     }, [callSettings]);
 
     function isApplyDisabled() {
