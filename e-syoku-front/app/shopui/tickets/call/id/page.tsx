@@ -43,6 +43,21 @@ export default function Page() {
         await reloadFunc.current?.()
     }
 
+    useEffect(() => {
+        let timer:NodeJS.Timer
+        // 30sにつきcallStackを呼ぶ
+        timer = setInterval(timerBody, 1000 * 30)
+
+        async function timerBody(){
+            callStackFunc.current?.()
+            timer = setInterval(timerBody, 1000 * 30)
+        }
+
+        return () => {
+            clearInterval(timer)
+        }
+    }, []);
+
     return (
         <HStack w={"full"} h={"100%"}>
             <VStack flexShrink={1}>
@@ -72,8 +87,8 @@ export default function Page() {
             </VStack>
             <CallRight
                 shopId={shopId}
-                onAutoCall={() => {
-                    reloadBody()
+                onAutoCallCompleted={() => {
+                    reloadFunc.current?.()
                 }}
                 onBarcodeRead={async (r: EndPointResponse<TicketResponse>) => {
                     if (r.isSuccess) {
@@ -109,7 +124,7 @@ const defaultIgnoreTimeThresholdMin = 30
 
 function CallRight(params: {
     shopId: string,
-    onAutoCall: () => void,
+    onAutoCallCompleted: () => void,
     onBarcodeRead: (r: EndPointResponse<TicketResponse>) => void,
     setCallStackFunc: (func: () => Promise<void>) => void
 }) {
@@ -145,7 +160,7 @@ function CallRight(params: {
                 }
             }
 
-            params.onAutoCall()
+            params.onAutoCallCompleted()
         }
     }
 
