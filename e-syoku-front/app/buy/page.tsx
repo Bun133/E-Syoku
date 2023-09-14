@@ -239,11 +239,6 @@ function OrderConfirm(params: {
             </WarningBox>
 
             <VStack w={"full"}>
-                <HStack w={"full"}>
-                    <Text fontSize={"3xl"}>注文内容</Text>
-                    <Spacer/>
-                </HStack>
-
                 <OrderSummary order={params.order}/>
             </VStack>
 
