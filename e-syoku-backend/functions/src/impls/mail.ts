@@ -11,9 +11,16 @@ export async function sendMailNotification(auth: Auth, changedTicket: Ticket) {
 }
 
 async function sendMail(toAddress: string, changedTicket: Ticket) {
-    // TODO sendGridのSMTPをここにかく
-    await createTransport().sendMail({
-        from: "noreply@e-syoku.web.app",
+    await createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: false,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        }
+    }).sendMail({
+        from: "noreply@e-syoku.com",
         to: toAddress,
         subject: "TITLE",
         text: "TEST: " + JSON.stringify(changedTicket),
