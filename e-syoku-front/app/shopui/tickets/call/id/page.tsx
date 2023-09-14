@@ -30,14 +30,6 @@ export default function Page() {
     const [apiError, setAPIError] = useState<EndPointErrorResponse<any>>()
     const [readTicket, setReadTicket] = useState<PrettyTicket>()
 
-    if (!shopId) {
-        return (
-            <Center>
-                <Text>ShopIdを指定してください</Text>
-            </Center>
-        )
-    }
-
     async function reloadBody() {
         await callStackFunc.current?.()
         await reloadFunc.current?.()
@@ -57,6 +49,14 @@ export default function Page() {
             clearInterval(timer)
         }
     }, []);
+
+    if (!shopId) {
+        return (
+            <Center>
+                <Text>ShopIdを指定してください</Text>
+            </Center>
+        )
+    }
 
     return (
         <HStack w={"full"} h={"100%"}>
