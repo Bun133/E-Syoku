@@ -32,8 +32,14 @@ export function utcSecToString(utcSec: number) {
 export function pretty(ticket: Ticket, goodsData: PrettyGoods[], shopData: ShopDetail[]): PrettyTicket | undefined {
     const shop = shopData.find(e => e.shopId === ticket.shopId)
     const order = prettyOrder(goodsData, ticket.orderData)
-    if (!shop) return undefined
-    if (!order) return undefined
+    if (!shop) {
+        console.warn("Shop Data not found")
+        return undefined
+    }
+    if (!order) {
+        console.warn("Order Data not found")
+        return undefined
+    }
     return {
         customerId: ticket.customerId,
         paymentSessionId: ticket.paymentSessionId,
@@ -75,7 +81,7 @@ function prettyTimeStamp(timeStamp: TimeStamp): PrettyTimeStamp {
 function prettyStatus(status: TicketStatus): PrettyTicketStatus {
     switch (status) {
         case "PROCESSING":
-            return "注文済み"
+            return "調理中"
         case "CALLED":
             return "受け取り待ち"
         case "RESOLVED":

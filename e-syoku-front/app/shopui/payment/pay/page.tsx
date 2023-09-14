@@ -75,11 +75,13 @@ export default function Page() {
                         </FormErrorMessage>) : null}
                     </FormControl>
                     <Btn onClick={async () => {
-                        const res = await callEndpoint(markPaymentPaidEndpoint,await auth.waitForUser(), {
+                        const res = await callEndpoint(markPaymentPaidEndpoint, await auth.waitForUser(), {
                             paidAmount: amount,
                             paidMeans: paidMeans,
                             paymentId: paymentId,
                             paymentBarcode: barcode,
+                            // 省略するとDB内部でundefinedが書き込まれてエラー
+                            remark: ""
                         })
 
                         if (res.isSuccess) {
