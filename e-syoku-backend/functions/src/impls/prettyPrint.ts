@@ -105,8 +105,6 @@ export async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResu
 export function prettyStatus(status: TicketStatus): PrettyTicketStatus {
     switch (status) {
         case "PROCESSING":
-            return "注文済み"
-        case "COOKING":
             return "調理中"
         case "CALLED":
             return "受け取り待ち"

@@ -12,8 +12,6 @@ import {z} from "zod";
 export const ticketStatusSchema = z.union([
     // ①調理前
     z.literal("PROCESSING"),
-    // ②調理中
-    z.literal("COOKING"),
     // ③調理済み・受け取り前
     z.literal("CALLED"),
     // ④受け取り後

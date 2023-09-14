@@ -5,8 +5,6 @@ import {paidDetailSchema} from "./payment";
 
 export const prettyTicketStatusSchema = z.union([
     // PROCESSING
-    z.literal("注文済み"),
-    // COOKING
     z.literal("調理中"),
     // CALLED
     z.literal("受け取り待ち"),
