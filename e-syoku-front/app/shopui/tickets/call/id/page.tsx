@@ -49,8 +49,8 @@ export default function Page() {
         timer = setInterval(timerBody, 1000 * 30)
 
         async function timerBody(){
+            console.log("timerBody")
             callStackFunc.current?.()
-            timer = setInterval(timerBody, 1000 * 30)
         }
 
         return () => {
@@ -87,7 +87,7 @@ export default function Page() {
             </VStack>
             <CallRight
                 shopId={shopId}
-                onAutoCallCompleted={() => {
+                onCallStackCompleted={() => {
                     reloadFunc.current?.()
                 }}
                 onBarcodeRead={async (r: EndPointResponse<TicketResponse>) => {
@@ -124,7 +124,7 @@ const defaultIgnoreTimeThresholdMin = 30
 
 function CallRight(params: {
     shopId: string,
-    onAutoCallCompleted: () => void,
+    onCallStackCompleted: () => void,
     onBarcodeRead: (r: EndPointResponse<TicketResponse>) => void,
     setCallStackFunc: (func: () => Promise<void>) => void
 }) {
@@ -160,7 +160,7 @@ function CallRight(params: {
                 }
             }
 
-            params.onAutoCallCompleted()
+            params.onCallStackCompleted()
         }
     }
 
