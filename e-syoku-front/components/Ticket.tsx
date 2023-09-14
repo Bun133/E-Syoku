@@ -14,7 +14,6 @@ export function ticketColor(status: PrettyTicketStatus): string {
             return "green.300"
         case "完了":
             return "gray.300"
-        case "注文済み":
         case "調理中":
             return "yellow.100"
     }
@@ -28,7 +27,6 @@ function colorScheme(status: PrettyTicketStatus): string {
             return "green"
         case "完了":
             return "gray"
-        case "注文済み":
         case "調理中":
             return "yellow"
     }
