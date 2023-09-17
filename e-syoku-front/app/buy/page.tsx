@@ -64,7 +64,7 @@ export default function Page() {
         {title: '商品選択', description: '注文する商品を選択'},
         {title: '注文確認', description: '注文内容を確認'},
         {title: '注文情報送信', description: '注文情報を送信'},
-        {title: '決済', description: '店舗でお支払い'},
+        {title: '決済', description: '決済用レジでお支払い'},
         {title: '食券', description: '商品を受け取り'},
     ]
 
@@ -227,7 +227,7 @@ function OrderConfirm(params: {
             <WarningBox>
                 <NumberLeading num={1}>
                     <Text>
-                        店舗にて代金をお支払いいただくまでは商品は確保されません
+                        決済用レジにて代金をお支払いいただくまでは商品は確保されません
                     </Text>
                 </NumberLeading>
 
@@ -416,7 +416,7 @@ function Payment(params: {
                                          まだ注文は確定していません！
                                      </Text>
                                      <Text>
-                                         店舗で代金をお支払いいただくと注文が確定します
+                                         決済用レジで代金をお支払いいただくと注文が確定します
                                      </Text>
                                  </Box>
 
