@@ -13,7 +13,7 @@ import {
     ticketById,
     updateTicketStatusByIds
 } from "./impls/ticket";
-import {getAllGoods, getRemainDataOfGoods, getWaitingDataOfGoods} from "./impls/goods";
+import {getRemainDataOfGoods, getWaitingDataOfGoods, listGoodsId} from "./impls/goods";
 import "./utils/collectionUtils"
 import {orderSchema} from "./types/order";
 import {createPaymentSession} from "./impls/order";
@@ -37,7 +37,7 @@ import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, cmsPaymentListFunc, cmsRemainFunc, cmsTicketFunc} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
-import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
+import {getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 import {PrettyGoods, PrettyPaymentSession, PrettyTicket} from "./types/prettyPrint";
 import {GoodsRemainData, WaitingData} from "./types/goods";
 
@@ -264,23 +264,23 @@ export const listGoods = standardFunction(async (request, response) => {
     await onPost(request, response, auth, "listGoods", async () => {
         return authedWithType(["ANONYMOUS", "CASHIER", "SHOP", "ADMIN"], auth, refs, request, response, async (authInstance: AuthInstance) => {
             // すべてのGoodsのデータを取得
-            const goods = await getAllGoods(refs)
+            const goodsIds = await listGoodsId(refs)
             const data: TypedSingleResult<{
                 goods: PrettyGoods,
                 remainData: GoodsRemainData,
                 waitingData: WaitingData
-            }>[] = (await Promise.all(goods.map(async g => {
-                const pGoods = await prettyGoods(refs, g)
+            }>[] = await prettyCache(async (cache) => await Promise.all(goodsIds.map(async gId => {
+                const pGoods = await getPrettyGoods(cache, refs, gId)
                 if (isSingleError(pGoods)) {
                     return pGoods
                 }
 
-                const remainData = await getRemainDataOfGoods(refs, g.goodsId)
+                const remainData = await getRemainDataOfGoods(refs, gId)
                 if (isSingleError(remainData)) {
                     return remainData
                 }
 
-                const waitingData = await getWaitingDataOfGoods(refs, g.goodsId)
+                const waitingData = await getWaitingDataOfGoods(refs, gId)
                 if (isSingleError(waitingData)) {
                     return waitingData
                 }
@@ -644,7 +644,7 @@ export const bindBarcode = standardFunction(async (req, res) => {
  * Permission:
  *  - ADMIN
  */
-export const cmsTicket = cmsFunction(auth, refs, "cmsTicket",async (authInstance: AuthInstance, req, res) => {
+export const cmsTicket = cmsFunction(auth, refs, "cmsTicket", async (authInstance: AuthInstance, req, res) => {
     return await cmsTicketFunc(refs, req)
 })
 

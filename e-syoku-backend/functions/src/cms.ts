@@ -25,20 +25,20 @@ import {
 import {ticketByBarcode} from "./impls/barcode";
 import {Ticket} from "./types/ticket";
 import {ticketById} from "./impls/ticket";
-import {prettyGoods, prettyPayment, prettyTicket} from "./impls/prettyPrint";
-import {getAllGoods, getRemainDataOfGoods} from "./impls/goods";
+import {getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
+import {getRemainDataOfGoods, listGoodsId} from "./impls/goods";
 import {GoodsRemainData, goodsRemainDataSchema} from "./types/goods";
 import {PrettyGoods, PrettyPaymentSession} from "./types/prettyPrint";
 import {paymentSessionSchema} from "./types/payment";
 import {transformPaymentSession} from "./impls/payment";
 
 
-export function cmsFunction(auth: Auth, refs: DBRefs,endpointName:string, f: (authInstance: AuthInstance, req: Request, res: Response) => Promise<{
+export function cmsFunction(auth: Auth, refs: DBRefs, endpointName: string, f: (authInstance: AuthInstance, req: Request, res: Response) => Promise<{
     result: Result,
     statusCode?: number
 }>) {
     return standardFunction(async (req, res) => {
-        await onPost(req, res, auth,endpointName,async () => {
+        await onPost(req, res, auth, endpointName, async () => {
             return authedWithType(["ADMIN"], auth, refs, req, res, async (authInstance: AuthInstance) => f(authInstance, req, res))
         })
     })
@@ -129,23 +129,24 @@ async function cmsRemainList(refs: DBRefs, req: Request): Promise<EndpointResult
     const allRemainData: TypedSingleResult<{
         goods: PrettyGoods,
         remain: GoodsRemainData
-    }>[] = await Promise.all((await getAllGoods(refs)).map(async e => {
-        const remainData = await getRemainDataOfGoods(refs, e.goodsId)
-        if (!remainData.isSuccess) {
-            return remainData
-        }
-        const pGoods = await prettyGoods(refs, e)
-        if (!pGoods.isSuccess) {
-            return pGoods
-        }
-        return {
-            isSuccess: true,
-            data: {
-                goods: pGoods.data,
-                remain: remainData.data
+    }>[] = await prettyCache(async (cache) =>
+        await Promise.all((await listGoodsId(refs)).map(async gId => {
+            const remainData = await getRemainDataOfGoods(refs, gId)
+            if (!remainData.isSuccess) {
+                return remainData
             }
-        }
-    }))
+            const pGoods = await getPrettyGoods(cache, refs, gId)
+            if (!pGoods.isSuccess) {
+                return pGoods
+            }
+            return {
+                isSuccess: true,
+                data: {
+                    goods: pGoods.data,
+                    remain: remainData.data
+                }
+            }
+        })))
 
     const suc: {
         goods: PrettyGoods,

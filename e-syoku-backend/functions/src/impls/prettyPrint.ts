@@ -40,6 +40,11 @@ function emptyPrettyCache(): PrettyCache {
     }
 }
 
+export async function prettyCache<R>(body: (cache: PrettyCache) => Promise<R>): Promise<R> {
+    const cache = emptyPrettyCache()
+    return body(cache)
+}
+
 async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): Promise<TypedSingleResult<Shop>> {
     if (shopId in cache.shop) {
         return {isSuccess: true, data: cache.shop[shopId]}
@@ -52,7 +57,7 @@ async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): 
     return {isSuccess: true, data: shop.data}
 }
 
-async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: string): Promise<TypedSingleResult<PrettyGoods>> {
+export async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: string): Promise<TypedSingleResult<PrettyGoods>> {
     if (goodsId in cache.goods) {
         return {isSuccess: true, data: cache.goods[goodsId]}
     }

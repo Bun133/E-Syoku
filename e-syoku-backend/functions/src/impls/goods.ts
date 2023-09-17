@@ -41,6 +41,10 @@ export async function getAllGoods(refs: DBRefs): Promise<Goods[]> {
     })
 }
 
+export async function listGoodsId(ref: DBRefs): Promise<string[]> {
+    return (await ref.goods.listDocuments()).map(e => e.id)
+}
+
 /**
  * 在庫情報取得
  * @param refs
