@@ -31,29 +31,22 @@ import {promiseInRow} from "../utils/promise";
 type PrettyCache = {
     goods: { [goodsId: string]: PrettyGoods },
     shop: { [shopId: string]: Shop },
-    hit: number,
-    nonHit: number,
 }
 
 export function emptyPrettyCache(): PrettyCache {
     return {
         goods: {},
-        shop: {},
-        hit: 0,
-        nonHit: 0,
+        shop: {}
     }
 }
 
 export async function prettyCache<R>(body: (cache: PrettyCache) => Promise<R>): Promise<R> {
     const cache = emptyPrettyCache()
-    const r = await body(cache)
-    console.log("Hit: " + cache.hit + " NonHit: " + cache.nonHit)
-    return r
+    return await body(cache)
 }
 
 async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): Promise<TypedSingleResult<Shop>> {
     if (shopId in cache.shop) {
-        cache.hit++
         return {isSuccess: true, data: cache.shop[shopId]}
     }
     const shop = await getShopById(refs, shopId)
@@ -61,13 +54,11 @@ async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): 
         return shop
     }
     cache.shop[shopId] = shop.data
-    cache.nonHit++
     return {isSuccess: true, data: shop.data}
 }
 
 export async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: string): Promise<TypedSingleResult<PrettyGoods>> {
     if (goodsId in cache.goods) {
-        cache.hit++
         return {isSuccess: true, data: cache.goods[goodsId]}
     }
 
@@ -93,7 +84,6 @@ export async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: 
         }
     }
     cache.goods[goodsId] = r.data
-    cache.nonHit++
     return r
 }
 
