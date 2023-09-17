@@ -56,6 +56,7 @@ const helpEntries: HelpEntry[] = [
     errorMd("TICKET_STATUS_INVALID"),
     errorMd("INTERNAL_BARCODE_BIND_NOT_FOUND"),
     errorMd("TICKET_NOT_SHOP_MATCH"),
+    hintMd("NotificationFailed.md", "「通知設定に失敗しました」と表示される"),
     hintMd("HowToOrder.md", "注文方法について"),
     hintMd("HowToCheckTicket.md", "食券を確認したい"),
     hintMd("HowToPay.md", "支払方法について"),
