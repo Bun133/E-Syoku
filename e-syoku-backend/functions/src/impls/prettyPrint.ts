@@ -174,10 +174,10 @@ function prettyStatus(status: TicketStatus): PrettyTicketStatus {
     }
 }
 
-export async function prettyTicket(refs: DBRefs, ticket: Ticket): Promise<TypedResult<PrettyTicket>> {
+export async function prettyTicket(cache:PrettyCache,refs: DBRefs, ticket: Ticket): Promise<TypedResult<PrettyTicket>> {
     const issueTime = prettyTimeStamp(ticket.issueTime)
     const lastUpdatedTime = prettyTimeStamp(ticket.lastStatusUpdated)
-    const order = await prettyOrder(refs, ticket.orderData)
+    const order = await prettyOrder(cache,refs, ticket.orderData)
     if (isError(order)) {
         return order
     }
@@ -218,8 +218,8 @@ function prettyPaymentStatus(state: PaymentState): PrettyPaymentState {
     }
 }
 
-export async function prettyPayment(refs: DBRefs, payment: PaymentSession): Promise<TypedResult<PrettyPaymentSession>> {
-    const pOrder = await prettyOrder(refs, payment.orderContent)
+export async function prettyPayment(cache:PrettyCache,refs: DBRefs, payment: PaymentSession): Promise<TypedResult<PrettyPaymentSession>> {
+    const pOrder = await prettyOrder(cache,refs, payment.orderContent)
     if (isError(pOrder)) {
         return pOrder
     }
