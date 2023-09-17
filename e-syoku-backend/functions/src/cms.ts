@@ -31,6 +31,7 @@ import {GoodsRemainData, goodsRemainDataSchema} from "./types/goods";
 import {PrettyGoods, PrettyPaymentSession} from "./types/prettyPrint";
 import {paymentSessionSchema} from "./types/payment";
 import {transformPaymentSession} from "./impls/payment";
+import {promiseInRow} from "./utils/promise";
 
 
 export function cmsFunction(auth: Auth, refs: DBRefs, endpointName: string, f: (authInstance: AuthInstance, req: Request, res: Response) => Promise<{
@@ -130,7 +131,7 @@ async function cmsRemainList(refs: DBRefs, req: Request): Promise<EndpointResult
         goods: PrettyGoods,
         remain: GoodsRemainData
     }>[] = await prettyCache(async (cache) =>
-        await Promise.all((await listGoodsId(refs)).map(async gId => {
+        await promiseInRow((await listGoodsId(refs)), (async gId => {
             const remainData = await getRemainDataOfGoods(refs, gId)
             if (!remainData.isSuccess) {
                 return remainData
@@ -220,7 +221,7 @@ export async function cmsPaymentListFunc(refs: DBRefs, req: Request): Promise<En
     if (uid.param === undefined) return {result: uid.error}
 
     const payments = await parseQueryDataAll(paymentSessionSchema, refs.payments.where("customerId", "==", uid.param), (doc, data) => transformPaymentSession(doc.id, data))
-    const pPayments: PrettyPaymentSession[] = await prettyCache(async (cache) => (await Promise.all(payments.map(async e => {
+    const pPayments: PrettyPaymentSession[] = await prettyCache(async (cache) => (await promiseInRow(payments, (async e => {
         return await prettyPayment(cache, refs, e)
     }))).filter(isTypedSuccess).map(e => e.data))
 

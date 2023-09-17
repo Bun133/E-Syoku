@@ -40,6 +40,7 @@ import {addMessageToken, NotificationData} from "./impls/notification";
 import {emptyPrettyCache, getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 import {PrettyGoods, PrettyPaymentSession, PrettyTicket} from "./types/prettyPrint";
 import {GoodsRemainData, WaitingData} from "./types/goods";
+import {promiseInRow} from "./utils/promise";
 
 
 admin.initializeApp()
@@ -108,7 +109,7 @@ export const listTickets = standardFunction(async (request, response) => {
             // 要求ユーザーのすべてのチケットを取得します
             let allTickets = await listTicketForUser(refs, authInstance.uid);
 
-            const pTickets = await prettyCache(async (cache) => await Promise.all(allTickets.map((e) => prettyTicket(cache, refs, e))))
+            const pTickets = await prettyCache(async (cache) => await promiseInRow(allTickets, (e) => prettyTicket(cache, refs, e)))
 
             // TODO Error Handling
             const suc: Success = {
@@ -269,7 +270,7 @@ export const listGoods = standardFunction(async (request, response) => {
                 goods: PrettyGoods,
                 remainData: GoodsRemainData,
                 waitingData: WaitingData
-            }>[] = await prettyCache(async (cache) => await Promise.all(goodsIds.map(async gId => {
+            }>[] = await prettyCache(async (cache) => await promiseInRow(goodsIds, async gId => {
                 const pGoods = await getPrettyGoods(cache, refs, gId)
                 if (isSingleError(pGoods)) {
                     return pGoods
@@ -293,7 +294,7 @@ export const listGoods = standardFunction(async (request, response) => {
                         waitingData: waitingData.data
                     }
                 }
-            })))
+            }))
 
             const suc: Success = {"isSuccess": true, "data": data.filter(isTypedSuccess).map(s => s.data)}
             return {
@@ -357,7 +358,10 @@ export const listPayments = standardFunction(async (request, response) => {
             // ユーザーに紐づいているすべての決済セッションのデータを取得します
             const payments = await getAllPayments(refs, authInstance.uid)
 
-            const pPayments: PrettyPaymentSession[] = await prettyCache(async (cache) => (await Promise.all(payments.map(async p => prettyPayment(cache, refs, p)))).filter(isTypedSuccess).map(e => e.data))
+            const pPayments: PrettyPaymentSession[] = await prettyCache(async (cache) =>
+                (await promiseInRow(payments, (async p => prettyPayment(cache, refs, p))))
+                    .filter(isTypedSuccess).map(e => e.data)
+            )
 
             const suc: Success = {"isSuccess": true, "payments": pPayments}
             return {

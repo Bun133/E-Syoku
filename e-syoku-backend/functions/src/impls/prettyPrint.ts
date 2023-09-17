@@ -14,7 +14,6 @@ import {Timestamp} from "firebase-admin/firestore";
 import {Order, SingleOrder} from "../types/order";
 import {getGoodsById} from "./goods";
 import {SingleError, TypedResult, TypedSingleResult, TypedSuccess} from "../types/errors";
-import {Goods} from "../types/goods";
 import {getShopById} from "./shop";
 import {
     errorResult,
@@ -27,26 +26,34 @@ import {
 } from "./errors";
 import {PaymentSession, PaymentState} from "../types/payment";
 import {Shop} from "../types/shop";
+import {promiseInRow} from "../utils/promise";
 
 type PrettyCache = {
     goods: { [goodsId: string]: PrettyGoods },
     shop: { [shopId: string]: Shop },
+    hit: number,
+    nonHit: number,
 }
 
 export function emptyPrettyCache(): PrettyCache {
     return {
         goods: {},
         shop: {},
+        hit: 0,
+        nonHit: 0,
     }
 }
 
 export async function prettyCache<R>(body: (cache: PrettyCache) => Promise<R>): Promise<R> {
     const cache = emptyPrettyCache()
-    return body(cache)
+    const r = await body(cache)
+    console.log("Hit: " + cache.hit + " NonHit: " + cache.nonHit)
+    return r
 }
 
 async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): Promise<TypedSingleResult<Shop>> {
     if (shopId in cache.shop) {
+        cache.hit++
         return {isSuccess: true, data: cache.shop[shopId]}
     }
     const shop = await getShopById(refs, shopId)
@@ -54,11 +61,13 @@ async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): 
         return shop
     }
     cache.shop[shopId] = shop.data
+    cache.nonHit++
     return {isSuccess: true, data: shop.data}
 }
 
 export async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: string): Promise<TypedSingleResult<PrettyGoods>> {
     if (goodsId in cache.goods) {
+        cache.hit++
         return {isSuccess: true, data: cache.goods[goodsId]}
     }
 
@@ -72,7 +81,7 @@ export async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: 
         return shop
     }
 
-    return {
+    const r: TypedSingleResult<PrettyGoods> = {
         isSuccess: true,
         data: {
             shop: shop.data,
@@ -83,6 +92,9 @@ export async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: 
             imageRefPath: goods.data.imageRefPath,
         }
     }
+    cache.goods[goodsId] = r.data
+    cache.nonHit++
+    return r
 }
 
 function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
@@ -108,7 +120,7 @@ async function prettySingleOrder(cache: PrettyCache, refs: DBRefs, order: Single
 }
 
 async function prettyOrder(cache: PrettyCache, refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
-    const singles = await Promise.all(order.map(single => prettySingleOrder(cache, refs, single)))
+    const singles = await promiseInRow(order, (single) => prettySingleOrder(cache, refs, single))
     const errors: SingleError[] = []
     const successes: TypedSuccess<PrettySingleOrder>[] = []
 
