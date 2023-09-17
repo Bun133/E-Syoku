@@ -26,6 +26,59 @@ import {
     prettyTicketFailed
 } from "./errors";
 import {PaymentSession, PaymentState} from "../types/payment";
+import {Shop} from "../types/shop";
+
+type PrettyCache = {
+    goods: { [goodsId: string]: PrettyGoods },
+    shop: { [shopId: string]: Shop },
+}
+
+function emptyPrettyCache(): PrettyCache {
+    return {
+        goods: {},
+        shop: {},
+    }
+}
+
+async function getPrettyShop(cache: PrettyCache, refs: DBRefs, shopId: string): Promise<TypedSingleResult<Shop>> {
+    if (shopId in cache.shop) {
+        return {isSuccess: true, data: cache.shop[shopId]}
+    }
+    const shop = await getShopById(refs, shopId)
+    if (isSingleError(shop)) {
+        return shop
+    }
+    cache.shop[shopId] = shop.data
+    return {isSuccess: true, data: shop.data}
+}
+
+async function getPrettyGoods(cache: PrettyCache, refs: DBRefs, goodsId: string): Promise<TypedSingleResult<PrettyGoods>> {
+    if (goodsId in cache.goods) {
+        return {isSuccess: true, data: cache.goods[goodsId]}
+    }
+
+    const goods = await getGoodsById(refs, goodsId)
+    if (isSingleError(goods)) {
+        return goods
+    }
+
+    const shop = await getPrettyShop(cache, refs, goods.data.shopId)
+    if (isSingleError(shop)) {
+        return shop
+    }
+
+    return {
+        isSuccess: true,
+        data: {
+            shop: shop.data,
+            goodsId: goods.data.goodsId,
+            name: goods.data.name,
+            price: goods.data.price,
+            description: goods.data.description,
+            imageRefPath: goods.data.imageRefPath,
+        }
+    }
+}
 
 function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
     const date = timeStamp.toDate();
@@ -34,6 +87,11 @@ function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
     }
 }
 
+/**
+ * @deprecated getPrettyGoods
+ * @param refs
+ * @param goods
+ */
 export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSingleResult<PrettyGoods>> {
     const shop = await getShopById(refs, goods.shopId)
     if (isSingleError(shop)) {
@@ -54,7 +112,7 @@ export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSing
     return suc
 }
 
-export async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
+async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
     const goodsData = await getGoodsById(refs, order.goodsId)
     if (isSingleError(goodsData)) {
         return goodsData
@@ -73,7 +131,7 @@ export async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promi
     return suc
 }
 
-export async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
+async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
     const singles = await Promise.all(order.map(single => prettySingleOrder(refs, single)))
     const errors: SingleError[] = []
     const successes: TypedSuccess<PrettySingleOrder>[] = []
@@ -102,7 +160,7 @@ export async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResu
     }
 }
 
-export function prettyStatus(status: TicketStatus): PrettyTicketStatus {
+function prettyStatus(status: TicketStatus): PrettyTicketStatus {
     switch (status) {
         case "PROCESSING":
             return "調理中"
