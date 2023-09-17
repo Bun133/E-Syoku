@@ -92,31 +92,6 @@ function prettyTimeStamp(timeStamp: Timestamp): PrettyTimeStamp {
     }
 }
 
-/**
- * @deprecated getPrettyGoods
- * @param refs
- * @param goods
- */
-export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSingleResult<PrettyGoods>> {
-    const shop = await getShopById(refs, goods.shopId)
-    if (isSingleError(shop)) {
-        return shop
-    }
-    const suc: TypedSuccess<PrettyGoods> = {
-        isSuccess: true,
-        data: {
-            shop: shop.data,
-            goodsId: goods.goodsId,
-            name: goods.name,
-            price: goods.price,
-            description: goods.description,
-            imageRefPath: goods.imageRefPath,
-        }
-    }
-
-    return suc
-}
-
 async function prettySingleOrder(cache: PrettyCache, refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
     const pGoods = await getPrettyGoods(cache, refs, order.goodsId)
     if (isSingleError(pGoods)) {
