@@ -117,12 +117,8 @@ export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSing
     return suc
 }
 
-async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
-    const goodsData = await getGoodsById(refs, order.goodsId)
-    if (isSingleError(goodsData)) {
-        return goodsData
-    }
-    const pGoods = await prettyGoods(refs, goodsData.data)
+async function prettySingleOrder(cache:PrettyCache,refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
+    const pGoods = await getPrettyGoods(cache,refs,order.goodsId)
     if (isSingleError(pGoods)) {
         return pGoods
     }
@@ -136,8 +132,8 @@ async function prettySingleOrder(refs: DBRefs, order: SingleOrder): Promise<Type
     return suc
 }
 
-async function prettyOrder(refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
-    const singles = await Promise.all(order.map(single => prettySingleOrder(refs, single)))
+async function prettyOrder(cache:PrettyCache,refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
+    const singles = await Promise.all(order.map(single => prettySingleOrder(cache,refs, single)))
     const errors: SingleError[] = []
     const successes: TypedSuccess<PrettySingleOrder>[] = []
 
