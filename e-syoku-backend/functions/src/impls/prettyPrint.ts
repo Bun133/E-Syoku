@@ -33,7 +33,7 @@ type PrettyCache = {
     shop: { [shopId: string]: Shop },
 }
 
-function emptyPrettyCache(): PrettyCache {
+export function emptyPrettyCache(): PrettyCache {
     return {
         goods: {},
         shop: {},
@@ -117,8 +117,8 @@ export async function prettyGoods(refs: DBRefs, goods: Goods): Promise<TypedSing
     return suc
 }
 
-async function prettySingleOrder(cache:PrettyCache,refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
-    const pGoods = await getPrettyGoods(cache,refs,order.goodsId)
+async function prettySingleOrder(cache: PrettyCache, refs: DBRefs, order: SingleOrder): Promise<TypedSingleResult<PrettySingleOrder>> {
+    const pGoods = await getPrettyGoods(cache, refs, order.goodsId)
     if (isSingleError(pGoods)) {
         return pGoods
     }
@@ -132,8 +132,8 @@ async function prettySingleOrder(cache:PrettyCache,refs: DBRefs, order: SingleOr
     return suc
 }
 
-async function prettyOrder(cache:PrettyCache,refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
-    const singles = await Promise.all(order.map(single => prettySingleOrder(cache,refs, single)))
+async function prettyOrder(cache: PrettyCache, refs: DBRefs, order: Order): Promise<TypedResult<PrettyOrder>> {
+    const singles = await Promise.all(order.map(single => prettySingleOrder(cache, refs, single)))
     const errors: SingleError[] = []
     const successes: TypedSuccess<PrettySingleOrder>[] = []
 
@@ -174,10 +174,10 @@ function prettyStatus(status: TicketStatus): PrettyTicketStatus {
     }
 }
 
-export async function prettyTicket(cache:PrettyCache,refs: DBRefs, ticket: Ticket): Promise<TypedResult<PrettyTicket>> {
+export async function prettyTicket(cache: PrettyCache, refs: DBRefs, ticket: Ticket): Promise<TypedResult<PrettyTicket>> {
     const issueTime = prettyTimeStamp(ticket.issueTime)
     const lastUpdatedTime = prettyTimeStamp(ticket.lastStatusUpdated)
-    const order = await prettyOrder(cache,refs, ticket.orderData)
+    const order = await prettyOrder(cache, refs, ticket.orderData)
     if (isError(order)) {
         return order
     }
@@ -218,8 +218,8 @@ function prettyPaymentStatus(state: PaymentState): PrettyPaymentState {
     }
 }
 
-export async function prettyPayment(cache:PrettyCache,refs: DBRefs, payment: PaymentSession): Promise<TypedResult<PrettyPaymentSession>> {
-    const pOrder = await prettyOrder(cache,refs, payment.orderContent)
+export async function prettyPayment(cache: PrettyCache, refs: DBRefs, payment: PaymentSession): Promise<TypedResult<PrettyPaymentSession>> {
+    const pOrder = await prettyOrder(cache, refs, payment.orderContent)
     if (isError(pOrder)) {
         return pOrder
     }

@@ -37,7 +37,7 @@ import {grantPermissionToUser} from "./impls/auth";
 import {bindBarcodeToTicket, getTicketBarcodeBindData} from "./impls/barcode";
 import {cmsFunction, cmsPaymentListFunc, cmsRemainFunc, cmsTicketFunc} from "./cms";
 import {addMessageToken, NotificationData} from "./impls/notification";
-import {getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
+import {emptyPrettyCache, getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 import {PrettyGoods, PrettyPaymentSession, PrettyTicket} from "./types/prettyPrint";
 import {GoodsRemainData, WaitingData} from "./types/goods";
 
@@ -75,7 +75,7 @@ export const ticketStatus = standardFunction(async (request, response) => {
                 return {result: errorResult(ticket)}
             }
 
-            const pTicket = await prettyTicket(refs, ticket.data)
+            const pTicket = await prettyTicket(emptyPrettyCache(), refs, ticket.data)
             if (!pTicket.isSuccess) {
                 return {result: pTicket}
             }
@@ -108,7 +108,7 @@ export const listTickets = standardFunction(async (request, response) => {
             // 要求ユーザーのすべてのチケットを取得します
             let allTickets = await listTicketForUser(refs, authInstance.uid);
 
-            const pTickets = await Promise.all(allTickets.map((e) => prettyTicket(refs, e)))
+            const pTickets = await prettyCache(async (cache) => await Promise.all(allTickets.map((e) => prettyTicket(cache, refs, e))))
 
             // TODO Error Handling
             const suc: Success = {
@@ -219,7 +219,7 @@ function ticketStateChangeEndpoint(fromStatus: TicketStatus, toStatus: TicketSta
                         }
                     }
 
-                    const pTicket = await prettyTicket(refs, called.targetTicket)
+                    const pTicket = await prettyTicket(emptyPrettyCache(), refs, called.targetTicket)
                     if (!pTicket.isSuccess) {
                         const err: Error = pTicket
                         return {
@@ -357,7 +357,7 @@ export const listPayments = standardFunction(async (request, response) => {
             // ユーザーに紐づいているすべての決済セッションのデータを取得します
             const payments = await getAllPayments(refs, authInstance.uid)
 
-            const pPayments: PrettyPaymentSession[] = (await Promise.all(payments.map(async p => prettyPayment(refs, p)))).filter(isTypedSuccess).map(e => e.data)
+            const pPayments: PrettyPaymentSession[] = await prettyCache(async (cache) => (await Promise.all(payments.map(async p => prettyPayment(cache, refs, p)))).filter(isTypedSuccess).map(e => e.data))
 
             const suc: Success = {"isSuccess": true, "payments": pPayments}
             return {
@@ -428,7 +428,7 @@ export const paymentStatus = standardFunction(async (request, response) => {
                 }
             }
 
-            const pPayment = await prettyPayment(refs, payment)
+            const pPayment = await prettyPayment(emptyPrettyCache(), refs, payment)
             if (!pPayment.isSuccess) {
                 return {result: pPayment}
             }

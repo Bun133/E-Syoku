@@ -25,7 +25,7 @@ import {
 import {ticketByBarcode} from "./impls/barcode";
 import {Ticket} from "./types/ticket";
 import {ticketById} from "./impls/ticket";
-import {getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
+import {emptyPrettyCache, getPrettyGoods, prettyCache, prettyPayment, prettyTicket} from "./impls/prettyPrint";
 import {getRemainDataOfGoods, listGoodsId} from "./impls/goods";
 import {GoodsRemainData, goodsRemainDataSchema} from "./types/goods";
 import {PrettyGoods, PrettyPaymentSession} from "./types/prettyPrint";
@@ -83,7 +83,7 @@ export async function cmsTicketFunc(refs: DBRefs, req: Request): Promise<Endpoin
         }
     }
 
-    const pTicket = await prettyTicket(refs, ticket.data)
+    const pTicket = await prettyTicket(emptyPrettyCache(), refs, ticket.data)
     if (!pTicket.isSuccess) {
         return {
             result: pTicket
@@ -220,9 +220,9 @@ export async function cmsPaymentListFunc(refs: DBRefs, req: Request): Promise<En
     if (uid.param === undefined) return {result: uid.error}
 
     const payments = await parseQueryDataAll(paymentSessionSchema, refs.payments.where("customerId", "==", uid.param), (doc, data) => transformPaymentSession(doc.id, data))
-    const pPayments: PrettyPaymentSession[] = (await Promise.all(payments.map(async e => {
-        return await prettyPayment(refs, e)
-    }))).filter(isTypedSuccess).map(e => e.data)
+    const pPayments: PrettyPaymentSession[] = await prettyCache(async (cache) => (await Promise.all(payments.map(async e => {
+        return await prettyPayment(cache, refs, e)
+    }))).filter(isTypedSuccess).map(e => e.data))
 
     return {
         result: {
