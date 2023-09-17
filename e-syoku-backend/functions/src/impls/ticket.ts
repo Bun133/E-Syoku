@@ -144,7 +144,7 @@ async function internalUpdateTicketStatus(ref: DBRefs, auth: Auth, messaging: Me
         // 通知を送信する場合は送信処理を行います
         if (sendNotification) {
             await sendMessage(ref, messaging, ticket.data.customerId, sendNotification)
-            await sendMailNotification(auth, ticket.data)
+            await sendMailNotification(auth, ticket.data,toStatus)
         }
         const suc: Success & {
             targetTicket: Ticket
