@@ -76,7 +76,7 @@ async function internalCallEndpoint<Q, R extends DefaultResponseFormat>(endPoint
             isSuccess: false,
         }
     }
-    const tokenString = await (user.getIdToken(true))
+    const tokenString = await (user.getIdToken(false))
     let data: Response
     try {
         data = await fetch(fullPath, {
